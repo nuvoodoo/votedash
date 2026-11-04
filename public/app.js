@@ -365,7 +365,7 @@
         const top2 = cands.slice(0, 2);
         app(box, el('h2', null, `${d.regions[0].type || 'Region'} results`));
         const th = (label, key, num) => { const h = el('th', { scope: 'col', class: num ? 'num' : '' }, label + (regionSort.key === key ? (regionSort.dir > 0 ? ' ▲' : ' ▼') : '')); h.addEventListener('click', () => { regionSort = { key, dir: regionSort.key === key ? -regionSort.dir : 1 }; draw(); }); return h; };
-        const rt = el('table', { class: 'regions' }, el('thead', null, el('tr', null, th('Name', 'name'), th('In', 'pct', true), ...top2.map((x) => { const h = th(x.n.split(' ').pop(), 'c' + x.n, true); h.classList.add('p-' + x.p); return h; }), th('Margin', 'margin', true))), el('tbody'));
+        const rt = el('table', { class: 'regions' }, el('thead', null, el('tr', null, th('Name', 'name'), th('In', 'pct', true), ...top2.map((x) => { const h = th(x.n, 'c' + x.n, true); h.classList.add('p-' + x.p); return h; }), th('Margin', 'margin', true))), el('tbody'));
         const rb = rt.lastChild;
         const regs = d.regions.map((g) => { const m = {}; for (const x of g.cands) m[x.n] = x; const a = m[top2[0]?.n] || { v: 0, pc: 0 }, b = m[top2[1]?.n] || { v: 0, pc: 0 }; return { g, a, b, margin: a.pc - b.pc }; });
         regs.sort((x, y) => { const k = regionSort.key; let v = 0; if (k === 'name') v = x.g.name.localeCompare(y.g.name); else if (k === 'pct') v = x.g.pct - y.g.pct; else if (k === 'margin') v = x.margin - y.margin; else if (k.startsWith('c')) { const n = k.slice(1); v = (n === top2[0].n ? x.a.v - y.a.v : x.b.v - y.b.v); } return v * regionSort.dir; });

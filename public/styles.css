@@ -179,7 +179,9 @@ button { cursor: pointer; }
 .rating.T { background: var(--amber-soft); color: #7A4F00; }
 .leader { min-width: 230px; }
 .cand-line { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: 13.5px; }
-.cand-line .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cand-line .nm { white-space: normal; line-height: 1.25; }
+.cand-line { align-items: start; }
+.races td { vertical-align: top; }
 .cand-line .pc { font-weight: 600; }
 .cand-line.w .nm::before { content: "✓ "; font-weight: 700; }
 .bar { position: relative; height: 8px; background: var(--paper-2); margin-top: 5px; display: flex; overflow: hidden; }
@@ -320,9 +322,6 @@ button { cursor: pointer; }
   .races th:nth-child(5), .races td:nth-child(5) { display: none; }
   .races td { padding: 8px 4px; }
   .leader { min-width: 120px; }
-  .cand-line .nm { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.25; }
-  .cand-line { align-items: start; }
-  .races td { vertical-align: top; }
   .pct { font-size: 13px; }
   .pct .pbar { width: 28px; }
   .margin { font-size: 13px; }
