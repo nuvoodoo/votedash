@@ -28,6 +28,7 @@ function readRows() {
 let lastHash = '';
 async function sync() {
   try {
+    if (!fs.existsSync(file)) { console.log(new Date().toISOString(), 'waiting for', file); return; }
     const { body, type } = readRows();
     const h = require('crypto').createHash('md5').update(body).digest('hex');
     if (h === lastHash) return;
@@ -39,4 +40,4 @@ async function sync() {
 }
 sync();
 fs.watchFile(file, { interval: 5000 }, sync);
-setInterval(sync, 60000);
+setInterval(sync, 30000);

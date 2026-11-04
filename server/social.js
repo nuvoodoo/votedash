@@ -29,7 +29,7 @@ function pick(o, ...keys) {
 function normalise(o) {
   const url = pick(o, 'url', 'link', 'post_url', 'permalink', 'tweet_url');
   const text = pick(o, 'text', 'content', 'post', 'body', 'message', 'tweet');
-  if (!text && !url) return null;
+  if (!text) return null; // account rows without a post are not stream items
   const tsRaw = pick(o, 'ts', 'timestamp', 'time', 'date', 'created_at', 'posted_at', 'datetime');
   const ts = tsRaw ? (Date.parse(tsRaw) || Number(tsRaw) || Date.now()) : Date.now();
   return {
