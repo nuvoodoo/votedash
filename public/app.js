@@ -16,8 +16,10 @@
   const app = (n, ...kids) => { for (const k of kids) if (k != null) n.append(k); return n; };
   const fmtN = (n) => (n || 0).toLocaleString('en-US');
   const fmtPct = (n) => `${(Math.round((n || 0) * 10) / 10).toFixed(1)}%`;
-  const fmtTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: 'America/New_York' }) + ' ET';
-  const fmtShort = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+  // Times in the viewer's own zone, labelled with its short name (PST, ET, GMT+1).
+  const TZ = (() => { try { const p = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(new Date()).find((x) => x.type === 'timeZoneName'); return p ? p.value : ''; } catch (e) { return ''; } })();
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' }) + (TZ ? ' ' + TZ : '');
+  const fmtShort = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   const PARTY = { D: 'Dem', R: 'Rep', I: 'Ind', O: '' };
   const OUTLET_ORDER = ['DDHQ', 'AP', 'CNN', 'NBC', 'Fox', 'NYT', 'ABC', 'CBS', 'Reuters', 'Pollgebra', 'civicAPI'];
 

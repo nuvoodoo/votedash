@@ -42,12 +42,12 @@ td.v { text-align: right; width: 70px; font-weight: 600; }
   const key = new URLSearchParams(location.search).get('key') || '';
   const main = document.getElementById('main');
   const fmt = (n) => (n || 0).toLocaleString('en-US');
-  const t = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+  const t = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   async function load() {
     const r = await fetch('/api/usage?key=' + encodeURIComponent(key), { cache: 'no-store' });
     if (!r.ok) { main.innerHTML = '<p class="err">Not available.</p>'; return; }
     const d = await r.json();
-    document.getElementById('sub').textContent = 'usage since ' + new Date(d.since).toLocaleString('en-US', { timeZone: 'America/New_York' }) + ' ET, refreshed ' + t(d.now) + ' ET';
+    document.getElementById('sub').textContent = 'usage since ' + new Date(d.since).toLocaleString('en-US') + ', refreshed ' + t(d.now);
     const tile = (n, l, cls) => `<div class="tile"><div class="n ${cls || ''}">${fmt(n)}</div><div class="l">${l}</div></div>`;
     const list = (title, rows) => `<div><h2>${title}</h2><table>${rows.map((x) => `<tr><td>${x.k}</td><td class="v">${fmt(x.v)}</td></tr>`).join('') || '<tr><td>None yet</td></tr>'}</table></div>`;
     // chart: viewers (concurrent peak), views, uniques per minute over 24h
