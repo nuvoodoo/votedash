@@ -9,6 +9,7 @@ const { Social } = require('./social');
 const { SocialPoll } = require('./socialpoll');
 const { XPoll } = require('./xpoll');
 const { Polymarket } = require('./polymarket');
+const og = require('./og');
 
 const PORT = Number(process.env.PORT || 8080);
 const SOCIAL_TOKEN = process.env.SOCIAL_TOKEN || '';
@@ -152,6 +153,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (p === '/og.png') {
+      try { const png = og.render(civic); res.writeHead(200, { 'content-type': 'image/png', 'content-length': png.length, 'cache-control': 'public, max-age=60' }); return res.end(png); }
+      catch (e) { console.error('og', e.message); res.writeHead(500); return res.end('og error'); }
+    }
+    if (p === '/og.svg') { res.writeHead(200, { 'content-type': 'image/svg+xml', 'cache-control': 'no-cache' }); return res.end(og.buildSVG(civic)); }
     if (p === '/api/snapshot') { buildSnapshot(); return sendJSON(req, res, null, { raw: snapshotRaw, gz: snapshotGz }); }
 
     if (p.startsWith('/api/race/')) {
