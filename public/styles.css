@@ -54,7 +54,7 @@ button { cursor: pointer; }
   .live:not(.stale) .dot { animation: pulse 2s infinite; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(212,138,0,.6); } 70% { box-shadow: 0 0 0 8px rgba(212,138,0,0); } 100% { box-shadow: 0 0 0 0 rgba(212,138,0,0); } }
 }
-.topnav { margin-left: auto; display: flex; gap: 4px; }
+.topnav { display: none; }
 .topnav a, .mobile-nav a { color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 3px; font-weight: 500; }
 .topnav a[aria-current="page"] { background: rgba(255,255,255,.14); }
 .topnav a:hover { background: rgba(255,255,255,.1); }
@@ -231,14 +231,6 @@ button { cursor: pointer; }
 .foot p { margin: 0; }
 .powered a { color: var(--ink); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--amber); }
 .powered a:hover { border-bottom-color: var(--ink); }
-
-/* Feed view: full width at every size */
-body[data-view="feed"] .board, body[data-view="feed"] .detail { display: none; }
-body[data-view="feed"] .split { grid-template-columns: minmax(0, 1fr); max-width: 900px; }
-body[data-view="feed"] .feed { position: static; max-height: none; }
-body[data-view="feed"] .feed-list { overflow: visible; }
-body[data-view="feed"] .feed-list li { font-size: 15px; }
-body[data-view="feed"] .feed-head h2 { font-size: 20px; }
 
 /* Big screen */
 @media (min-width: 1700px) {
