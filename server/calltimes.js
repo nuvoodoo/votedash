@@ -183,9 +183,11 @@ class CallTimes {
     const S = (k) => (src[k] = src[k] || { src: k, pts: 0, races: 0, firsts: 0, wrong: 0, behind: [], called: 0 });
     let scored = 0;
     for (const r of races) {
-      for (const c of r.calls) S(c.src).called++;
-      const ok = r.calls.filter((c) => c.v === 'accurate');
-      for (const c of r.calls) if (c.v === 'wrong') { const s = S(c.src); s.races++; s.wrong++; c.pts = 0; }
+      // Polymarket stays on the race timelines but is not scored or ranked.
+      const calls = r.calls.filter((c) => c.src !== 'Polymarket');
+      for (const c of calls) S(c.src).called++;
+      const ok = calls.filter((c) => c.v === 'accurate');
+      for (const c of calls) if (c.v === 'wrong') { const s = S(c.src); s.races++; s.wrong++; c.pts = 0; }
       if (ok.length < 2) continue;
       scored++;
       r.scored = true;

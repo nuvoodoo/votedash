@@ -551,7 +551,7 @@
     if (!d) { box.replaceChildren(el('h1', null, 'Who called it'), el('p', { class: 'empty' }, 'Loading calls…')); loadCalls().then(renderCalls).catch(() => {}); return; }
     const head = el('div', { class: 'ct-head' },
       el('h1', null, 'Who called it'),
-      el('p', { class: 'ct-dek' }, `Ranked by who called the winner first. In each of the ${fmtN(d.scoredRaces)} races called by two or more sources, the first source to call the winner gets 100 points and the last gets 0; a call for the wrong candidate scores 0. A source's score is its average. Polymarket's call is the moment the winner's market reached 55% and held; a market favoring the loser at 55% or more when Election Day began is a wrong call.`));
+      el('p', { class: 'ct-dek' }, `Ranked by who called the winner first. In each of the ${fmtN(d.scoredRaces)} races called by two or more sources, the first source to call the winner gets 100 points and the last gets 0; a call for the wrong candidate scores 0. A source's score is its average.`));
     const ranked = d.board.filter((b) => b.ranked), rest = d.board.filter((b) => !b.ranked && b.races);
     const cols = el('li', { class: 'ct-row ct-cols', 'aria-hidden': 'true' }, el('span', null, '#'), el('span', null, 'Source'), el('span', null, 'Score'), el('span', null, 'First'), el('span', null, 'Scored'), el('span', null, 'Behind first'), el('span', null, 'Wrong'));
     const list = el('ol', { class: 'ct-board' }, cols, ...ranked.map((b, i) => boardRow(b, i + 1)));
