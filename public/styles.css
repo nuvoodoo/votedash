@@ -232,6 +232,14 @@ button { cursor: pointer; }
 .powered a { color: var(--ink); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--amber); }
 .powered a:hover { border-bottom-color: var(--ink); }
 
+/* Feed view: full width at every size */
+body[data-view="feed"] .board, body[data-view="feed"] .detail { display: none; }
+body[data-view="feed"] .split { grid-template-columns: minmax(0, 1fr); max-width: 900px; }
+body[data-view="feed"] .feed { position: static; max-height: none; }
+body[data-view="feed"] .feed-list { overflow: visible; }
+body[data-view="feed"] .feed-list li { font-size: 15px; }
+body[data-view="feed"] .feed-head h2 { font-size: 20px; }
+
 /* Big screen */
 @media (min-width: 1700px) {
   body { font-size: 16px; }
