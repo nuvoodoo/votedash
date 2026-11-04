@@ -159,13 +159,14 @@
       bg.setAttribute('aria-label', `${tdef.label} races`);
       tile.appendChild(bg);
       const label = sv('text', { x: x0 + 5, y: y0 + 13, class: 'tile-lbl' }); label.textContent = tdef.label; tile.appendChild(label);
-      const pt = sv('text', { x: x0 + w - 5, y: y0 + 13, class: 'tile-lbl pct', 'data-pct': st }); tile.appendChild(pt);
+      const sb = /sb/.test(cls);
+      const pt = sv('text', sb ? { x: x0 + 5, y: y0 + 26, class: 'tile-lbl pct sbpct', 'data-pct': st } : { x: x0 + w - 5, y: y0 + 13, class: 'tile-lbl pct', 'data-pct': st }); tile.appendChild(pt);
       pctEls[st] = pt;
       const rs = tdef.rs;
       const n = rs.length;
       if (n) {
         const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols);
-        const areaY = y0 + 17, areaH = w - 21, areaW = w - 8;
+        const areaY = y0 + (sb ? 30 : 17), areaH = w - (sb ? 34 : 21), areaW = w - 8;
         const cell = Math.min(areaW / cols, areaH / rows);
         const gap = cell > 8 ? 1.5 : 0.8;
         const offX = x0 + 4 + (areaW - cols * cell) / 2, offY = areaY + (areaH - rows * cell) / 2;
