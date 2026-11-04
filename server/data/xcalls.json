@@ -1,0 +1,1432 @@
+{
+ "generatedAt": "2026-11-04T16:19:47.248Z",
+ "since": "2026-11-03_22:00:00_UTC",
+ "calls": {
+  "55857": {
+   "NBC": {
+    "ts": 1793765262000,
+    "url": "https://x.com/NBCNews/status/2117831124713923035",
+    "title": "BREAKING: Democrat Gina Hinojosa wins Texas's governor race, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793765880000,
+    "url": "https://x.com/FoxNews/status/2117833717469299008",
+    "title": "BREAKING: The Fox News Decision Desk can project that Democrat Gina Hinojosa will defeat Gov. Greg Abbott in the Texas gubernatorial race, ending his 12-year run. Democrats haven’t won a statewide rac"
+   },
+   "ABC": {
+    "ts": 1793766001000,
+    "url": "https://x.com/ABC/status/2117834224967295351",
+    "title": "BREAKING: In the Texas governor's race, Democrat Gina Hinojosa will defeat Republican Gov. Greg Abbott, denying him a fourth term in office, ABC News projects. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793765282000,
+    "url": "https://x.com/CBSNews/status/2117831208130523515",
+    "title": "Democrat Gina Hinojosa has won the race for governor of Texas, CBS News projects."
+   },
+   "Reuters": {
+    "ts": 1793792407000,
+    "url": "https://x.com/Reuters/status/2117944982325633129",
+    "title": "Democrat Gina Hinojosa defeats Texas Governor Abbott in a stunning upset"
+   },
+   "AP": {
+    "ts": 1793766326000,
+    "url": "https://x.com/AP/status/2117835586845176248",
+    "title": "Democrat Gina Hinojosa wins election for governor of Texas, defeating Republican incumbent Greg Abbott."
+   }
+  },
+  "56011": {
+   "NBC": {
+    "ts": 1793769440000,
+    "url": "https://x.com/NBCNews/status/2117848649665323170",
+    "title": "BREAKING: Democrat Henry Cuellar wins re-election to the U.S. House in Texas's 28th Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793770417000,
+    "url": "https://x.com/CBSNews/status/2117852748183966017",
+    "title": "CBS News projects Democratic Rep. Henry Cuellar wins reelection to the U.S. House in Texas’s 28th Congressional District, defeating Republican Tano Tijerina."
+   }
+  },
+  "56013": {
+   "NBC": {
+    "ts": 1793759072000,
+    "url": "https://x.com/NBCNews/status/2117805163998028016",
+    "title": "BREAKING: Democrat Vicente Gonzalez wins re-election to the U.S. House in Texas's 34th Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793765921000,
+    "url": "https://x.com/CBSNews/status/2117833891754934283",
+    "title": "CBS News projects Democratic Rep. Vicente Gonzalez wins reelection to the U.S. House in Texas’s 34th Congressional District, defeating Republican Eric Flores."
+   }
+  },
+  "86901": {
+   "CBS": {
+    "ts": 1793765061000,
+    "url": "https://x.com/CBSNews/status/2117830283827511382",
+    "title": "CBS News projects Democratic Rep. Shomari Figures wins reelection to the U.S. House in Alabama’s 2nd Congressional District, defeating Republican Rhett Marques."
+   },
+   "AP": {
+    "ts": 1793768248000,
+    "url": "https://x.com/AP/status/2117843651195711841",
+    "title": "Democrat Shomari Figures wins a second term in Alabama's 2nd Congressional District, which was redrawn to favor Republicans."
+   }
+  },
+  "86907": {
+   "NBC": {
+    "ts": 1793761958000,
+    "url": "https://x.com/NBCNews/status/2117817266163085643",
+    "title": "BREAKING: Republican Barry Moore wins U.S. Senate race in Alabama, NBC News projects."
+   }
+  },
+  "86908": {
+   "NBC": {
+    "ts": 1793774223000,
+    "url": "https://x.com/NBCNews/status/2117868710761210299",
+    "title": "BREAKING: Republican Tommy Tuberville wins Alabama's governor race, NBC News projects."
+   }
+  },
+  "86928": {
+   "NBC": {
+    "ts": 1793773200000,
+    "url": "https://x.com/NBCNews/status/2117864419057082766",
+    "title": "BREAKING: Democrat Katie Hobbs wins Arizona's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793775403000,
+    "url": "https://x.com/ABC/status/2117873658609688599",
+    "title": "NEW: Incumbent Democratic Gov. Katie Hobbs will win the Arizona governor's race, ABC News projects."
+   },
+   "CBS": {
+    "ts": 1793762905000,
+    "url": "https://x.com/CBSNews/status/2117821240719077535",
+    "title": "Democrat Katie Hobbs wins reelection for governor of Arizona, CBS News projects."
+   }
+  },
+  "86938": {
+   "NBC": {
+    "ts": 1793762019000,
+    "url": "https://x.com/NBCNews/status/2117817522208534727",
+    "title": "BREAKING: Republican Sarah Huckabee Sanders wins Arkansas's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793760768000,
+    "url": "https://x.com/ABC/status/2117812276396978314",
+    "title": "NEW: Republican Arkansas Gov. Sarah Huckabee Sanders will win reelection, ABC News projects, defeating Democratic challenger Fred Love. Follow live updates:"
+   }
+  },
+  "86949": {
+   "NBC": {
+    "ts": 1793763520000,
+    "url": "https://x.com/NBCNews/status/2117823818290823280",
+    "title": "BREAKING: Republican Tom Cotton wins re-election to the U.S. Senate in Arkansas, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793762517000,
+    "url": "https://x.com/FoxNews/status/2117819614206083263",
+    "title": "BREAKING: The Fox News Decision Desk can make another projection in Arkansas. Republican Tom Cotton will win his Senate race against Democrat Hallie Shoffner. Download the Fox News app now for live mi"
+   },
+   "CBS": {
+    "ts": 1793763692000,
+    "url": "https://x.com/CBSNews/status/2117824542986911819",
+    "title": "Republican Sen. Tom Cotton wins reelection to the U.S. Senate in Arkansas, defeating Democrat Hallie Shoffner."
+   }
+  },
+  "86952": {
+   "CNN": {
+    "ts": 1793765135000,
+    "url": "https://x.com/CNN/status/2117830594478457210",
+    "title": "Democrat Xavier Becerra will be elected as California governor, CNN projects, maintaining his party's control of the nation's largest state. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793764896000,
+    "url": "https://x.com/NBCNews/status/2117829590685004005",
+    "title": "BREAKING: Democrat Xavier Becerra wins California's governor race, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793765723000,
+    "url": "https://x.com/CBSNews/status/2117833057910538508",
+    "title": "Democrat Xavier Becerra has won the race for governor of California, CBS News projects."
+   },
+   "AP": {
+    "ts": 1793765900000,
+    "url": "https://x.com/AP/status/2117833801896284316",
+    "title": "Democrat Xavier Becerra wins the race for California governor, succeeding term-limited Gov. Gavin Newsom."
+   }
+  },
+  "87017": {
+   "CBS": {
+    "ts": 1793760893000,
+    "url": "https://x.com/CBSNews/status/2117812803067424874",
+    "title": "CBS News projects Democrat Manny Rutinel has won the race for U.S. House in Colorado’s 8th Congressional District, defeating incumbent Republican Rep. Gabe Evans."
+   }
+  },
+  "87022": {
+   "NBC": {
+    "ts": 1793757748000,
+    "url": "https://x.com/NBCNews/status/2117799609707765971",
+    "title": "BREAKING: Democrat John Hickenlooper wins re-election to the U.S. Senate in Colorado, NBC News projects."
+   }
+  },
+  "87026": {
+   "NBC": {
+    "ts": 1793757856000,
+    "url": "https://x.com/NBCNews/status/2117800062440939908",
+    "title": "BREAKING: Democrat Ned Lamont wins Connecticut's governor race, NBC News projects."
+   }
+  },
+  "87036": {
+   "NBC": {
+    "ts": 1793754169000,
+    "url": "https://x.com/NBCNews/status/2117784597614252396",
+    "title": "BREAKING: Democrat Chris Coons wins re-election to the U.S. Senate in Delaware, NBC News projects."
+   }
+  },
+  "87053": {
+   "CNN": {
+    "ts": 1793758083000,
+    "url": "https://x.com/CNN/status/2117801013134365095",
+    "title": "Democrat Pia Dandiya will win Florida’s 22nd District and Democratic incumbents Rep. Jared Moskowitz and Rep. Kathy Castor will win reelection, holding their seats, CNN’s Decision Desk projects. In Fl"
+   },
+   "CBS": {
+    "ts": 1793755087000,
+    "url": "https://x.com/CBSNews/status/2117788450287911336",
+    "title": "CBS News projects Democratic Rep. Kathy Castor wins reelection to the U.S. House in Florida’s 14th Congressional District."
+   }
+  },
+  "87061": {
+   "CNN": {
+    "ts": 1793758083000,
+    "url": "https://x.com/CNN/status/2117801013134365095",
+    "title": "Democrat Pia Dandiya will win Florida’s 22nd District and Democratic incumbents Rep. Jared Moskowitz and Rep. Kathy Castor will win reelection, holding their seats, CNN’s Decision Desk projects. In Fl"
+   },
+   "CBS": {
+    "ts": 1793756018000,
+    "url": "https://x.com/CBSNews/status/2117792353260126588",
+    "title": "CBS News projects Democrat Pia Dandiya has won the race for U.S. House in Florida’s 22nd Congressional District, defeating Republican Casey Askar."
+   }
+  },
+  "87064": {
+   "CNN": {
+    "ts": 1793754736000,
+    "url": "https://x.com/CNN/status/2117786978045292882",
+    "title": "Democratic Rep. Jared Moskowitz will win Florida's newly redrawn 25th Congressional District, CNN projects, defeating Republican Scott Singer. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793754404000,
+    "url": "https://x.com/NBCNews/status/2117785584387133646",
+    "title": "BREAKING: Democrat Jared Moskowitz wins re-election to the U.S. House in Florida's 25th Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793754966000,
+    "url": "https://x.com/CBSNews/status/2117787943167205499",
+    "title": "CBS News projects Democratic Rep. Jared Moskowitz wins reelection to the U.S. House in Florida’s 25th Congressional District."
+   }
+  },
+  "87068": {
+   "NBC": {
+    "ts": 1793755949000,
+    "url": "https://x.com/NBCNews/status/2117792062414151739",
+    "title": "BREAKING: Republican Ashley Moody wins special election for U.S. Senate seat in Florida, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793756197000,
+    "url": "https://x.com/FoxNews/status/2117793105114181691",
+    "title": "BREAKING: The Fox News Decision Desk can project that in Florida, Republican Senator Ashley Moody will win her first full term in office, defeating Democrat Angie Nixon."
+   },
+   "ABC": {
+    "ts": 1793756207000,
+    "url": "https://x.com/ABC/status/2117793145119289756",
+    "title": "Republican Sen. Ashley Moody will win the Florida Senate race, holding the seat for the GOP, ABC News projects."
+   },
+   "CBS": {
+    "ts": 1793756471000,
+    "url": "https://x.com/CBSNews/status/2117794254110249243",
+    "title": "Republican Sen. Ashley Moody wins reelection to the U.S. Senate in Florida, defeating Democratic challenger Angie Nixon, CBS News projects."
+   }
+  },
+  "87069": {
+   "NBC": {
+    "ts": 1793758238000,
+    "url": "https://x.com/NBCNews/status/2117801666720243841",
+    "title": "BREAKING: Republican Byron Donalds wins Florida's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793758879000,
+    "url": "https://x.com/ABC/status/2117804354237542480",
+    "title": "JUST IN: Republican Rep. Byron Donalds will defeat Democratic Rep. David Jolly to win Florida’s governor's race. He will become the state’s first Black governor, ABC News projects. Follow live updates"
+   },
+   "CBS": {
+    "ts": 1793758370000,
+    "url": "https://x.com/CBSNews/status/2117802218078224519",
+    "title": "Republican Byron Donalds has won the race for governor of Florida, CBS News projects. Donalds will be the state’s first Black governor."
+   }
+  },
+  "87087": {
+   "CNN": {
+    "ts": 1793753810000,
+    "url": "https://x.com/CNN/status/2117783092987334880",
+    "title": "Georgia Sen. Jon Ossoff will win reelection, CNN projects, defending a crucial Democratic seat that Republicans once considered a top pick-up opportunity. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793752314000,
+    "url": "https://x.com/NBCNews/status/2117776820225315208",
+    "title": "BREAKING: Democrat Jon Ossoff wins re-election to the U.S. Senate in Georgia, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793754054000,
+    "url": "https://x.com/FoxNews/status/2117784114384585161",
+    "title": "BREAKING: The Fox News Decision Desk can project that in Georgia’s Senate race, Democratic Senator Jon Ossoff will defeat Republican Congressman Mike Collins."
+   },
+   "ABC": {
+    "ts": 1793754340000,
+    "url": "https://x.com/ABC/status/2117785317298331697",
+    "title": "BREAKING: Democratic Sen. Jon Ossoff will defeat Republican Rep. Mike Collins in the Georgia Senate race, ABC News projects. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793752936000,
+    "url": "https://x.com/CBSNews/status/2117779427585294578",
+    "title": "Incumbent Democratic Sen. Jon Ossoff wins reelection to the U.S. Senate in Georgia, defeating Republican challenger Mike Collins, CBS News projects."
+   },
+   "Reuters": {
+    "ts": 1793753413000,
+    "url": "https://x.com/Reuters/status/2117781426678677556",
+    "title": "Incumbent Democrat Jon Ossoff wins Georgia's Senate race, news media project. Follow live updates on the US midterm elections:"
+   }
+  },
+  "87088": {
+   "CNN": {
+    "ts": 1793758953000,
+    "url": "https://x.com/CNN/status/2117804665890840970",
+    "title": "Democrat Keisha Lance Bottoms will win Georgia governor's race and become the first Black female governor in US history, CNN projects. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793757880000,
+    "url": "https://x.com/NBCNews/status/2117800161690665372",
+    "title": "BREAKING: Democrat Keisha Lance Bottoms wins Georgia's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793759755000,
+    "url": "https://x.com/ABC/status/2117808029798416600",
+    "title": "JUST IN: Keisha Lance Bottoms will win the Georgia governor's race, ABC News projects. She will become the first Black woman elected governor in the U.S. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793759169000,
+    "url": "https://x.com/CBSNews/status/2117805569600069852",
+    "title": "Democrat Keisha Lance Bottoms has won the race for governor of Georgia, CBS News projects. Bottoms will be the first Black woman to serve as a U.S. governor."
+   },
+   "Reuters": {
+    "ts": 1793759426000,
+    "url": "https://x.com/Reuters/status/2117806647196238073",
+    "title": "Georgia Democrat Keisha Lance Bottoms wins the state's Governor's race, news media projects. Follow live updates:"
+   }
+  },
+  "87100": {
+   "NBC": {
+    "ts": 1793768521000,
+    "url": "https://x.com/NBCNews/status/2117844795192168925",
+    "title": "BREAKING: Democrat Josh Green wins Hawaii's governor race, NBC News projects."
+   }
+  },
+  "87103": {
+   "NBC": {
+    "ts": 1793773960000,
+    "url": "https://x.com/NBCNews/status/2117867608284217745",
+    "title": "BREAKING: Republican Jim Risch wins re-election to the U.S. Senate in Idaho, NBC News projects."
+   }
+  },
+  "87106": {
+   "NBC": {
+    "ts": 1793770529000,
+    "url": "https://x.com/NBCNews/status/2117853215429366233",
+    "title": "BREAKING: Republican Brad Little wins Idaho's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793768793000,
+    "url": "https://x.com/ABC/status/2117845937913499989",
+    "title": "Republican Gov. Brad Little will win reelection in Idaho, ABC News projects."
+   }
+  },
+  "87129": {
+   "NBC": {
+    "ts": 1793754234000,
+    "url": "https://x.com/NBCNews/status/2117784871657406543",
+    "title": "BREAKING: Democrat Juliana Stratton wins U.S. Senate race in Illinois, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793754369000,
+    "url": "https://x.com/CBSNews/status/2117785436957352350",
+    "title": "Democrat Juliana Stratton has won the race for U.S. Senate in Illinois, CBS News projects."
+   }
+  },
+  "87130": {
+   "NBC": {
+    "ts": 1793754202000,
+    "url": "https://x.com/NBCNews/status/2117784737678848168",
+    "title": "BREAKING: Democrat JB Pritzker wins Illinois's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793754844000,
+    "url": "https://x.com/ABC/status/2117787428513841503",
+    "title": "JUST IN: Democratic Gov. JB Pritzker, often mentioned as a possible 2028 presidential contender, will win reelection in the Illinois governor race, ABC News projects. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793755095000,
+    "url": "https://x.com/CBSNews/status/2117788482735308905",
+    "title": "Democrat JB Pritzker wins reelection for governor of Illinois, CBS News projects."
+   }
+  },
+  "87147": {
+   "NBC": {
+    "ts": 1793768893000,
+    "url": "https://x.com/NBCNews/status/2117846354110112129",
+    "title": "BREAKING: Democrat Christina Bohannan wins U.S. House race in Iowa's 1st Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793769848000,
+    "url": "https://x.com/CBSNews/status/2117850362250211563",
+    "title": "CBS News projects Democrat Christina Bohannan has won the race for U.S. House in Iowa’s 1st Congressional District, defeating incumbent Republican Rep. Mariannette Miller-Meeks."
+   }
+  },
+  "87148": {
+   "CBS": {
+    "ts": 1793769738000,
+    "url": "https://x.com/CBSNews/status/2117849900859937158",
+    "title": "CBS News projects Democrat Lindsay James has won the race for U.S. House in Iowa’s 2nd Congressional District, defeating Republican Joe Mitchell."
+   }
+  },
+  "87149": {
+   "NBC": {
+    "ts": 1793767232000,
+    "url": "https://x.com/NBCNews/status/2117839386859499816",
+    "title": "BREAKING: Democrat Sarah Trone Garriott wins U.S. House race in Iowa's 3rd Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793768726000,
+    "url": "https://x.com/CBSNews/status/2117845653342560271",
+    "title": "CBS News projects Democrat Sarah Trone Garriott has won the race for U.S. House in Iowa’s 3rd Congressional District, defeating incumbent Republican Rep. Zach Nunn."
+   }
+  },
+  "87151": {
+   "CNN": {
+    "ts": 1793767462000,
+    "url": "https://x.com/CNN/status/2117840353688486046",
+    "title": "Democratic state Rep. Josh Turek will flip Iowa's Senate seat, CNN projects, defeating GOP US Rep. Ashley Hinson and renewing the state's battleground status. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793766229000,
+    "url": "https://x.com/NBCNews/status/2117835182145171661",
+    "title": "BREAKING: Democrat Josh Turek wins U.S. Senate race in Iowa, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793768654000,
+    "url": "https://x.com/ABC/status/2117845352258658694",
+    "title": "Democrat Josh Turek will win the Iowa Senate race, ABC News projects, defeating Republican Rep. Ashley Hinson in the race to fill retiring Republican Sen. Joni Ernst's seat."
+   },
+   "CBS": {
+    "ts": 1793766775000,
+    "url": "https://x.com/CBSNews/status/2117837473698955487",
+    "title": "Democrat Josh Turek has won the race for U.S. Senate in Iowa, CBS News projects."
+   },
+   "AP": {
+    "ts": 1793767161000,
+    "url": "https://x.com/AP/status/2117839089445511673",
+    "title": "Democrat Josh Turek defeats Republican Rep. Ashley Hinson in Iowa Senate race, flipping a Republican-held seat."
+   }
+  },
+  "87152": {
+   "CNN": {
+    "ts": 1793766632000,
+    "url": "https://x.com/CNN/status/2117836872386801759",
+    "title": "Iowa Democratic state auditor Rob Sand will win the state's race for governor, CNN projects, defeating Republican businessman Zach Lahn and flipping a GOP-held office. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793765591000,
+    "url": "https://x.com/NBCNews/status/2117832506271559755",
+    "title": "BREAKING: Democrat Rob Sand wins Iowa's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793768508000,
+    "url": "https://x.com/ABC/status/2117844741341483249",
+    "title": "Democrat Rob Sand will win the Iowa governor’s race, ABC News projects, defeating Republican Zach Lahn and flipping the seat to Democratic control for the first time in 20 years."
+   },
+   "CBS": {
+    "ts": 1793765606000,
+    "url": "https://x.com/CBSNews/status/2117832567164698977",
+    "title": "Democrat Rob Sand has won the race for governor of Iowa, CBS News projects."
+   }
+  },
+  "87162": {
+   "CNN": {
+    "ts": 1793766330000,
+    "url": "https://x.com/CNN/status/2117835607024300105",
+    "title": "Democrat Adam Hamilton will win the Kansas Senate race, CNN projects. It's a seismic defeat of Republican Sen. Roger Marshall in a deep-red state. Hamilton will be the first Democratic senator from th"
+   },
+   "NBC": {
+    "ts": 1793766033000,
+    "url": "https://x.com/NBCNews/status/2117834361902960926",
+    "title": "BREAKING: Democrat Adam Hamilton wins U.S. Senate race in Kansas, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793766314000,
+    "url": "https://x.com/FoxNews/status/2117835539906695549",
+    "title": "BREAKING: The Fox News Decision Desk can project that Kansas will elect a Democrat to the U.S. Senate for the first time in 94 years. Megachurch pastor Adam Hamilton, the Democrat, will defeat Republi"
+   },
+   "CBS": {
+    "ts": 1793766374000,
+    "url": "https://x.com/CBSNews/status/2117835789434265861",
+    "title": "Democrat Adam Hamilton has won the race for U.S. Senate in Kansas, defeating incumbent Republican Sen. Roger Marshall, CBS News projects. Hamilton will be the first Democrat elected to the U.S. Senate"
+   },
+   "AP": {
+    "ts": 1793769550000,
+    "url": "https://x.com/AP/status/2117849110367580559",
+    "title": "Adam Hamilton defeats Republican Sen. Roger Marshall, becoming first Democrat to win a Senate seat in Kansas in nearly a century."
+   }
+  },
+  "87174": {
+   "NBC": {
+    "ts": 1793758774000,
+    "url": "https://x.com/NBCNews/status/2117803912195400087",
+    "title": "BREAKING: Republican Andy Barr wins U.S. Senate race in Kentucky, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793757501000,
+    "url": "https://x.com/ABC/status/2117798572662075506",
+    "title": "Republican Andy Barr will win the Kentucky Senate race, holding the seat for the GOP, ABC News projects. Follow live updates:"
+   }
+  },
+  "87183": {
+   "NBC": {
+    "ts": 1793770346000,
+    "url": "https://x.com/NBCNews/status/2117852450631582199",
+    "title": "BREAKING: Republican Julia Letlow wins U.S. Senate race in Louisiana, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793770442000,
+    "url": "https://x.com/CBSNews/status/2117852851263152374",
+    "title": "Republican Julia Letlow has won the race for U.S. Senate in Louisiana, CBS News projects."
+   }
+  },
+  "87188": {
+   "CNN": {
+    "ts": 1793782700000,
+    "url": "https://x.com/CNN/status/2117904265331060844",
+    "title": "Democrat Troy Jackson promised to represent all of the state’s constituents in Congress after he was projected to win the Maine Senate race. Follow live updates:"
+   },
+   "NBC": {
+    "ts": 1793771348000,
+    "url": "https://x.com/NBCNews/status/2117856651147456649",
+    "title": "BREAKING: Democrat Troy Jackson wins U.S. Senate race in Maine, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793769874000,
+    "url": "https://x.com/FoxNews/status/2117850472157450399",
+    "title": "BREAKING: The Fox News Decision Desk can project that Democrat Troy Jackson will defeat Republican Sen. Susan Collins in Maine. The state has backed Democrats in every presidential election since 1992"
+   },
+   "ABC": {
+    "ts": 1793773287000,
+    "url": "https://x.com/ABC/status/2117864786041917921",
+    "title": "NEW: Democrat Troy Jackson will win the Senate race in Maine, defeating incumbent Republican Sen. Susan Collins, ABC News projects. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793771484000,
+    "url": "https://x.com/CBSNews/status/2117857221874962623",
+    "title": "Democrat Troy Jackson has won the race for U.S. Senate in Maine, CBS News projects, defeating incumbent Republican Sen. Susan Collins, who has served in the Senate since 1997."
+   }
+  },
+  "87189": {
+   "NBC": {
+    "ts": 1793768502000,
+    "url": "https://x.com/NBCNews/status/2117844714967777778",
+    "title": "BREAKING: Democrat Hannah Pingree wins Maine's governor race, NBC News projects."
+   }
+  },
+  "87198": {
+   "NBC": {
+    "ts": 1793754263000,
+    "url": "https://x.com/NBCNews/status/2117784994466631696",
+    "title": "BREAKING: Democrat Wes Moore wins Maryland's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793755213000,
+    "url": "https://x.com/ABC/status/2117788977889710095",
+    "title": "NEW: Democratic Maryland Gov. Wes Moore will win reelection, ABC News projects. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793754633000,
+    "url": "https://x.com/CBSNews/status/2117786545117950121",
+    "title": "Democrat Wes Moore wins reelection for governor of Maryland, CBS News projects."
+   }
+  },
+  "87214": {
+   "CNN": {
+    "ts": 1793777493000,
+    "url": "https://x.com/CNN/status/2117882425728508021",
+    "title": "Democrat Abdul El-Sayed will defeat Republican former Rep. Mike Rogers in Michigan's Senate race, CNN projects, delivering a battleground state victory for the Democratic Party's progressive wing. Fol"
+   },
+   "NBC": {
+    "ts": 1793777488000,
+    "url": "https://x.com/NBCNews/status/2117882405960720606",
+    "title": "BREAKING: Democrat Abdul El-Sayed wins Michigan’s Senate race, a victory for progressives that will make him the first Muslim senator, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793775318000,
+    "url": "https://x.com/FoxNews/status/2117873305726439452",
+    "title": "BREAKING: The Fox News Decision Desk can project that Democrat Abdul El-Sayed will defeat Republican Mike Rogers to become Michigan’s next U.S. senator. El-Sayed will make history as the first Muslim "
+   },
+   "ABC": {
+    "ts": 1793777927000,
+    "url": "https://x.com/ABC/status/2117884246161580436",
+    "title": "BREAKING: Democrat Abdul El-Sayed will defeat Republican Mike Rogers in the Michigan Senate race, holding the seat for the party, ABC News projects."
+   },
+   "CBS": {
+    "ts": 1793777312000,
+    "url": "https://x.com/CBSNews/status/2117881667868106909",
+    "title": "Democrat Abdul El-Sayed has won the race for U.S. Senate in Michigan, defeating Republican Mike Rogers, CBS News projects. El-Sayed will be the first Muslim to serve in the U.S. Senate."
+   },
+   "AP": {
+    "ts": 1793777471000,
+    "url": "https://x.com/AP/status/2117882333130813685",
+    "title": "Progressive Democrat Abdul El-Sayed wins the U.S. Senate race in Michigan, defeating former U.S. Rep. Mike Rogers."
+   }
+  },
+  "87215": {
+   "CNN": {
+    "ts": 1793772741000,
+    "url": "https://x.com/CNN/status/2117862496564281601",
+    "title": "Democratic Secretary of State Jocelyn Benson will be elected the next governor of Michigan, CNN projects, defeating Republican Rep. John James and keeping the battleground state's highest office in he"
+   },
+   "NBC": {
+    "ts": 1793773106000,
+    "url": "https://x.com/NBCNews/status/2117864024586977304",
+    "title": "BREAKING: Democrat Jocelyn Benson wins Michigan's governor race, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793773332000,
+    "url": "https://x.com/FoxNews/status/2117864974093582696",
+    "title": "BREAKING: The Fox News Decision Desk can project that Democrat Jocelyn Benson will defeat Republican John James to become Michigan’s next governor. Tune in to Fox News Channel now for live midterm ele"
+   },
+   "ABC": {
+    "ts": 1793775159000,
+    "url": "https://x.com/ABC/status/2117872635338211380",
+    "title": "NEW: Democrat Jocelyn Benson will win the Michigan governor's race, ABC News projects. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793773641000,
+    "url": "https://x.com/CBSNews/status/2117866270745833942",
+    "title": "Democrat Jocelyn Benson has won the race for governor of Michigan, CBS News projects."
+   }
+  },
+  "87229": {
+   "CNN": {
+    "ts": 1793769223000,
+    "url": "https://x.com/CNN/status/2117847740646301865",
+    "title": "Democratic Lt. Gov. Peggy Flanagan will win Minnesota's open Senate seat, CNN projects, becoming the first Native American woman elected to the chamber. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793768734000,
+    "url": "https://x.com/NBCNews/status/2117845687639363779",
+    "title": "BREAKING: Democrat Peggy Flanagan wins U.S. Senate race in Minnesota, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793769173000,
+    "url": "https://x.com/CBSNews/status/2117847531346383180",
+    "title": "Democrat Peggy Flanagan has won the race for U.S. Senate in Minnesota, defeating Republican Michele Tafoya."
+   },
+   "Reuters": {
+    "ts": 1793771104000,
+    "url": "https://x.com/Reuters/status/2117855629150658689",
+    "title": "Democrat Peggy Flanagan won Minnesota's US Senate race, US media outlets projected. Flanagan, the state's lieutenant governor, defeated Republican Michele Tafoya, a former NFL television journalist"
+   }
+  },
+  "87230": {
+   "NBC": {
+    "ts": 1793768767000,
+    "url": "https://x.com/NBCNews/status/2117845827968229651",
+    "title": "BREAKING: Democrat Amy Klobuchar wins Minnesota's governor race, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793769599000,
+    "url": "https://x.com/FoxNews/status/2117849315217723606",
+    "title": "BREAKING: Fox News can project that Democratic Sen. Amy Klobuchar will win Minnesota’s governor’s race against Republican Lisa Demuth. Klobuchar will become the first woman elected governor in the Nor"
+   },
+   "CBS": {
+    "ts": 1793769036000,
+    "url": "https://x.com/CBSNews/status/2117846955917562192",
+    "title": "Democrat Amy Klobuchar has won the race for governor of Minnesota, CBS News projects, becoming the first woman elected governor in the state’s history."
+   }
+  },
+  "87247": {
+   "NBC": {
+    "ts": 1793774315000,
+    "url": "https://x.com/NBCNews/status/2117869098730148194",
+    "title": "BREAKING: Republican Kurt Alme wins U.S. Senate race in Montana, NBC News projects."
+   }
+  },
+  "87252": {
+   "CNN": {
+    "ts": 1793768729000,
+    "url": "https://x.com/CNN/status/2117845665799680096",
+    "title": "Denise Powell will win the race in Nebraska's 2nd District, CNN projects, flipping the state's \"Blue Dot\" in a pickup for Democrats. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793767761000,
+    "url": "https://x.com/NBCNews/status/2117841608678789611",
+    "title": "BREAKING: Democrat Denise Powell wins U.S. House race in Nebraska's 2nd Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793772017000,
+    "url": "https://x.com/CBSNews/status/2117859456990195800",
+    "title": "CBS News projects Democrat Denise Powell has won the race for U.S. House in Nebraska’s 2nd Congressional District, defeating Republican Brinker Harding."
+   }
+  },
+  "87254": {
+   "CNN": {
+    "ts": 1793781805000,
+    "url": "https://x.com/CNN/status/2117900511475028258",
+    "title": "Republican Sen. Pete Ricketts will win reelection in Nebraska's Senate race, CNN projects, defeating independent candidate Dan Osborn. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793781246000,
+    "url": "https://x.com/NBCNews/status/2117898169447023030",
+    "title": "BREAKING: Republican Pete Ricketts wins re-election to the U.S. Senate in Nebraska, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793788090000,
+    "url": "https://x.com/CBSNews/status/2117926874416312453",
+    "title": "GOP Sen. Pete Ricketts won reelection in the Nebraska Senate race, CBS News projects, fending off a challenge from independent Dan Osborn."
+   }
+  },
+  "87255": {
+   "NBC": {
+    "ts": 1793778910000,
+    "url": "https://x.com/NBCNews/status/2117888368205873611",
+    "title": "BREAKING: Republican Jim Pillen wins Nebraska's governor race, NBC News projects."
+   }
+  },
+  "87260": {
+   "CNN": {
+    "ts": 1793787117000,
+    "url": "https://x.com/CNN/status/2117922791416590360",
+    "title": "Democrat Aaron Ford will win the gubernatorial race in the battleground state of Nevada, CNN projects. He will become Nevada's first Black governor. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793785713000,
+    "url": "https://x.com/NBCNews/status/2117916902047494190",
+    "title": "BREAKING: Democrat Aaron Ford wins Nevada's governor race, NBC News projects."
+   }
+  },
+  "87275": {
+   "NBC": {
+    "ts": 1793754225000,
+    "url": "https://x.com/NBCNews/status/2117784835301294248",
+    "title": "BREAKING: Democrat Ed Markey wins re-election to the U.S. Senate in Massachusetts, NBC News projects."
+   }
+  },
+  "87276": {
+   "NBC": {
+    "ts": 1793754271000,
+    "url": "https://x.com/NBCNews/status/2117785025592566095",
+    "title": "BREAKING: Democrat Maura Healey wins Massachusetts's governor race, NBC News projects."
+   }
+  },
+  "87283": {
+   "CNN": {
+    "ts": 1793755684000,
+    "url": "https://x.com/CNN/status/2117790954329362681",
+    "title": "Democratic Rep. Chris Pappas will win New Hampshire's open Senate seat, CNN projects, making history as the first out gay man to be elected to the chamber. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793755271000,
+    "url": "https://x.com/NBCNews/status/2117789221297512690",
+    "title": "BREAKING: Democrat Chris Pappas wins U.S. Senate race in New Hampshire, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793755914000,
+    "url": "https://x.com/ABC/status/2117791916423311793",
+    "title": "NEW: Democrat Chris Pappas will win the New Hampshire Senate race, holding the seat for the party, ABC News projects. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793755497000,
+    "url": "https://x.com/CBSNews/status/2117790167146942472",
+    "title": "Democrat Chris Pappas has won the race for U.S. Senate in New Hampshire, defeating Republican John Sununu, CBS News projects. Pappas will be the first openly gay man elected to the U.S. Senate."
+   },
+   "Reuters": {
+    "ts": 1793755823000,
+    "url": "https://x.com/Reuters/status/2117791536280703195",
+    "title": "Democrat Chris Pappas holds New Hampshire Senate seat for Democrats, news media projects, as the party fights to take control of the chamber Follow for live election updates:"
+   },
+   "AP": {
+    "ts": 1793755754000,
+    "url": "https://x.com/AP/status/2117791244491379092",
+    "title": "Chris Pappas defeats John Sununu in New Hampshire U.S. Senate race, becoming the first openly gay male senator."
+   }
+  },
+  "87284": {
+   "NBC": {
+    "ts": 1793774738000,
+    "url": "https://x.com/NBCNews/status/2117870872962670855",
+    "title": "BREAKING: Republican Kelly Ayotte wins New Hampshire's governor race, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793770782000,
+    "url": "https://x.com/CBSNews/status/2117854279117705465",
+    "title": "Republican Kelly Ayotte wins reelection for governor of New Hampshire, CBS News projects."
+   }
+  },
+  "87286": {
+   "CBS": {
+    "ts": 1793771026000,
+    "url": "https://x.com/CBSNews/status/2117855300766314970",
+    "title": "CBS News projects Democratic Rep. Gabriel Vasquez wins reelection to the U.S. House in New Mexico’s 2nd Congressional District, defeating Republican Greg Cunningham."
+   }
+  },
+  "87288": {
+   "NBC": {
+    "ts": 1793757770000,
+    "url": "https://x.com/NBCNews/status/2117799701529362722",
+    "title": "BREAKING: Democrat Ben Ray Lujan wins re-election to the U.S. Senate in New Mexico, NBC News projects."
+   }
+  },
+  "87289": {
+   "NBC": {
+    "ts": 1793764555000,
+    "url": "https://x.com/NBCNews/status/2117828160582496759",
+    "title": "BREAKING: Democrat Deb Haaland wins New Mexico's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793772230000,
+    "url": "https://x.com/ABC/status/2117860352620912880",
+    "title": "Deb Haaland, the former U.S. Secretary of the Interior, is projected to win New Mexico's gubernatorial race, becoming the first indigenous governor in U.S. history. She is a member of the Laguna Puebl"
+   }
+  },
+  "87296": {
+   "NBC": {
+    "ts": 1793759981000,
+    "url": "https://x.com/NBCNews/status/2117808976247046321",
+    "title": "BREAKING: Democrat Rebecca Bennett wins U.S. House race in New Jersey's 7th Congressional District, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793763631000,
+    "url": "https://x.com/ABC/status/2117824284009934997",
+    "title": "Democrat Rebecca Bennett will win in New Jersey's 7th Congressional district, ABC News projects, defeating incumbent Republican Rep. Tom Kean Jr."
+   },
+   "CBS": {
+    "ts": 1793760697000,
+    "url": "https://x.com/CBSNews/status/2117811980534771725",
+    "title": "CBS News projects Democrat Rebecca Bennett has won the race for U.S. House in New Jersey’s 7th Congressional District, defeating incumbent Republican Rep. Thomas Kean Jr."
+   }
+  },
+  "87302": {
+   "NBC": {
+    "ts": 1793754295000,
+    "url": "https://x.com/NBCNews/status/2117785127103107291",
+    "title": "BREAKING: Democrat Cory Booker wins re-election to the U.S. Senate in New Jersey, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793754188000,
+    "url": "https://x.com/CBSNews/status/2117784679135015322",
+    "title": "Democratic Sen. Cory Booker wins reelection to the U.S. Senate in New Jersey, CBS News projects."
+   }
+  },
+  "87315": {
+   "CNN": {
+    "ts": 1793758353000,
+    "url": "https://x.com/CNN/status/2117802148964540581",
+    "title": "Democratic socialist and activist Darializa Avila Chevalier will win the race for New York's 13th Congressional District, CNN projects. Follow live updates."
+   }
+  },
+  "87321": {
+   "CBS": {
+    "ts": 1793762354000,
+    "url": "https://x.com/CBSNews/status/2117818928693223556",
+    "title": "CBS News projects Democratic Rep. Josh Riley wins reelection to the U.S. House in New York’s 19th Congressional District, defeating Republican Peter Oberacker."
+   }
+  },
+  "87329": {
+   "NBC": {
+    "ts": 1793757792000,
+    "url": "https://x.com/NBCNews/status/2117799793510494308",
+    "title": "BREAKING: Democrat Kathy Hochul wins New York's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793758330000,
+    "url": "https://x.com/ABC/status/2117802051962818661",
+    "title": "NEW: Incumbent Democratic New York Gov. Kathy Hochul will win another term in Albany, ABC News projects."
+   },
+   "CBS": {
+    "ts": 1793757736000,
+    "url": "https://x.com/CBSNews/status/2117799558826885317",
+    "title": "Democrat Kathy Hochul wins reelection for governor of New York, CBS News projects."
+   }
+  },
+  "87332": {
+   "NBC": {
+    "ts": 1793767402000,
+    "url": "https://x.com/NBCNews/status/2117840100629283320",
+    "title": "BREAKING: Democrat Don Davis wins re-election to the U.S. House in North Carolina's 1st Congressional District, NBC News projects."
+   }
+  },
+  "87342": {
+   "NBC": {
+    "ts": 1793756745000,
+    "url": "https://x.com/NBCNews/status/2117795402367770969",
+    "title": "BREAKING: Democrat Jamie Ager wins U.S. House race in North Carolina's 11th Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793757905000,
+    "url": "https://x.com/CBSNews/status/2117800268796658117",
+    "title": "CBS News projects Democrat Jamie Ager has won the race for U.S. House in North Carolina’s 11th Congressional District, defeating Republican Jennifer Balkcom."
+   }
+  },
+  "87346": {
+   "CNN": {
+    "ts": 1793755996000,
+    "url": "https://x.com/CNN/status/2117792259634520483",
+    "title": "Former Gov. Roy Cooper will win the Senate race in North Carolina, CNN projects, defeating Republican Michael Whatley for a seat that had long evaded Democrats. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793755424000,
+    "url": "https://x.com/NBCNews/status/2117789862480740388",
+    "title": "BREAKING: Democrat Roy Cooper wins U.S. Senate race in North Carolina, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793755940000,
+    "url": "https://x.com/FoxNews/status/2117792025018003578",
+    "title": "BREAKING: The Fox News Decision Desk can project that former Governor Roy Cooper will flip North Carolina’s open Senate seat to the Democrats."
+   },
+   "ABC": {
+    "ts": 1793755809000,
+    "url": "https://x.com/ABC/status/2117791476864389441",
+    "title": "BREAKING: Democratic former Gov. Roy Cooper will win the North Carolina Senate race, flipping the seat for Democrats, ABC News projects. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793755533000,
+    "url": "https://x.com/CBSNews/status/2117790320423534659",
+    "title": "Democrat Roy Cooper has won the race for U.S. Senate in North Carolina, defeating Republican Michael Whatley, CBS News projects. Cooper succeeds GOP Sen. Thom Tillis, who did not seek reelection."
+   },
+   "Reuters": {
+    "ts": 1793755952000,
+    "url": "https://x.com/Reuters/status/2117792077979468044",
+    "title": "Democrats flip North Carolina Senate seat as Roy Cooper defeats Republican opponent Michael Whatley, news media projects. Follow live updates:"
+   },
+   "AP": {
+    "ts": 1793755822000,
+    "url": "https://x.com/AP/status/2117791533483118879",
+    "title": "Democrat Roy Cooper defeats Michael Whatley in North Carolina, flipping a Republican-held Senate seat."
+   }
+  },
+  "87350": {
+   "CBS": {
+    "ts": 1793764929000,
+    "url": "https://x.com/CBSNews/status/2117829728447132016",
+    "title": "CBS News projects Democratic Rep. Greg Landsman wins reelection to the U.S. House in Ohio’s 1st Congressional District, defeating Republican Eric Conroy."
+   }
+  },
+  "87356": {
+   "CNN": {
+    "ts": 1793770028000,
+    "url": "https://x.com/CNN/status/2117851117006520714",
+    "title": "Democrat Brian Poindexter will unseat embattled Rep. Max Miller, CNN projects, a major upset in an Ohio district that President Donald Trump won by more than 10 points just two years ago. Follow live "
+   },
+   "NBC": {
+    "ts": 1793769944000,
+    "url": "https://x.com/NBCNews/status/2117850764672450772",
+    "title": "BREAKING: Democrat Brian Poindexter wins U.S. House race in Ohio's 7th Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793773342000,
+    "url": "https://x.com/CBSNews/status/2117865016074346643",
+    "title": "CBS News projects Democrat Brian Poindexter has won the race for U.S. House in Ohio’s 7th Congressional District, defeating incumbent Republican Rep. Max Miller."
+   },
+   "AP": {
+    "ts": 1793774591000,
+    "url": "https://x.com/AP/status/2117870254835556802",
+    "title": "Democrat Brian Poindexter wins the U.S. House seat in Ohio's 7th District, defeating Republican U.S. Rep. Max Miller, who faces domestic abuse allegations."
+   }
+  },
+  "87358": {
+   "CNN": {
+    "ts": 1793779470000,
+    "url": "https://x.com/CNN/status/2117890720182743363",
+    "title": "Democratic Rep. Marcy Kaptur will win reelection to a 23rd term in Congress, CNN projects, once again fending off Republican Derek Merrin's bid to flip Ohio's 9th District. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793778702000,
+    "url": "https://x.com/NBCNews/status/2117887498953040179",
+    "title": "BREAKING: Democrat Marcy Kaptur wins re-election to the U.S. House in Ohio's 9th Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793787508000,
+    "url": "https://x.com/CBSNews/status/2117924433499156710",
+    "title": "Longtime Democratic Rep. Marcy Kaptur won a rematch against Republican Derek Merrin in Ohio's 9th Congressional District, CBS News projected."
+   }
+  },
+  "87365": {
+   "CNN": {
+    "ts": 1793764287000,
+    "url": "https://x.com/CNN/status/2117827038467776742",
+    "title": "Democrat Amy Acton will be elected Ohio's next governor, CNN projects, defeating Republican Vivek Ramaswamy after the race garnered national attention over a controversial attack ad. Acton is the firs"
+   },
+   "NBC": {
+    "ts": 1793764165000,
+    "url": "https://x.com/NBCNews/status/2117826523008733649",
+    "title": "BREAKING: Democrat Amy Acton wins Ohio's governor race, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793764139000,
+    "url": "https://x.com/CBSNews/status/2117826414003253357",
+    "title": "Democrat Amy Acton has won the race for governor of Ohio, CBS News projects."
+   }
+  },
+  "87374": {
+   "NBC": {
+    "ts": 1793764915000,
+    "url": "https://x.com/NBCNews/status/2117829670791942197",
+    "title": "BREAKING: Democrat Jeff Merkley wins re-election to the U.S. Senate in Oregon, NBC News projects."
+   }
+  },
+  "87375": {
+   "CNN": {
+    "ts": 1793772607000,
+    "url": "https://x.com/CNN/status/2117861935207129381",
+    "title": "Democratic Gov. Tina Kotek will win a second term as Oregon's governor, CNN projects, marking a second defeat for her Republican opponent, Christine Drazan. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793782517000,
+    "url": "https://x.com/NBCNews/status/2117903498113081538",
+    "title": "BREAKING: Democrat Tina Kotek wins Oregon's governor race, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793767815000,
+    "url": "https://x.com/CBSNews/status/2117841835540521379",
+    "title": "Democrat Tina Kotek has won reelection for governor of Oregon, CBS News projects."
+   }
+  },
+  "87376": {
+   "NBC": {
+    "ts": 1793769882000,
+    "url": "https://x.com/NBCNews/status/2117850504118075609",
+    "title": "BREAKING: Democrat Bob Harvie wins U.S. House race in Pennsylvania's 1st Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793770879000,
+    "url": "https://x.com/CBSNews/status/2117854687416156255",
+    "title": "CBS News projects Democrat Bob Harvie has won the race for U.S. House in Pennsylvania’s 1st Congressional District, defeating incumbent Republican Rep. Brian Fitzpatrick."
+   }
+  },
+  "87382": {
+   "NBC": {
+    "ts": 1793762292000,
+    "url": "https://x.com/NBCNews/status/2117818668457271328",
+    "title": "BREAKING: Democrat Bob Brooks wins U.S. House race in Pennsylvania's 7th Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793763491000,
+    "url": "https://x.com/CBSNews/status/2117823697499074794",
+    "title": "CBS News projects Democrat Bob Brooks has won the race for U.S. House in Pennsylvania’s 7th Congressional District, defeating incumbent Republican Rep. Ryan Mackenzie."
+   }
+  },
+  "87383": {
+   "NBC": {
+    "ts": 1793760173000,
+    "url": "https://x.com/NBCNews/status/2117809781880602897",
+    "title": "BREAKING: Democrat Paige Cognetti wins U.S. House race in Pennsylvania's 8th Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793764364000,
+    "url": "https://x.com/CBSNews/status/2117827360968044982",
+    "title": "CBS News projects Democrat Paige Cognetti has won the race for U.S. House in Pennsylvania’s 8th Congressional District, defeating incumbent Republican Rep. Rob Bresnahan."
+   }
+  },
+  "87385": {
+   "NBC": {
+    "ts": 1793762215000,
+    "url": "https://x.com/NBCNews/status/2117818346812911804",
+    "title": "BREAKING: Democrat Janelle Stelson wins U.S. House race in Pennsylvania's 10th Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793764652000,
+    "url": "https://x.com/CBSNews/status/2117828567627149696",
+    "title": "CBS News projects Democrat Janelle Stelson has won the race for U.S. House in Pennsylvania’s 10th Congressional District, defeating incumbent Republican Rep. Scott Perry."
+   }
+  },
+  "87393": {
+   "CNN": {
+    "ts": 1793754158000,
+    "url": "https://x.com/CNN/status/2117784550570889233",
+    "title": "Democratic Gov. Josh Shapiro will win reelection in Pennsylvania, CNN projects, defeating Republican state Treasurer Stacy Garrity. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793754364000,
+    "url": "https://x.com/NBCNews/status/2117785417369960849",
+    "title": "BREAKING: Democrat Josh Shapiro wins Pennsylvania's governor race, NBC News projects."
+   },
+   "ABC": {
+    "ts": 1793755069000,
+    "url": "https://x.com/ABC/status/2117788374883086351",
+    "title": "JUST IN: Democratic Gov. Josh Shapiro, often mentioned as a possible 2028 presidential contender, will win reelection in Pennsylvania, ABC News projects. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793754886000,
+    "url": "https://x.com/CBSNews/status/2117787607853646139",
+    "title": "Democrat Josh Shapiro wins reelection for governor of Pennsylvania, CBS News projects."
+   }
+  },
+  "87396": {
+   "NBC": {
+    "ts": 1793754324000,
+    "url": "https://x.com/NBCNews/status/2117785247416816022",
+    "title": "BREAKING: Democrat Jack Reed wins re-election to the U.S. Senate in Rhode Island, NBC News projects."
+   }
+  },
+  "87397": {
+   "NBC": {
+    "ts": 1793755987000,
+    "url": "https://x.com/NBCNews/status/2117792222670135686",
+    "title": "BREAKING: Democrat Helena Foulkes wins Rhode Island's governor race, NBC News projects."
+   }
+  },
+  "87409": {
+   "CNN": {
+    "ts": 1793761442000,
+    "url": "https://x.com/CNN/status/2117815103663882668",
+    "title": "Democrat Annie Andrews will win the US Senate race in South Carolina, CNN projects, defeating Sen. Darline Graham and flipping a seat that Republicans have held for nearly three decades. Follow live u"
+   },
+   "NBC": {
+    "ts": 1793761096000,
+    "url": "https://x.com/NBCNews/status/2117813651356684689",
+    "title": "BREAKING: Democrat Annie Andrews wins U.S. Senate race in South Carolina, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793761976000,
+    "url": "https://x.com/FoxNews/status/2117817344030368125",
+    "title": "BREAKING: The Fox News Decision Desk can project that Democrat Annie Andrews will win South Carolina’s Senate race, defeating Republican Senator Darline Graham, who ran in honor of her late brother, L"
+   },
+   "ABC": {
+    "ts": 1793763427000,
+    "url": "https://x.com/ABC/status/2117823428262514832",
+    "title": "BREAKING: Democrat Annie Andrews will beat Sen. Darline Graham in the election for U.S. Senate in South Carolina, ABC News projects, flipping the seat once held by the late Lindsey Graham and notching"
+   },
+   "CBS": {
+    "ts": 1793761203000,
+    "url": "https://x.com/CBSNews/status/2117814099983933484",
+    "title": "Democrat Annie Andrews has won the race for U.S. Senate in South Carolina, CBS News projects. Andrews defeats Republican Sen. Darline Graham, who was appointed to the seat in July after the death of h"
+   },
+   "Reuters": {
+    "ts": 1793761745000,
+    "url": "https://x.com/Reuters/status/2117816374752117105",
+    "title": "Democrats flip Senate seat in South Carolina as Annie Andrews defeats Republican opponent Darline Graham. President Trump won the state by 18 points in 2024. Follow for live updates:"
+   },
+   "AP": {
+    "ts": 1793763835000,
+    "url": "https://x.com/AP/status/2117825139748323401",
+    "title": "Dr. Annie Andrews defeats Darline Graham in U.S. Senate race in South Carolina, the first Democrat in the state to win in decades."
+   }
+  },
+  "87410": {
+   "NBC": {
+    "ts": 1793766813000,
+    "url": "https://x.com/NBCNews/status/2117837632751153270",
+    "title": "BREAKING: Republican Alan Wilson wins South Carolina's governor race, NBC News projects."
+   }
+  },
+  "87422": {
+   "CNN": {
+    "ts": 1793770460000,
+    "url": "https://x.com/CNN/status/2117852927238754398",
+    "title": "Democrats will flip control of Texas' deep-red 15th District, CNN projects, with Tejano singer Bobby Pulido defeating two-term GOP Rep. Monica De La Cruz. Follow live updates."
+   },
+   "CBS": {
+    "ts": 1793770244000,
+    "url": "https://x.com/CBSNews/status/2117852021172892061",
+    "title": "CBS News projects Democrat Bobby Pulido has won the race for U.S. House in Texas’s 15th Congressional District, defeating incumbent Republican Rep. Monica De La Cruz."
+   }
+  },
+  "87428": {
+   "CNN": {
+    "ts": 1793774143000,
+    "url": "https://x.com/CNN/status/2117868374646460422",
+    "title": "Democrat Katy Padilla Stout will win Texas' 23rd Congressional District, CNN projects, defeating Republican candidate and gun influencer Brandon Herrera. Follow live updates."
+   },
+   "CBS": {
+    "ts": 1793776542000,
+    "url": "https://x.com/CBSNews/status/2117878436681134524",
+    "title": "Democrat Katy Padilla Stout wins Texas' 23 congressional district, flipping seat"
+   }
+  },
+  "87431": {
+   "CBS": {
+    "ts": 1793773568000,
+    "url": "https://x.com/CBSNews/status/2117865963177828442",
+    "title": "CBS News projects Democrat Johnny Garcia has won the race for U.S. House in Texas’s 35th Congressional District, defeating Republican Carlos De La Cruz."
+   }
+  },
+  "87435": {
+   "CBS": {
+    "ts": 1793773568000,
+    "url": "https://x.com/CBSNews/status/2117865963177828442",
+    "title": "CBS News projects Democrat Johnny Garcia has won the race for U.S. House in Texas’s 35th Congressional District, defeating Republican Carlos De La Cruz."
+   }
+  },
+  "87438": {
+   "CNN": {
+    "ts": 1793764884000,
+    "url": "https://x.com/CNN/status/2117829539980075279",
+    "title": "Democratic state Rep. James Talarico will win the Senate race in Texas, CNN projects, delivering a stunning defeat to Republican state Attorney General Ken Paxton. Talarico is the first Democrat elect"
+   },
+   "NBC": {
+    "ts": 1793764393000,
+    "url": "https://x.com/NBCNews/status/2117827479444287629",
+    "title": "BREAKING: Democrat James Talarico wins U.S. Senate race in Texas, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793765494000,
+    "url": "https://x.com/FoxNews/status/2117832097062678584",
+    "title": "BREAKING: The Fox News Decision Desk can project that James Talarico will defeat Republican Attorney General Ken Paxton in the Texas Senate race."
+   },
+   "ABC": {
+    "ts": 1793765441000,
+    "url": "https://x.com/ABC/status/2117831876098269229",
+    "title": "BREAKING: Democrat James Talarico will win the Texas Senate race, defeating Republican Texas Attorney General Ken Paxton and becoming the first Democrat to win a Texas statewide race in over 30 years,"
+   },
+   "CBS": {
+    "ts": 1793764534000,
+    "url": "https://x.com/CBSNews/status/2117828074037501983",
+    "title": "Democrat James Talarico has won the race for U.S. Senate in Texas, defeating Republican Ken Paxton, CBS News projects. Talarico will be the first Democratic U.S. senator elected in Texas since 1988."
+   },
+   "Reuters": {
+    "ts": 1793765181000,
+    "url": "https://x.com/Reuters/status/2117830788020605229",
+    "title": "Democrat James Talarico wins Texas Senate seat, US media projects, making him the first Democrat to win statewide office in the state since 1994"
+   },
+   "AP": {
+    "ts": 1793765189000,
+    "url": "https://x.com/AP/status/2117830819624440286",
+    "title": "James Talarico defeats Republican Ken Paxton in Texas Senate race, becoming the first Democrat to win statewide office in over 30 years."
+   }
+  },
+  "87446": {
+   "NBC": {
+    "ts": 1793767262000,
+    "url": "https://x.com/NBCNews/status/2117839514978664487",
+    "title": "BREAKING: Republican Mike Rounds wins re-election to the U.S. Senate in South Dakota, NBC News projects."
+   }
+  },
+  "87447": {
+   "NBC": {
+    "ts": 1793767324000,
+    "url": "https://x.com/NBCNews/status/2117839776422215736",
+    "title": "BREAKING: Republican Larry Rhoden wins South Dakota's governor race, NBC News projects."
+   }
+  },
+  "87461": {
+   "NBC": {
+    "ts": 1793764533000,
+    "url": "https://x.com/NBCNews/status/2117828070295912840",
+    "title": "BREAKING: Democrat Shannon Taylor wins U.S. House race in Virginia's 1st Congressional District, NBC News projects."
+   }
+  },
+  "87462": {
+   "CNN": {
+    "ts": 1793768064000,
+    "url": "https://x.com/CNN/status/2117842878298828909",
+    "title": "Former Democratic Rep. Elaine Luria will defeat Republican Rep. Jen Kiggans in Virginia's 2nd Congressional District, CNN projects, flipping a GOP-held seat in a rematch of their 2022 race. Follow liv"
+   },
+   "NBC": {
+    "ts": 1793763175000,
+    "url": "https://x.com/NBCNews/status/2117822372409475440",
+    "title": "BREAKING: Democrat Elaine Luria wins U.S. House race in Virginia's 2nd Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793767914000,
+    "url": "https://x.com/CBSNews/status/2117842249828741395",
+    "title": "CBS News projects Democrat Elaine Luria has won the race for U.S. House in Virginia’s 2nd Congressional District, defeating incumbent Republican Rep. Jen Kiggans."
+   }
+  },
+  "87472": {
+   "NBC": {
+    "ts": 1793751028000,
+    "url": "https://x.com/NBCNews/status/2117771423934476316",
+    "title": "BREAKING: Democrat Mark Warner wins re-election to the U.S. Senate in Virginia, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793750509000,
+    "url": "https://x.com/FoxNews/status/2117769245614309399",
+    "title": "BREAKING: Fox News can project that Democratic Senator Mark Warner will win a fourth term in Virginia."
+   },
+   "CBS": {
+    "ts": 1793750632000,
+    "url": "https://x.com/CBSNews/status/2117769761723498987",
+    "title": "Democrat Mark Warner has won reelection to the U.S. Senate in Virginia, CBS News projects."
+   }
+  },
+  "87474": {
+   "Fox": {
+    "ts": 1793757466000,
+    "url": "https://x.com/FoxNews/status/2117798427702550760",
+    "title": "BREAKING: The Fox News Decision Desk can project that in West Virginia, Republican Sen. Shelley Moore Capito will win a third term, defeating Democratic councilwoman Rachel Fetty Anderson."
+   }
+  },
+  "87475": {
+   "NBC": {
+    "ts": 1793760540000,
+    "url": "https://x.com/NBCNews/status/2117811321190162688",
+    "title": "BREAKING: Republican Bill Hagerty wins re-election to the U.S. Senate in Tennessee, NBC News projects."
+   }
+  },
+  "87476": {
+   "NBC": {
+    "ts": 1793771028000,
+    "url": "https://x.com/NBCNews/status/2117855309133758705",
+    "title": "BREAKING: Republican Marsha Blackburn wins Tennessee's governor race, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793770137000,
+    "url": "https://x.com/CBSNews/status/2117851571774181620",
+    "title": "Republican Marsha Blackburn has won the race for governor of Tennessee, CBS News projects. Blackburn is the state’s first woman elected governor."
+   }
+  },
+  "87477": {
+   "NBC": {
+    "ts": 1793756340000,
+    "url": "https://x.com/NBCNews/status/2117793703137853951",
+    "title": "BREAKING: Republican Shelley Moore Capito wins re-election to the U.S. Senate in West Virginia, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793757466000,
+    "url": "https://x.com/FoxNews/status/2117798427702550760",
+    "title": "BREAKING: The Fox News Decision Desk can project that in West Virginia, Republican Sen. Shelley Moore Capito will win a third term, defeating Democratic councilwoman Rachel Fetty Anderson."
+   }
+  },
+  "87485": {
+   "CNN": {
+    "ts": 1793772972000,
+    "url": "https://x.com/CNN/status/2117863466136486112",
+    "title": "Democrat Rebecca Cooke will unseat two-term GOP Rep. Derrick Van Orden in Wisconsin's 3rd Congressional District, CNN projects. Follow live updates."
+   },
+   "NBC": {
+    "ts": 1793768718000,
+    "url": "https://x.com/NBCNews/status/2117845621193277914",
+    "title": "BREAKING: Democrat Rebecca Cooke wins U.S. House race in Wisconsin's 3rd Congressional District, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793772527000,
+    "url": "https://x.com/CBSNews/status/2117861598052151445",
+    "title": "CBS News projects Democrat Rebecca Cooke has won the race for U.S. House in Wisconsin’s 3rd Congressional District, defeating incumbent Republican Rep. Derrick Van Orden."
+   }
+  },
+  "87491": {
+   "CNN": {
+    "ts": 1793766832000,
+    "url": "https://x.com/CNN/status/2117837712803721495",
+    "title": "Democrat David Crowley will win Wisconsin's race for governor, CNN projects, defeating GOP Rep. Tom Tiffany and keeping the top office in one of the nation's premier battlegrounds in Democratic hands."
+   },
+   "NBC": {
+    "ts": 1793764937000,
+    "url": "https://x.com/NBCNews/status/2117829764090085646",
+    "title": "BREAKING: Democrat David Crowley wins Wisconsin's governor race, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793768213000,
+    "url": "https://x.com/FoxNews/status/2117843505145929850",
+    "title": "BREAKING: The Fox News Decision Desk projects winners in three governor's races: - Oklahoma: Republican Mike Mazzei defeats Democrat Cyndi Munson - Wisconsin: Democrat David Crowley makes history as t"
+   },
+   "ABC": {
+    "ts": 1793800564000,
+    "url": "https://x.com/ABC/status/2117979191651991643",
+    "title": "Democrat David Crowley will win the Wisconsin gubernatorial race and become the state's first Black governor, @ABC News projects."
+   },
+   "CBS": {
+    "ts": 1793766521000,
+    "url": "https://x.com/CBSNews/status/2117836406160572824",
+    "title": "Democrat David Crowley has won the race for governor of Wisconsin, CBS News projects. Crowley will be the state’s first Black governor."
+   }
+  },
+  "87496": {
+   "NBC": {
+    "ts": 1793757822000,
+    "url": "https://x.com/NBCNews/status/2117799919129886749",
+    "title": "BREAKING: Republican Harriet Hageman wins U.S. Senate race in Wyoming, NBC News projects."
+   }
+  },
+  "87497": {
+   "NBC": {
+    "ts": 1793757839000,
+    "url": "https://x.com/NBCNews/status/2117799991276179763",
+    "title": "BREAKING: Republican Eric Barlow wins Wyoming's governor race, NBC News projects."
+   }
+  },
+  "87503": {
+   "NBC": {
+    "ts": 1793764343000,
+    "url": "https://x.com/NBCNews/status/2117827270844793161",
+    "title": "BREAKING: Republican Phil Scott wins Vermont's governor race, NBC News projects."
+   },
+   "CBS": {
+    "ts": 1793768405000,
+    "url": "https://x.com/CBSNews/status/2117844309533708676",
+    "title": "Republican Phil Scott has won reelection for governor of Vermont, CBS News projects."
+   }
+  },
+  "87526": {
+   "NBC": {
+    "ts": 1793759830000,
+    "url": "https://x.com/NBCNews/status/2117808344329068601",
+    "title": "BREAKING: Republican Kevin Hern wins U.S. Senate race in Oklahoma, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793760657000,
+    "url": "https://x.com/FoxNews/status/2117811811583992287",
+    "title": "BREAKING: Fox News can project that Republican Congressman Kevin Hern will win Oklahoma’s Senate race. This seat was recently held by Markwayne Mullin, who is now Secretary of Homeland Security."
+   }
+  },
+  "87527": {
+   "CNN": {
+    "ts": 1793765311000,
+    "url": "https://x.com/CNN/status/2117831330511622436",
+    "title": "Democratic former Sen. Sherrod Brown will return to the US Senate after unseating Republican Sen. Jon Husted in Ohio, CNN projects, giving his party a major win in one of the country's most closely wa"
+   },
+   "NBC": {
+    "ts": 1793765464000,
+    "url": "https://x.com/NBCNews/status/2117831972051419302",
+    "title": "BREAKING: Democrat Sherrod Brown wins special election for U.S. Senate seat in Ohio, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793766132000,
+    "url": "https://x.com/FoxNews/status/2117834773230215435",
+    "title": "BREAKING: The Fox News Decision Desk can project that Ohio Democrat Sherrod Brown will return to the Senate, defeating Republican Sen. Jon Husted. This is a key Midwestern flip for the Democrats."
+   },
+   "ABC": {
+    "ts": 1793765748000,
+    "url": "https://x.com/ABC/status/2117833164047749362",
+    "title": "JUST IN: Democrat Sherrod Brown will defeat Sen. Jon Husted in the Ohio Senate race, flipping the seat for Democrats, ABC News projects. Follow live updates:"
+   },
+   "CBS": {
+    "ts": 1793765457000,
+    "url": "https://x.com/CBSNews/status/2117831944851636616",
+    "title": "Democrat Sherrod Brown has won the race for U.S. Senate in Ohio, defeating incumbent Republican Sen. Jon Husted, CBS News projects."
+   },
+   "Reuters": {
+    "ts": 1793766097000,
+    "url": "https://x.com/Reuters/status/2117834629575020574",
+    "title": "Ohio Democrat Sherrod Brown wins Ohio's Senate seat, US media projects, defeating Republican incumbent Jon Husted, who replaced Vice President JD Vance. Brown returns to the Senate after losing his se"
+   },
+   "AP": {
+    "ts": 1793765580000,
+    "url": "https://x.com/AP/status/2117832458238369832",
+    "title": "Democrat Sherrod Brown wins a comeback bid to the U.S. Senate from Ohio, defeating Republican Sen. Jon Husted."
+   }
+  },
+  "87582": {
+   "NBC": {
+    "ts": 1793767843000,
+    "url": "https://x.com/NBCNews/status/2117841952758530106",
+    "title": "BREAKING: Republican Mike Mazzei wins Oklahoma's governor race, NBC News projects."
+   },
+   "Fox": {
+    "ts": 1793768213000,
+    "url": "https://x.com/FoxNews/status/2117843505145929850",
+    "title": "BREAKING: The Fox News Decision Desk projects winners in three governor's races: - Oklahoma: Republican Mike Mazzei defeats Democrat Cyndi Munson - Wisconsin: Democrat David Crowley makes history as t"
+   }
+  }
+ }
+}

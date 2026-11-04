@@ -41,7 +41,7 @@ function verdict(src, call, race) {
   // Outlet headlines: the candidate a win verb follows, else the only candidate
   // named, else the party a flip or hold is credited to.
   const t = ' ' + norm(title) + ' ';
-  const winner = cands.find((c) => { const ln = lastName(c.n); return ln && (new RegExp(` (?:race|seat|district) for (?:\\w+ ){0,2}${ln} `).test(t) || new RegExp(` ${ln} (?:\\w+ ){0,2}(?:wins?|won|elected|re elected|reelected|projected|defeats?|defeating|beats?|ousts?|unseats?|flips?|holds?|keeps?|retains?|victory) `).test(t)); });
+  const winner = cands.find((c) => { const ln = lastName(c.n); return ln && (new RegExp(` (?:race|seat|district) for (?:\\w+ ){0,2}${ln} `).test(t) || new RegExp(` ${ln} (?:\\w+ ){0,2}(?:wins?|won|elected|re elected|reelected|projected|defeats?|defeated|defeating|beats?|ousts?|unseats?|unseating|flips?|holds?|keeps?|retains?|return|returns|victory) `).test(t)); });
   if (winner) return winner.n === w.n ? 'accurate' : 'wrong';
   const named = cands.filter((c) => hasWord(title, lastName(c.n)));
   if (named.length === 1 && named[0].n === w.n && WIN_RE.test(t)) return 'accurate';
@@ -58,6 +58,13 @@ class CallTimes {
     this.civic = civic; this.news = news;
     const p = path.join(__dirname, 'data', 'polymarket.json');
     this.pmMap = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : null;
+    // Call times read from outlets' own posts (tools/build-xcalls.js, Threads): race id -> outlet -> {ts,url,title}.
+    this.posted = {};
+    for (const f of ['xcalls.json', 'threadscalls.json']) {
+      const fp = path.join(__dirname, 'data', f);
+      if (!fs.existsSync(fp)) continue;
+      for (const [id, byOutlet] of Object.entries(JSON.parse(fs.readFileSync(fp, 'utf8')).calls || {})) Object.assign((this.posted[id] = this.posted[id] || {}), byOutlet);
+    }
     this.tokens = {}; // market id -> yes token id
     this.pm = {}; // race id -> { ts, pre, url }
     this.payload = null; this.payloadTs = 0;
@@ -115,10 +122,15 @@ class CallTimes {
 
   races() {
     const out = [];
-    for (const [id, calls] of Object.entries(this.news.calls)) {
+    const ids = new Set([...Object.keys(this.news.calls), ...Object.keys(this.posted)]);
+    for (const id of ids) {
       const race = this.civic.races.get(Number(id));
       if (!race || !race.winner) continue;
-      const list = Object.entries(calls).filter(([src, c]) => c && c.ts && c.ts >= (TIMED_FROM[src] || 0))
+      // Each outlet's earliest timed call: from its feed, or from its own post.
+      const best = {};
+      for (const [src, c] of Object.entries(this.news.calls[id] || {})) if (c && c.ts && c.ts >= (TIMED_FROM[src] || 0)) best[src] = c;
+      for (const [src, c] of Object.entries(this.posted[id] || {})) if (c && c.ts && (!best[src] || c.ts < best[src].ts)) best[src] = c;
+      const list = Object.entries(best)
         .map(([src, c]) => ({ src, ts: c.ts, url: c.url, title: String(c.title || '').slice(0, 160), v: verdict(src, c, race) }));
       if (!list.length) continue;
       list.sort((a, b) => a.ts - b.ts);
