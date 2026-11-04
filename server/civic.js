@@ -25,6 +25,32 @@ const HOLDOVERS = {
   governor: { D: 6, R: 8, I: 0, total: 50, majority: 26 },
 };
 
+// South Bay (Los Angeles County) races, keyed by civicAPI race id -> tile label.
+const SOUTHBAY = {
+  182063:'El Segundo', 182062:'El Segundo',
+  182070:'Hawthorne', 182068:'Hawthorne', 182069:'Hawthorne', 182071:'Hawthorne', 182219:'Hawthorne',
+  182089:'Lawndale', 182088:'Lawndale', 182087:'Lawndale', 182234:'Lawndale', 182233:'Lawndale',
+  182170:'Los Angeles',
+  182093:'Manhattan Beach',
+  182072:'Hermosa Beach', 182073:'Hermosa Beach',
+  182123:'Redondo Beach',
+  182281:'Torrance',
+  182115:'Palos Verdes Estates', 182116:'Palos Verdes Estates',
+  182124:'Rolling Hills',
+  182122:'Rancho Palos Verdes', 182121:'Rancho Palos Verdes',
+  182034:'Carson', 182035:'Carson', 182031:'Carson', 182032:'Carson', 182033:'Carson',
+  182255:'PV Peninsula schools', 182292:'PV Peninsula schools',
+  182002:'LA County', 182000:'LA County', 182001:'LA County', 182003:'LA County', 182004:'LA County', 182005:'LA County', 182006:'LA County',
+  182313:'Water and colleges', 182314:'Water and colleges', 182240:'Water and colleges', 182241:'Water and colleges', 182242:'Water and colleges',
+  86986:'Congress and Assembly', 86994:'Congress and Assembly', 86995:'Congress and Assembly', 150489:'Congress and Assembly',
+};
+const SOUTHBAY_TILES = [
+  ['El Segundo',0,0],['Hawthorne',1,0],['Lawndale',2,0],['Los Angeles',3,0],
+  ['Manhattan Beach',0,1],['Hermosa Beach',1,1],['Redondo Beach',2,1],['Torrance',3,1],
+  ['Palos Verdes Estates',0,2],['Rolling Hills',1,2],['Rancho Palos Verdes',2,2],['Carson',3,2],
+  ['PV Peninsula schools',0,3],['LA County',1,3],['Water and colleges',2,3],['Congress and Assembly',3,3],
+];
+
 function partyCode(p) {
   if (!p) return 'O';
   if (/^dem/i.test(p)) return 'D';
@@ -36,6 +62,7 @@ function partyCode(p) {
 function category(r) {
   const t = r.type || r.election_type || '';
   if (r.province === 'US') return 'national';
+  if ((r.election_type || '') === 'Local' || (r.election_scope || '') === 'Local') return 'local';
   if (t === 'US Senate') return 'senate';
   if (t === 'House of Representatives') return 'house';
   if (t === 'Delegate') return 'delegate';
@@ -117,6 +144,7 @@ class Civic {
       called: cands.some((c) => c.w),
       winner: cands.find((c) => c.w) || null,
       territory: TERRITORIES.has(r.province),
+      sb: SOUTHBAY[r.id] || null,
       cands,
     };
   }
@@ -191,10 +219,11 @@ class Civic {
   }
 
   async pollScope(scope) {
-    const url = `${BASE}/race/search?startDate=${DATE}&endDate=${DATE}&country=US&election_type=${scope}&limit=5000`;
+    const extra = scope === 'CALocal' ? '&province=CA&election_type=Local' : `&election_type=${scope}`;
+    const url = `${BASE}/race/search?startDate=${DATE}&endDate=${DATE}&country=US${extra}&limit=5000`;
     const data = await getJSON(url);
     if (!data || !Array.isArray(data.races)) throw new Error('bad search payload');
-    return data.races;
+    return scope === 'CALocal' ? data.races.filter((r) => SOUTHBAY[r.id]) : data.races;
   }
 
   async pollForecasts() {
@@ -229,12 +258,25 @@ class Civic {
         n: c.name, p: partyCode(c.party), pf: c.party || '', v: c.votes || 0, pc: c.percent || 0, w: !!c.winner, inc: !!c.incumbent,
       })).sort((a, b) => b.v - a.v),
       regions: Object.values(raw.region_results || {}).map((g) => ({
-        name: g.name, type: g.type, pct: g.percent_reporting ?? 0,
+        name: g.name, type: g.type, fips: g.fips || null, pct: g.percent_reporting ?? 0,
         cands: (g.candidates || []).map((c) => ({ n: c.name, p: partyCode(c.party), v: c.votes || 0, pc: c.percent || 0 })),
       })),
     };
     this.detailCache.set(id, { ts: Date.now(), data });
     return data;
+  }
+
+  // Seed from the running production server so a fresh container starts with
+  // the last known results instead of an empty board.
+  async seedFrom(url) {
+    const res = await fetch(url, { signal: AbortSignal.timeout(20000), headers: { accept: 'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const snap = await res.json();
+    if (!snap.races || !snap.races.length) throw new Error('empty snapshot');
+    for (const row of snap.races) { this.races.set(row.id, row); this.sig.set(row.id, this.signature(row)); }
+    if (snap.national) this.national = snap.national;
+    this.status.lastOk = snap.status?.civic?.lastOk || new Date().toISOString();
+    return snap;
   }
 
   async start() {
@@ -258,12 +300,17 @@ class Civic {
       }
     };
     // First General load before serving diffs; Statewide loads in its own loop.
+    const seedUrl = process.env.SEED_URL || '';
+    if (seedUrl && !this.races.size) {
+      try { const snap = await this.seedFrom(seedUrl); console.log(`seeded ${this.races.size} races from ${seedUrl}`); this.seed = snap; } catch (e) { console.error('seed', e.message); }
+    }
     console.log('initial General load');
     try { this.applyRaces(await this.pollScope('General'), 'General'); this.status.lastGeneral = new Date().toISOString(); this.status.lastOk = this.status.lastGeneral; } catch (e) { console.error('init General', e.message); }
     this.firstLoad = false;
     this.emit('ready', {});
     loop('General', Number(process.env.POLL_GENERAL_MS || 20000), 'lastGeneral');
     loop('Statewide', Number(process.env.POLL_STATEWIDE_MS || 45000), 'lastStatewide');
+    setTimeout(() => loop('CALocal', Number(process.env.POLL_LOCAL_MS || 45000), 'lastLocal'), 5000);
     setInterval(() => this.pollForecasts().catch(() => {}), 10 * 60 * 1000);
   }
 
@@ -272,4 +319,4 @@ class Civic {
   }
 }
 
-module.exports = { Civic, STATES, HOLDOVERS, partyCode };
+module.exports = { Civic, STATES, HOLDOVERS, partyCode, SOUTHBAY_TILES };

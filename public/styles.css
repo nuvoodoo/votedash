@@ -106,10 +106,26 @@ button { cursor: pointer; }
 .carto .tile-bg:hover, .carto .tile-bg:focus-visible { stroke: var(--ink); outline: none; }
 .carto .tile-bg.selected { stroke: var(--amber); stroke-width: 3; }
 .carto .tile-lbl { font: 600 11px var(--font); fill: var(--ink-2); pointer-events: none; }
+.carto.sb { max-height: 520px; }
+.carto.sb .tile-lbl { font-size: 13px; }
 .cell { fill: #DCD8CC; cursor: pointer; }
 .cell.lead.D { fill: #8FAAD9; } .cell.lead.R { fill: #E2958F; } .cell.lead.I { fill: #A6C48F; } .cell.lead.O { fill: #B4B8BF; }
 .cell.called.D { fill: var(--dem); } .cell.called.R { fill: var(--rep); } .cell.called.I { fill: var(--ind); } .cell.called.O { fill: var(--oth); }
 .cell:hover, .cell:focus-visible { stroke: var(--ink); stroke-width: 1.5; outline: none; }
+.map-zoom { display: flex; align-items: center; gap: 12px; padding: 6px 0 8px; }
+.map-zoom .zoom-text { display: flex; flex-direction: column; min-width: 0; }
+.map-zoom .zoom-title { font-weight: 600; }
+.map-zoom .zoom-sub { font-size: 12.5px; color: var(--ink-2); }
+.map-zoom button { background: var(--ink); color: #fff; border: 0; border-radius: 3px; padding: 6px 12px; font-weight: 500; white-space: nowrap; }
+.map-zoom button:hover { background: var(--ink-2); }
+.map-zoom .zoom-open { margin-left: auto; }
+.geo.zoomed .st { fill-opacity: .35; pointer-events: none; }
+.geo.zoomed .st.zoom-target { fill: none; stroke: var(--ink); stroke-width: 1.2; }
+.geo.zoomed .labels, .geo.zoomed .small { display: none; }
+.cty { fill: var(--paper-2); stroke: #fff; stroke-width: .6; }
+.cty.none { fill: var(--paper-2); } .cty.empty { fill: #DCD8CC; }
+.cty.lead.D { fill: #8FAAD9; } .cty.lead.R { fill: #E2958F; } .cty.lead.I { fill: #A6C48F; } .cty.lead.O { fill: #B4B8BF; }
+.cty:hover { stroke: var(--ink); stroke-width: 1; }
 .map-tip { position: absolute; z-index: 6; background: var(--ink); color: #fff; padding: 8px 10px; border-radius: 3px; font-size: 13px; min-width: 200px; max-width: 300px; pointer-events: none; }
 .map-tip .tr + .tr { border-top: 1px solid rgba(255,255,255,.2); margin-top: 6px; padding-top: 6px; }
 .map-tip .tn { font-weight: 600; margin-bottom: 2px; }

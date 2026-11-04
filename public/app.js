@@ -48,8 +48,9 @@
   async function loadSnapshot() {
     const r = await fetch('/api/snapshot', { cache: 'no-store' });
     const s = await r.json();
+    if (!s.races.length && state.races.size) { setTimeout(() => loadSnapshot().catch(() => {}), 5000); return; } // keep last results
     state.races = new Map(s.races.map((x) => [x.id, x]));
-    state.bop = s.bop; state.feed = s.feed; state.social = s.social; state.calls = s.calls || {}; state.forecastTotals = s.forecastTotals;
+    state.southBayTiles = s.southBayTiles || state.southBayTiles; state.bop = s.bop; if (s.feed.length || !state.feed.length) state.feed = s.feed; if (s.social.length || !state.social.length) state.social = s.social; state.calls = Object.keys(s.calls || {}).length ? s.calls : state.calls; state.forecastTotals = s.forecastTotals || state.forecastTotals;
     state.lastTs = s.status?.civic?.lastOk ? Date.parse(s.status.civic.lastOk) : s.ts;
     renderAll();
     if (!s.races.length) setTimeout(() => loadSnapshot().catch(() => {}), 5000);
@@ -141,6 +142,7 @@
     if (r.cat === 'house' || r.cat === 'delegate') return `${r.stateName} ${r.district ? r.district.split('-')[1] === 'AL' ? 'at large' : 'District ' + Number(r.district.split('-')[1]) : ''}`.trim();
     if (r.cat === 'senate') return `${r.stateName} Senate`;
     if (r.cat === 'governor') return `${r.stateName} Governor`;
+    if (r.cat === 'local') return r.name.replace(/^California /, '').replace(/^City of /, '');
     return r.name;
   }
   function callTags(r, withCivic) {
@@ -193,8 +195,8 @@
   // ---- board ------------------------------------------------------------
   function filtered() {
     const q = state.q.trim().toLowerCase();
-    let rows = [...state.races.values()].filter((r) => catOf(r) === state.cat);
-    if (state.stateFilter) rows = rows.filter((r) => r.state === state.stateFilter);
+    let rows = state.cat === 'southbay' ? [...state.races.values()].filter((r) => r.sb) : [...state.races.values()].filter((r) => catOf(r) === state.cat);
+    if (state.stateFilter) rows = rows.filter((r) => (state.cat === 'southbay' ? r.sb : r.state) === state.stateFilter);
     if (state.uncalled) rows = rows.filter((r) => !r.called);
     if (q) rows = rows.filter((r) => `${r.name} ${r.stateName} ${r.state} ${r.district || ''} ${r.cands.map((c) => c.n).join(' ')}`.toLowerCase().includes(q));
     const key = {
@@ -219,6 +221,7 @@
     const nameCell = el('td', null,
       el('span', { class: 'race-name' }, el('button', { type: 'button', onclick: () => go(`/race/${r.id}`) }, raceLabel(r))),
       el('span', { class: 'race-sub' },
+        state.cat === 'southbay' && r.sb ? el('span', null, r.sb) : null,
         (r.cat === 'house' || r.cat === 'senate' || r.cat === 'governor') ? null : el('span', null, r.type === r.name ? '' : r.type),
         r.rating ? el('span', { class: 'rating ' + ratingClass(r.rating) }, r.rating) : null,
         r.called && r.winner ? el('span', { class: 'called-note' }, `Winner: ${r.winner.n}`) : null));
@@ -244,9 +247,9 @@
     app(tb, frag);
     $('#empty').hidden = rows.length > 0;
     $('#map-clear').hidden = !state.stateFilter;
-    if (window.VoteMap) VoteMap.render({ cat: state.cat, races: state.races, calls: state.calls, stateFilter: state.stateFilter,
+    if (window.VoteMap) VoteMap.render({ cat: state.cat, races: state.races, calls: state.calls, stateFilter: state.stateFilter, southBayTiles: state.southBayTiles,
       onOpen: (id) => go(`/race/${id}`),
-      onState: (st) => { state.stateFilter = state.stateFilter === st ? null : st; renderBoard(); } }).catch(() => {});
+      onState: (st) => { state.stateFilter = st === null ? null : (state.stateFilter === st ? null : st); renderBoard(); } }).catch(() => {});
     $('#cat-tabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.cat === state.cat ? 'true' : 'false'));
   }
   function patchRows(ids) {

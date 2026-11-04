@@ -3,7 +3,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
-const { Civic } = require('./civic');
+const { Civic, SOUTHBAY_TILES } = require('./civic');
 const { News } = require('./news');
 const { Social } = require('./social');
 const { SocialPoll } = require('./socialpoll');
@@ -28,7 +28,16 @@ function broadcast(event, payload) {
 const civic = new Civic((ev, payload) => {
   if (ev === 'races') { snapshotDirty = true; broadcast('races', { ...payload, ts: Date.now() }); }
   else if (ev === 'calls') { feedCalls(payload); }
-  else if (ev === 'ready') { snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start(); }
+  else if (ev === 'ready') {
+    if (civic.seed) {
+      const sn = civic.seed; civic.seed = null;
+      if (Array.isArray(sn.feed) && !news.items.length) { news.items = sn.feed; for (const it of sn.feed) news.seen.add(it.id); }
+      if (sn.calls && !Object.keys(news.calls).length) news.calls = sn.calls;
+      if (Array.isArray(sn.social) && !social.items.size) social.ingestItems(sn.social);
+      console.log(`seeded feed ${news.items.length}, social ${social.items.size}`);
+    }
+    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start();
+  }
 });
 const news = new News(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
 const social = new Social((ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
@@ -67,6 +76,7 @@ function buildSnapshot() {
       governor: civic.forecasts.governor?.totals || null,
     },
     races: civic.snapshotRows(),
+    southBayTiles: SOUTHBAY_TILES,
     feed: news.items.slice(0, 300),
     calls: news.calls,
     social: social.list().slice(0, 200),
@@ -126,6 +136,8 @@ const server = http.createServer(async (req, res) => {
   const p = url.pathname;
   try {
     if (p === '/healthz') { res.writeHead(200, { 'content-type': 'text/plain' }); return res.end('ok'); }
+    // Readiness: only take traffic once the race index exists.
+    if (p === '/readyz') { const ok = civic.races.size > 0; res.writeHead(ok ? 200 : 503, { 'content-type': 'text/plain' }); return res.end(ok ? 'ready' : 'loading'); }
 
     if (p === '/events') {
       res.writeHead(200, {

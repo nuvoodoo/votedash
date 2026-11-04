@@ -59,6 +59,7 @@
 
   function racesFor(state, cat) {
     const out = [];
+    if (cat === 'southbay') { for (const r of ctx.races.values()) if (r.sb === state) out.push(r); return out; }
     for (const r of ctx.races.values()) {
       const c = r.cat === 'state-senate' || r.cat === 'state-house' ? 'legislature' : r.cat === 'delegate' ? 'house' : r.cat;
       if (c === cat && r.state === state) out.push(r);
@@ -137,21 +138,30 @@
     return svg;
   }
 
-  // ---- House cartogram ----------------------------------------------------
+  // ---- Tile cartograms (House by state, South Bay by city) ----------------
   function buildCartogram() {
-    const T = 90, PAD = 4, COLS = 11, ROWS = 8;
-    const svg = sv('svg', { viewBox: `0 0 ${COLS * T} ${ROWS * T}`, class: 'carto', role: 'img', 'aria-label': 'House districts by state' });
-    for (const st in GRID) {
-      const [cx, cy] = GRID[st];
-      const x0 = cx * T + PAD, y0 = cy * T + PAD, w = T - PAD * 2;
+    const tiles = Object.keys(GRID).map((st) => ({ key: st, label: st, cx: GRID[st][0], cy: GRID[st][1], rs: racesFor(st, 'house').sort((a, b) => (a.district || '').localeCompare(b.district || '', undefined, { numeric: true })) }));
+    return buildTiles(tiles, 11, 8, 90, 'House districts by state', 'carto');
+  }
+  function buildSouthBay() {
+    const defs = ctx.southBayTiles || [];
+    const tiles = defs.map(([label, cx, cy]) => ({ key: label, label, cx, cy, rs: [...ctx.races.values()].filter((r) => r.sb === label).sort((a, b) => a.name.localeCompare(b.name)) }));
+    return buildTiles(tiles, 4, 4, 150, 'South Bay races by city', 'carto sb');
+  }
+  function buildTiles(tiles, COLS, ROWS, T, aria, cls) {
+    const PAD = 4;
+    const svg = sv('svg', { viewBox: `0 0 ${COLS * T} ${ROWS * T}`, class: cls, role: 'img', 'aria-label': aria });
+    for (const tdef of tiles) {
+      const st = tdef.key;
+      const x0 = tdef.cx * T + PAD, y0 = tdef.cy * T + PAD, w = T - PAD * 2;
       const tile = sv('g', { class: 'tile', 'data-state': st });
       const bg = sv('rect', { x: x0, y: y0, width: w, height: w, class: 'tile-bg', 'data-state': st, tabindex: '0', role: 'button' });
-      bg.setAttribute('aria-label', `${st} House districts`);
+      bg.setAttribute('aria-label', `${tdef.label} races`);
       tile.appendChild(bg);
-      const label = sv('text', { x: x0 + 5, y: y0 + 13, class: 'tile-lbl' }); label.textContent = st; tile.appendChild(label);
+      const label = sv('text', { x: x0 + 5, y: y0 + 13, class: 'tile-lbl' }); label.textContent = tdef.label; tile.appendChild(label);
       const pt = sv('text', { x: x0 + w - 5, y: y0 + 13, class: 'tile-lbl pct', 'data-pct': st }); tile.appendChild(pt);
       pctEls[st] = pt;
-      const rs = racesFor(st, 'house').sort((a, b) => (a.district || '').localeCompare(b.district || '', undefined, { numeric: true }));
+      const rs = tdef.rs;
       const n = rs.length;
       if (n) {
         const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols);
@@ -177,7 +187,7 @@
     const cat = ctx.cat;
     const headline = cat === 'senate' || cat === 'governor';
     for (const [st, els] of shapeByState) {
-      if (cat === 'house') {
+      if (cat === 'house' || cat === 'southbay') {
         for (const el of els) {
           if (el.classList.contains('tile-bg')) { el.classList.toggle('selected', ctx.stateFilter === st); continue; }
           const r = ctx.races.get(Number(el.dataset.race));
@@ -194,7 +204,7 @@
       }
     }
     for (const st in pctEls) {
-      const rs = racesFor(st, cat === 'house' ? 'house' : cat);
+      const rs = racesFor(st, cat);
       let txt = '';
       if (rs.length) {
         const avg = rs.reduce((a, r) => a + (r.pct || 0), 0) / rs.length;
@@ -202,31 +212,154 @@
       }
       pctEls[st].textContent = txt;
     }
-    legend.innerHTML = cat === 'house' || headline
+    if (zoom) updateZoomBar();
+    legend.innerHTML = cat === 'house' || cat === 'southbay' || headline
       ? '<span><i class="sw lead D"></i>Dem leading</span><span><i class="sw called D"></i>Dem called</span><span><i class="sw lead R"></i>Rep leading</span><span><i class="sw called R"></i>Rep called</span><span><i class="sw lead I"></i>Ind</span><span><i class="sw empty"></i>No results yet</span>'
       : '<span><i class="sw has"></i>Has races tonight</span><span>Click a state to filter the board</span>';
-    note.textContent = cat === 'house' ? 'Each square is one district. Click a square for the race, or a state for its list.' : headline ? 'Click a state to open its race.' : '';
+    note.textContent = cat === 'house' ? 'Each square is one district. Click a square for the race, or a state for its list.' : cat === 'southbay' ? 'Each square is one race. Click a square to open it, or a city for its list.' : headline ? 'Click a state to open its race.' : '';
   }
+
+
+  // ---- State zoom (counties) ----------------------------------------------
+  const ABBR_TO_FIPS = Object.fromEntries(Object.entries(FIPS).map(([k, v]) => [v, k]));
+  let countyTopo = null, countyFeats = null;
+  const countyPaths = {}; // state -> [{id,name,d}]
+  const stateBBox = {};
+  let zoom = null; // { st, raceId, detail, g, timer }
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  async function loadCounties() {
+    if (countyTopo) return;
+    const r = await fetch(`/data/counties-albers-10m.json?v=${VER}`);
+    if (!r.ok) throw new Error(`counties ${r.status}`);
+    countyTopo = await r.json();
+    countyFeats = topojson.feature(countyTopo, countyTopo.objects.counties).features;
+  }
+  function bboxOf(g) {
+    let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+    const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
+    for (const poly of polys) for (const p of poly[0]) { if (p[0] < minx) minx = p[0]; if (p[0] > maxx) maxx = p[0]; if (p[1] < miny) miny = p[1]; if (p[1] > maxy) maxy = p[1]; }
+    return [minx, miny, maxx, maxy];
+  }
+  function countiesFor(st) {
+    if (countyPaths[st]) return countyPaths[st];
+    const pre = ABBR_TO_FIPS[st];
+    countyPaths[st] = countyFeats.filter((f) => String(f.id).startsWith(pre)).map((f) => ({ id: String(f.id), name: f.properties.name, d: geoPath(f.geometry) }));
+    return countyPaths[st];
+  }
+  function tweenViewBox(svg, to, ms) {
+    const from = svg.getAttribute('viewBox').split(/\s+/).map(Number);
+    if (reduced || !ms) { svg.setAttribute('viewBox', to.join(' ')); return; }
+    const t0 = performance.now();
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+      svg.setAttribute('viewBox', from.map((v, i) => v + (to[i] - v) * e).join(' '));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  function leaderOf(cands) {
+    const c = (cands || []).filter((x) => x.n !== 'Write-in').sort((a, b) => b.v - a.v);
+    return c[0] && c[0].v > 0 ? c[0] : null;
+  }
+  function paintCounties() {
+    if (!zoom || !zoom.g) return;
+    const byFips = {};
+    if (zoom.detail) for (const r of zoom.detail.regions || []) if (r.fips) byFips[r.fips] = r;
+    for (const el of zoom.g.querySelectorAll('.cty')) {
+      const r = byFips[el.dataset.fips];
+      const lead = r ? leaderOf(r.cands) : null;
+      el.setAttribute('class', 'cty ' + (lead ? 'lead ' + lead.p : r ? 'empty' : 'none'));
+    }
+  }
+  async function refreshZoomDetail() {
+    if (!zoom || !zoom.raceId) return;
+    try {
+      const res = await fetch(`/api/race/${zoom.raceId}`, { cache: 'no-store' });
+      if (res.ok && zoom) { zoom.detail = await res.json(); paintCounties(); updateZoomBar(); }
+    } catch (e) { /* keep last */ }
+  }
+  function updateZoomBar() {
+    const bar = container.querySelector('.map-zoom');
+    if (!zoom) { bar.hidden = true; return; }
+    bar.hidden = false;
+    const r = zoom.raceId ? ctx.races.get(zoom.raceId) : null;
+    const pct = zoom.detail ? Math.round(zoom.detail.pct) : r ? Math.round(r.pct) : null;
+    bar.querySelector('.zoom-title').textContent = r ? r.name : (STATE_NAMES[zoom.st] || zoom.st);
+    bar.querySelector('.zoom-sub').textContent = r ? `${pct}% reporting${r.winner ? ', ' + r.winner.n + ' wins' : ''}` : 'Counties';
+    bar.querySelector('.zoom-open').hidden = !r;
+  }
+  async function zoomTo(st) {
+    if (!svgEl || lastMode !== 'geo') return;
+    await loadCounties();
+    const feat = features.find((f) => FIPS[f.id] === st);
+    if (!feat) return;
+    if (!stateBBox[st]) stateBBox[st] = bboxOf(feat.geometry);
+    const [minx, miny, maxx, maxy] = stateBBox[st];
+    const w = maxx - minx, h = maxy - miny, pad = Math.max(w, h) * 0.08;
+    // keep aspect close to the base map (1060x610)
+    let vw = w + pad * 2, vh = h + pad * 2;
+    const ar = 1060 / 610;
+    if (vw / vh < ar) vw = vh * ar; else vh = vw / ar;
+    const cx = (minx + maxx) / 2, cy = (miny + maxy) / 2;
+    clearZoom(false);
+    const headline = ctx.cat === 'senate' || ctx.cat === 'governor';
+    const rs = headline ? racesFor(st, ctx.cat) : [];
+    zoom = { st, raceId: rs.length ? rs[0].id : null, detail: null, g: null, timer: null };
+    const g = sv('g', { class: 'counties' });
+    for (const c of countiesFor(st)) {
+      const p = sv('path', { d: c.d, class: 'cty none', 'data-fips': c.id, 'data-name': c.name });
+      g.appendChild(p);
+    }
+    zoom.g = g;
+    svgEl.insertBefore(g, svgEl.querySelector('.labels'));
+    svgEl.classList.add('zoomed');
+    for (const el of shapeByState.get(st) || []) el.classList.add('zoom-target');
+    tweenViewBox(svgEl, [cx - vw / 2, cy - vh / 2, vw, vh], 450);
+    updateZoomBar();
+    if (zoom.raceId) { refreshZoomDetail(); zoom.timer = setInterval(refreshZoomDetail, 30000); }
+  }
+  function clearZoom(animate) {
+    if (!zoom) return;
+    if (zoom.timer) clearInterval(zoom.timer);
+    if (zoom.g) zoom.g.remove();
+    for (const el of svgEl.querySelectorAll('.zoom-target')) el.classList.remove('zoom-target');
+    svgEl.classList.remove('zoomed');
+    zoom = null;
+    if (animate !== false) tweenViewBox(svgEl, [0, 0, 1060, 610], 350);
+    updateZoomBar();
+  }
+  const STATE_NAMES = { AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',DC:'District of Columbia' };
 
   function bind(svg) {
     svg.addEventListener('mousemove', (e) => {
       const t = e.target;
+      if (t.dataset.fips && zoom) {
+        const r = zoom.detail && (zoom.detail.regions || []).find((x) => x.fips === t.dataset.fips);
+        if (!r) return showTip(e, `<div class="tr"><div class="tn">${t.dataset.name}</div><div class="tl muted">No results yet</div></div>`);
+        const c = (r.cands || []).filter((x) => x.n !== 'Write-in').sort((a, b) => b.v - a.v).slice(0, 2);
+        return showTip(e, `<div class="tr"><div class="tn">${r.name}</div>${c.map((x) => `<div class="tl"><span class="p-${x.p}">${x.n} (${x.p})</span><b>${x.v.toLocaleString('en-US')} (${fmtPct(x.pc)})</b></div>`).join('')}<div class="tm">${Math.round(r.pct)}% reporting</div></div>`);
+      }
       if (t.dataset.race) { const r = ctx.races.get(Number(t.dataset.race)); if (r) showTip(e, tipHTML([r])); return; }
       const st = t.dataset.state;
       if (!st) return hideTip();
-      const cat = ctx.cat === 'house' ? 'house' : ctx.cat;
+      const cat = ctx.cat;
       const rs = racesFor(st, cat);
       if (!rs.length) return showTip(e, `<div class="tr"><div class="tn">${st}</div><div class="tl muted">No ${cat === 'house' ? 'House' : ''} races tonight</div></div>`);
-      showTip(e, cat === 'house' ? `<div class="tr"><div class="tn">${st}: ${rs.length} districts</div><div class="tm">${rs.filter((r) => r.winner).length} called</div></div>` : tipHTML(rs.slice(0, 4)));
+      showTip(e, cat === 'house' ? `<div class="tr"><div class="tn">${st}: ${rs.length} districts</div><div class="tm">${rs.filter((r) => r.winner).length} called</div></div>` : cat === 'southbay' ? `<div class="tr"><div class="tn">${st}: ${rs.length} race${rs.length === 1 ? '' : 's'}</div><div class="tm">${rs.filter((r) => r.winner).length} called</div></div>` : tipHTML(rs.slice(0, 4)));
     });
     svg.addEventListener('mouseleave', hideTip);
     const act = (t) => {
       if (t.dataset.race) { ctx.onOpen(Number(t.dataset.race)); return; }
+      if (t.dataset.fips) return;
       const st = t.dataset.state; if (!st) return;
-      if (ctx.cat === 'senate' || ctx.cat === 'governor') {
-        const rs = racesFor(st, ctx.cat);
-        if (rs.length === 1) ctx.onOpen(rs[0].id); else if (rs.length) ctx.onState(st);
-      } else ctx.onState(st);
+      if (lastMode === 'geo') {
+        if (zoom && zoom.st === st) { clearZoom(); ctx.onState(null); return; }
+        zoomTo(st).catch(() => {});
+        ctx.onState(st);
+        return;
+      }
+      ctx.onState(st);
     };
     svg.addEventListener('click', (e) => act(e.target));
     svg.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(e.target); } });
@@ -237,18 +370,21 @@
     if (!container) {
       container = document.getElementById('map');
       tip = container.querySelector('.map-tip'); legend = container.querySelector('.map-legend'); note = container.querySelector('.map-note');
+      container.querySelector('.zoom-back').addEventListener('click', () => { clearZoom(); ctx.onState(null); });
+      container.querySelector('.zoom-open').addEventListener('click', () => { if (zoom && zoom.raceId) ctx.onOpen(zoom.raceId); });
     }
     await load();
-    const mode = ctx.cat === 'house' ? 'carto' : 'geo';
-    const countSig = mode === 'carto' ? [...ctx.races.values()].filter((r) => r.cat === 'house' || r.cat === 'delegate').length : 0;
-    if (mode !== lastMode || (mode === 'carto' && countSig !== render.lastCount)) {
-      shapeByRace = new Map(); shapeByState = new Map(); pctEls = {};
+    const mode = ctx.cat === 'house' ? 'carto' : ctx.cat === 'southbay' ? 'sb' : 'geo';
+    const countSig = mode === 'carto' ? [...ctx.races.values()].filter((r) => r.cat === 'house' || r.cat === 'delegate').length : mode === 'sb' ? [...ctx.races.values()].filter((r) => r.sb).length : 0;
+    if (mode !== lastMode || (mode !== 'geo' && countSig !== render.lastCount)) {
+      zoom = null; shapeByRace = new Map(); shapeByState = new Map(); pctEls = {};
       if (svgEl) svgEl.remove();
-      svgEl = mode === 'carto' ? buildCartogram() : buildStateMap();
+      svgEl = mode === 'carto' ? buildCartogram() : mode === 'sb' ? buildSouthBay() : buildStateMap();
       container.querySelector('.map-stage').appendChild(svgEl);
       bind(svgEl);
       lastMode = mode; render.lastCount = countSig;
     }
+    if (zoom && !ctx.stateFilter) clearZoom();
     paint();
   }
   function update(next) { if (!svgEl) return; Object.assign(ctx, next || {}); paint(); }

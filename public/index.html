@@ -29,6 +29,7 @@
   <div class="split">
     <section class="board" id="board" aria-label="Race board">
       <div class="map" id="map">
+        <div class="map-zoom" hidden><button type="button" class="zoom-back">All states</button><div class="zoom-text"><span class="zoom-title"></span><span class="zoom-sub"></span></div><button type="button" class="zoom-open">Open race</button></div>
         <div class="map-stage"></div>
         <div class="map-tip" hidden></div>
         <div class="map-foot"><div class="map-legend"></div><p class="map-note"></p><button type="button" class="map-clear" id="map-clear" hidden>Show all states</button></div>
@@ -41,6 +42,7 @@
           <button role="tab" data-cat="ballot">Ballot measures</button>
           <button role="tab" data-cat="statewide">Statewide offices</button>
           <button role="tab" data-cat="legislature">State legislatures</button>
+          <button role="tab" data-cat="southbay">South Bay</button>
         </div>
         <div class="controls">
           <label class="search"><span class="vh">Find a race</span><input id="q" type="search" placeholder="State, district, or candidate" autocomplete="off"></label>
