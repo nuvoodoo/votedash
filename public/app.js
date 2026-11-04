@@ -19,7 +19,7 @@
   const fmtTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: 'America/New_York' }) + ' ET';
   const fmtShort = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
   const PARTY = { D: 'Dem', R: 'Rep', I: 'Ind', O: '' };
-  const OUTLET_ORDER = ['AP', 'NBC', 'CNN', 'Fox', 'NYT', 'ABC', 'CBS', 'DDHQ', 'Reuters', 'civicAPI'];
+  const OUTLET_ORDER = ['AP', 'NBC', 'CNN', 'Fox', 'NYT', 'ABC', 'CBS', 'DDHQ', 'Reuters', 'Pollgebra', 'civicAPI'];
 
   const state = {
     races: new Map(), bop: null, feed: [], social: [], calls: {}, forecastTotals: null,
@@ -205,7 +205,7 @@
     const keys = Object.keys(c).sort((x, y) => (OUTLET_ORDER.indexOf(x) + 1 || 99) - (OUTLET_ORDER.indexOf(y) + 1 || 99));
     for (const k of keys) {
       if (k === 'civicAPI' && !withCivic) continue;
-      out.push(el('a', { class: 'call-tag' + (k === 'civicAPI' ? ' civic' : ''), href: c[k].url, target: '_blank', rel: 'noopener', title: `${c[k].title} (${fmtShort(c[k].ts)})` }, k));
+      out.push(el('a', { class: 'call-tag' + (k === 'civicAPI' ? ' civic' : k === 'Pollgebra' ? ' pg' : ''), href: c[k].url, target: '_blank', rel: 'noopener', title: `${c[k].title} (${fmtShort(c[k].ts)})` }, k));
     }
     return out;
   }

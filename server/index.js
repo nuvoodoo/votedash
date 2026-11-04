@@ -9,6 +9,7 @@ const { Social } = require('./social');
 const { SocialPoll } = require('./socialpoll');
 const { XPoll } = require('./xpoll');
 const { Polymarket } = require('./polymarket');
+const { Pollgebra } = require('./pollgebra');
 const og = require('./og');
 // Candidate photos (tools/gather-photos.js). Served as one cached map.
 let photosRaw = null, photosGz = null, photosMtime = 0;
@@ -63,7 +64,7 @@ const civic = new Civic((ev, payload) => {
       if (Array.isArray(sn.social) && !social.items.size) social.ingestItems(sn.social);
       console.log(`seeded feed ${news.items.length}, social ${social.items.size}`);
     }
-    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start(); polymarket.start();
+    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start(); polymarket.start(); pollgebra.start();
   }
 });
 const news = new News(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
@@ -71,6 +72,7 @@ const social = new Social((ev, payload) => { snapshotDirty = true; broadcast(ev,
 const socialPoll = new SocialPoll(civic, social);
 const xPoll = new XPoll(civic, social, process.env.TWITTERAPI_IO_KEY || '');
 const polymarket = new Polymarket(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
+const pollgebra = new Pollgebra(civic, news, (payload) => { if (payload.items.length) news.items = payload.items.concat(news.items).slice(0, 500); snapshotDirty = true; broadcast('feed', payload); });
 
 // civicAPI winner flips become feed items too.
 function feedCalls(items) {
@@ -95,7 +97,7 @@ function buildSnapshot() {
   const body = {
     ts: Date.now(),
     version: VERSION,
-    status: { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, clients: clients.size },
+    status: { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, pollgebra: pollgebra.status, clients: clients.size },
     bop: civic.bop(),
     national: civic.national,
     forecastTotals: {
