@@ -7,6 +7,7 @@ const { Civic } = require('./civic');
 const { News } = require('./news');
 const { Social } = require('./social');
 const { SocialPoll } = require('./socialpoll');
+const { XPoll } = require('./xpoll');
 
 const PORT = Number(process.env.PORT || 8080);
 const SOCIAL_TOKEN = process.env.SOCIAL_TOKEN || '';
@@ -27,11 +28,12 @@ function broadcast(event, payload) {
 const civic = new Civic((ev, payload) => {
   if (ev === 'races') { snapshotDirty = true; broadcast('races', { ...payload, ts: Date.now() }); }
   else if (ev === 'calls') { feedCalls(payload); }
-  else if (ev === 'ready') { snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); }
+  else if (ev === 'ready') { snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start(); }
 });
 const news = new News(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
 const social = new Social((ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
 const socialPoll = new SocialPoll(civic, social);
+const xPoll = new XPoll(civic, social, process.env.TWITTERAPI_IO_KEY || '');
 
 // civicAPI winner flips become feed items too.
 function feedCalls(items) {
@@ -56,7 +58,7 @@ function buildSnapshot() {
   const body = {
     ts: Date.now(),
     version: VERSION,
-    status: { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, clients: clients.size },
+    status: { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, xPoll: xPoll.status, clients: clients.size },
     bop: civic.bop(),
     national: civic.national,
     forecastTotals: {
@@ -152,7 +154,7 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(req, res, { ok: true, added: n, total: social.items.size });
     }
 
-    if (p === '/api/status') return sendJSON(req, res, { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, clients: clients.size, races: civic.races.size, version: VERSION });
+    if (p === '/api/status') return sendJSON(req, res, { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, clients: clients.size, races: civic.races.size, version: VERSION });
 
     // static + SPA routes
     if (p === '/' || p.startsWith('/race/') || p === '/feed' || p === '/board') return sendFile(req, res, path.join(PUBLIC, 'index.html'));

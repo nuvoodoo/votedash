@@ -59,6 +59,7 @@ class SocialPoll {
         image: img,
         tag: a.kind === 'candidate' ? `${a.party}${race ? ', ' + race.name : ''}` : [a.outlet, a.role].filter(Boolean).join(', '),
         kind: a.kind,
+        tier: a.kind === 'media' || a.office === 'senate' ? 'A' : 'B',
         race_id: race ? race.id : null,
         race_name: race ? race.name : null,
       });
@@ -92,4 +93,4 @@ class SocialPoll {
   }
 }
 
-module.exports = { SocialPoll };
+module.exports = { SocialPoll, loadAccounts };

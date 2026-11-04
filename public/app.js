@@ -350,7 +350,7 @@
     return li;
   }
   function feedRows() {
-    let items = state.feedTab === 'social' ? state.social.map((s) => ({ ...s, kind: 'social' })) : state.feedTab === 'all' ? state.feed.concat(state.social.map((s) => ({ ...s, kind: 'social' }))) : state.feed.filter((i) => i.kind === state.feedTab);
+    let items = state.feedTab === 'social' ? state.social.map((s) => ({ ...s, kind: 'social' })) : state.feedTab === 'all' ? state.feed.concat(state.social.filter((s) => s.tier !== 'B').map((s) => ({ ...s, kind: 'social' }))) : state.feed.filter((i) => i.kind === state.feedTab);
     return items.sort((a, b) => b.ts - a.ts).slice(0, 200);
   }
   function renderFeed() {

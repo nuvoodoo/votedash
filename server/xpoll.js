@@ -1,0 +1,126 @@
+'use strict';
+// Polls X through twitterapi.io: batched "from:" searches with a since filter so
+// only new posts are fetched. Free tier allows one request per 5 seconds.
+
+const { loadAccounts } = require('./socialpoll');
+
+const API = 'https://api.twitterapi.io';
+const BATCH = 20;
+const SPACING_MS = Number(process.env.XPOLL_SPACING_MS || 5200);
+const MAX_PAGES = 3;
+
+function sinceStr(ts) {
+  const d = new Date(ts);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}_${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}_UTC`;
+}
+
+class XPoll {
+  constructor(civic, social, key) {
+    this.civic = civic; this.social = social; this.key = key;
+    const all = loadAccounts().filter((a) => a.x);
+    this.byHandle = new Map(all.map((a) => [a.x.toLowerCase(), a]));
+    const tierA = all.filter((a) => a.kind === 'media' || a.office === 'senate');
+    const tierB = all.filter((a) => !(a.kind === 'media' || a.office === 'senate'));
+    const chunk = (arr) => { const out = []; for (let i = 0; i < arr.length; i += BATCH) out.push(arr.slice(i, i + BATCH)); return out; };
+    const A = chunk(tierA).map((h, i) => ({ id: `A${i}`, tier: 'A', handles: h.map((a) => a.x), since: Date.now() - 30 * 60 * 1000 }));
+    const B = chunk(tierB).map((h, i) => ({ id: `B${i}`, tier: 'B', handles: h.map((a) => a.x), since: Date.now() - 30 * 60 * 1000 }));
+    // Rotation: tier A twice per cycle, interleaved with tier B.
+    const half = Math.ceil(B.length / 2);
+    this.rotation = [...A, ...B.slice(0, half), ...A, ...B.slice(half)];
+    this.pos = 0;
+    this.status = { accounts: all.length, batches: A.length + B.length, cycleSeconds: Math.round(this.rotation.length * SPACING_MS / 1000), last: null, requests: 0, posts: 0, errors: 0, lastError: null, credits: null };
+  }
+
+  raceFor(a) {
+    if (a.kind !== 'candidate') return null;
+    for (const r of this.civic.races.values()) {
+      if (a.office === 'senate' && r.cat === 'senate' && r.state === a.state) return r;
+      if (a.office === 'house' && (r.cat === 'house' || r.cat === 'delegate') && r.district === a.district) return r;
+    }
+    return null;
+  }
+
+  async get(path, params) {
+    const u = new URL(API + path);
+    for (const k in params) u.searchParams.set(k, params[k]);
+    const res = await fetch(u, { headers: { 'X-API-Key': this.key }, signal: AbortSignal.timeout(30000) });
+    this.status.requests++;
+    const text = await res.text();
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${text.slice(0, 80)}`);
+    return JSON.parse(text);
+  }
+
+  toItem(t) {
+    const a = this.byHandle.get((t.author?.userName || '').toLowerCase());
+    if (!a) return null;
+    if (t.isReply) return null;
+    if (/^RT @/.test(t.text || '')) return null;
+    const race = this.raceFor(a);
+    const ts = Date.parse(t.createdAt);
+    const media = (t.extendedEntities && t.extendedEntities.media) || (t.entities && t.entities.media) || [];
+    const img = media[0] && (media[0].media_url_https || media[0].mediaUrlHttps) || '';
+    return {
+      id: `x:${t.id}`,
+      author: t.author?.name || a.name,
+      handle: t.author?.userName || a.x,
+      platform: 'X',
+      text: (t.text || '').replace(/\s*https:\/\/t\.co\/\w+$/g, '').trim(),
+      url: t.url || `https://x.com/${a.x}/status/${t.id}`,
+      ts: ts || Date.now(),
+      avatar: t.author?.profilePicture || '',
+      image: img,
+      tag: a.kind === 'candidate' ? `${a.party}${race ? ', ' + race.name : ''}` : [a.outlet, a.role].filter(Boolean).join(', '),
+      kind: a.kind,
+      tier: a.kind === 'media' || a.office === 'senate' ? 'A' : 'B',
+      race_id: race ? race.id : null,
+      race_name: race ? race.name : null,
+    };
+  }
+
+  async pollBatch(b) {
+    const query = `(${b.handles.map((h) => `from:${h}`).join(' OR ')}) since:${sinceStr(b.since - 60000)}`;
+    let cursor = '', pages = 0, newest = b.since;
+    const items = [];
+    do {
+      const params = { query, queryType: 'Latest' };
+      if (cursor) params.cursor = cursor;
+      const j = await this.get('/twitter/tweet/advanced_search', params);
+      for (const t of j.tweets || []) {
+        const it = this.toItem(t);
+        if (it) { items.push(it); if (it.ts > newest) newest = it.ts; }
+      }
+      cursor = j.has_next_page ? j.next_cursor : '';
+      pages++;
+      if (cursor) await new Promise((r) => setTimeout(r, SPACING_MS));
+    } while (cursor && pages < MAX_PAGES);
+    b.since = newest;
+    if (items.length) this.status.posts += this.social.ingestItems(items);
+  }
+
+  async loop() {
+    for (;;) {
+      const b = this.rotation[this.pos % this.rotation.length];
+      this.pos++;
+      const t0 = Date.now();
+      try {
+        await this.pollBatch(b);
+        this.status.last = new Date().toISOString();
+      } catch (e) {
+        this.status.errors++; this.status.lastError = e.message;
+        if (/429/.test(e.message)) await new Promise((r) => setTimeout(r, 10000));
+      }
+      if (this.pos % 50 === 0) this.get('/oapi/my/info', {}).then((j) => { this.status.credits = j; }).catch(() => {});
+      const wait = Math.max(500, SPACING_MS - (Date.now() - t0));
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+
+  start() {
+    if (!this.key) { console.log('xpoll: no TWITTERAPI_IO_KEY'); return; }
+    if (!this.byHandle.size) { console.log('xpoll: no X accounts'); return; }
+    this.loop().catch((e) => console.error('xpoll fatal', e));
+  }
+}
+
+module.exports = { XPoll };
