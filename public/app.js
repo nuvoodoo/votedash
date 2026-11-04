@@ -30,7 +30,8 @@
   };
 
   // ---- routing ----------------------------------------------------------
-  // URL scheme: /  |  /board/{senate|house|governor|ballot|statewide|legislature|southbay}?state=GA&kind=measures&city=Hawthorne&uncalled=1&sort=margin
+  // URL scheme: /  |  /board/{lacounty|senate|house|governor|ballot|statewide|legislature}?state=GA&kind=measures&city=Hawthorne&uncalled=1&sort=margin
+  //             (the LA County tab is the 'southbay' category inside; /board/southbay still opens it and keeps its URL)
   //             /race/{id}  |  /feed/{all|call|news|exitpoll|social}
   const CATS = ['senate', 'house', 'governor', 'ballot', 'statewide', 'legislature', 'southbay'];
   const FEEDS = ['all', 'call', 'news', 'exitpoll', 'social'];
@@ -42,7 +43,8 @@
     state.view = f ? 'feed' : /^\/calls\b/.test(path) ? 'calls' : 'board';
     if (f && FEEDS.includes(f[1] || '')) state.feedTab = f[1];
     const b = path.match(/^\/board\/([a-z]+)/);
-    if (b && CATS.includes(b[1])) state.cat = b[1];
+    if (b && b[1] === 'lacounty') { state.cat = 'southbay'; state.sbSlug = 'lacounty'; }
+    else if (b && CATS.includes(b[1])) { state.cat = b[1]; if (b[1] === 'southbay') state.sbSlug = 'southbay'; }
     if (!state.raceId) {
       state.stateFilter = qs.get('state') || qs.get('city') || null;
       state.sbKind = ['all', 'measures', 'offices'].includes(qs.get('kind') || '') ? qs.get('kind') : 'all';
@@ -62,7 +64,7 @@
     if (state.uncalled) qs.set('uncalled', '1');
     if (state.sort !== 'state') qs.set('sort', state.sort);
     const q = qs.toString();
-    return `/board/${state.cat}${q ? '?' + q : ''}`;
+    return `/board/${state.cat === 'southbay' ? state.sbSlug || 'lacounty' : state.cat}${q ? '?' + q : ''}`;
   }
   function syncURL(replace) {
     const url = state.raceId ? `/race/${state.raceId}` : state.view === 'feed' ? `/feed/${state.feedTab}` : state.view === 'calls' ? '/calls' : boardURL();

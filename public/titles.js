@@ -3,7 +3,7 @@
   'use strict';
   const SITE = 'VoteDash';
   const HOME = 'VoteDash: Live 2026 Midterm Results';
-  const CAT = { senate: 'Senate', house: 'House', governor: 'Governor', ballot: 'Ballot Measure', statewide: 'Statewide Office', legislature: 'State Legislature', southbay: 'South Bay' };
+  const CAT = { senate: 'Senate', house: 'House', governor: 'Governor', ballot: 'Ballot Measure', statewide: 'Statewide Office', legislature: 'State Legislature', southbay: 'LA County', lacounty: 'LA County' };
   const PARTY = { D: 'Democrat', R: 'Republican', I: 'Independent' };
   const pct = (n) => `${Math.round((n || 0) * 10) / 10}%`;
   const real = (r) => (r.cands || []).filter((c) => c.n !== 'Write-in');

@@ -147,7 +147,7 @@
     const defs = ctx.southBayTiles || [];
     const tiles = defs.map(([label, cx, cy]) => ({ key: label, label, cx, cy, rs: [...ctx.races.values()].filter((r) => r.sb === label).sort((a, b) => a.name.localeCompare(b.name)) }));
     const rows = Math.max(4, ...defs.map((d) => d[2] + 1));
-    return buildTiles(tiles, 4, rows, 150, 'South Bay races by city', 'carto sb');
+    return buildTiles(tiles, 4, rows, 150, 'LA County races by city', 'carto sb');
   }
   function buildTiles(tiles, COLS, ROWS, T, aria, cls) {
     const PAD = 4;
