@@ -23,6 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script>(function(){try{var t=localStorage.getItem("vd-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t;else if(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)document.documentElement.dataset.theme="dark";}catch(e){}})();</script>
 <link rel="stylesheet" href="/styles.css?v=__V__">
 </head>
 <body>
@@ -30,6 +31,7 @@
 <header class="top" role="banner">
   <a class="brand" href="/" aria-label="VoteDash home">Vote<span>Dash</span></a>
   <div class="live" id="live"><span class="dot" aria-hidden="true"></span><span class="live-label">Live</span><time id="updated">connecting</time></div>
+  <button type="button" class="theme-btn" id="theme-btn" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9c0-.5 0-.9-.1-1.4A5.5 5.5 0 0 1 13.4 3.1C13 3 12.5 3 12 3z"/></svg><span>Dark</span></button>
   <nav class="topnav" aria-label="Sections">
     <a href="/board" data-nav="board">Board</a>
     <a href="/feed" data-nav="feed">Feed</a>

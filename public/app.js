@@ -482,6 +482,21 @@
   $('#sort').addEventListener('change', (e) => { state.sort = e.target.value; renderBoard(); syncURL(true); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) loadSnapshot().catch(() => {}); });
 
+  // Theme
+  const themeBtn = $('#theme-btn');
+  function applyTheme() {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    themeBtn.querySelector('span').textContent = dark ? 'Light' : 'Dark';
+    themeBtn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#0B0D10' : '#15181D');
+  }
+  themeBtn.addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('vd-theme', dark ? 'light' : 'dark'); } catch (e) { /* ignore */ }
+    applyTheme();
+  });
+  applyTheme();
   route();
   loadPhotos();
   loadSnapshot().then(connect).catch(() => { setStale(true); setTimeout(() => loadSnapshot().then(connect), 5000); });

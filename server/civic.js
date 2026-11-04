@@ -84,6 +84,8 @@ function partyCode(p) {
 function category(r) {
   const t = r.type || r.election_type || '';
   if (r.province === 'US') return 'national';
+  if (t === 'State Senate') return 'state-senate';
+  if (t === 'State House') return 'state-house';
   if ((r.election_type || '') === 'Local' || (r.election_scope || '') === 'Local') return 'local';
   if (t === 'US Senate') return 'senate';
   if (t === 'House of Representatives') return 'house';
@@ -253,10 +255,11 @@ class Civic {
   }
 
   async pollScope(scope) {
-    const extra = scope === 'CALocal' ? '&province=CA&election_type=Local' : `&election_type=${scope}`;
-    const url = `${BASE}/race/search?startDate=${DATE}&endDate=${DATE}&country=US${extra}&limit=5000`;
-    const data = await getJSON(url);
+    const extra = scope === 'CALocal' ? '&province=CA&election_type=Local' : scope === 'LocalSenate' ? '&election_type=Local&limit=50000' : `&election_type=${scope}`;
+    const url = `${BASE}/race/search?startDate=${DATE}&endDate=${DATE}&country=US${extra}${scope === 'LocalSenate' ? '' : '&limit=5000'}`;
+    const data = await getJSON(url, scope === 'LocalSenate' ? { tries: 2, timeout: 240000 } : {});
     if (!data || !Array.isArray(data.races)) throw new Error('bad search payload');
+    if (scope === 'LocalSenate') return data.races.filter((r) => r.type === 'State Senate' || SOUTHBAY[r.id]);
     return scope === 'CALocal' ? data.races.filter((r) => SOUTHBAY[r.id]) : data.races;
   }
 
@@ -346,6 +349,7 @@ class Civic {
     loop('General', Number(process.env.POLL_GENERAL_MS || 20000), 'lastGeneral');
     loop('Statewide', Number(process.env.POLL_STATEWIDE_MS || 45000), 'lastStatewide');
     setTimeout(() => loop('CALocal', Number(process.env.POLL_LOCAL_MS || 45000), 'lastLocal'), 5000);
+    setTimeout(() => loop('LocalSenate', Number(process.env.POLL_LOCAL_SENATE_MS || 300000), 'lastLocalSenate'), 20000);
     setInterval(() => this.pollForecasts().catch(() => {}), 10 * 60 * 1000);
   }
 
