@@ -230,6 +230,13 @@ class CallTimes {
   }
 
   start() {
+    // A new container keeps the running one's Polymarket results until its own first refresh lands.
+    if (process.env.SEED_URL) {
+      fetch(process.env.SEED_URL.replace(/\/api\/snapshot.*/, '') + '/api/calls', { headers: UA, signal: AbortSignal.timeout(15000) })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (!d || this.status.last) return; for (const r of d.races || []) if (r.pm) this.pm[r.id] = r.pm; this.payload = null; console.log('calltimes seeded', Object.keys(this.pm).length, 'Polymarket races'); })
+        .catch(() => {});
+    }
     const run = () => this.refreshPM().catch((e) => { this.status.lastError = e.message; console.error('calltimes', e.message); });
     setTimeout(run, 20000);
     setInterval(run, Number(process.env.POLL_CALLTIMES_MS || 300000));

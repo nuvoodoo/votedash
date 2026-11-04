@@ -292,11 +292,12 @@
       app(leadCell, 
         el('div', { class: 'cand-line' + (a.w ? ' w' : '') }, el('span', { class: 'nm p-' + a.p }, `${a.n}${PARTY[a.p] ? ' (' + a.p + ')' : ''}`, a.inc ? el('span', { class: 'inc-tag' }, 'Incumbent') : null), el('span', { class: 'pc' }, fmtPct(a.pc))),
         b ? el('div', { class: 'cand-line' + (b.w ? ' w' : '') }, el('span', { class: 'nm p-' + b.p }, `${b.n}${PARTY[b.p] ? ' (' + b.p + ')' : ''}`, b.inc ? el('span', { class: 'inc-tag' }, 'Incumbent') : null), el('span', { class: 'pc' }, fmtPct(b.pc))) : null,
-        barFor(r.cands));
+        barFor(r.cands),
+        el('div', { class: 'tot' }, `${fmtN(r.total)} votes`));
     } else {
       app(leadCell, el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, r.cands.filter((c) => c.n !== 'Write-in').slice(0, 3).map((c) => `${c.n}${PARTY[c.p] ? ' (' + c.p + ')' : ''}${c.inc ? ' [Inc]' : ''}`).join(', ') || 'No candidates listed')), el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, 'No votes reported')));
     }
-    const marginCell = el('td', { class: 'num margin' }, r.total > 0 && b ? el('span', { class: 'p-' + a.p }, `${a.p} +${(Math.round(margin * 10) / 10).toFixed(1)}`) : '');
+    const marginCell = el('td', { class: 'num margin' }, ...(r.total > 0 && b ? [el('span', { class: 'p-' + a.p }, `${a.p} +${(Math.round(margin * 10) / 10).toFixed(1)}`), el('span', { class: 'mv' }, `+${fmtN(a.v - b.v)}`)] : []));
     const pctCell = el('td', { class: 'num pct' }, `${Math.round(r.pct)}%`, el('span', { class: 'pbar', 'aria-hidden': 'true' }, el('i', { style: `width:${Math.min(100, r.pct)}%` })));
     const callCell = el('td', { class: 'calls' }, ...callTags(r, true));
     app(tr, nameCell, leadCell, marginCell, pctCell, callCell);
@@ -335,6 +336,14 @@
 
   // ---- detail -----------------------------------------------------------
   let detailData = null, detailFor = null, regionSort = { key: 'name', dir: 1 };
+  // Votes cast and the gap between the top two, from the counts shown in the table.
+  function voteMeta(cands) {
+    const c = cands.filter((x) => x.n !== 'Write-in').slice().sort((x, y) => y.v - x.v);
+    const total = cands.reduce((s, x) => s + x.v, 0);
+    if (!total) return [];
+    return [el('span', null, el('b', null, fmtN(total)), ' votes cast'),
+      c[1] ? el('span', null, 'Margin ', el('b', { class: 'p-' + c[0].p }, `${fmtN(c[0].v - c[1].v)} votes`), ` (${(Math.round((100 * (c[0].v - c[1].v) / total) * 10) / 10).toFixed(1)} pts)`) : null];
+  }
   async function renderDetail(refresh) {
     const box = $('#detail'); const r = state.races.get(state.raceId);
     $('#board').hidden = true; box.hidden = false;
@@ -351,6 +360,7 @@
       app(box, el('h1', null, r.name));
       const meta = el('div', { class: 'meta' },
         el('span', null, el('b', null, `${Math.round(d ? d.pct : r.pct)}%`), ' reporting'),
+        ...voteMeta(cands),
         r.upd ? el('span', null, 'Last update ', el('b', null, fmtTime(r.upd))) : null,
         r.src && r.src !== 'civicAPI' ? el('span', null, 'Counts from ', el('b', null, r.src), r.srcTs ? ` as of ${fmtShort(r.srcTs)}` : '') : null,
         r.rating ? el('span', null, 'Rating ', el('b', null, r.rating)) : null,
