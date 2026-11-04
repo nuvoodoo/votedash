@@ -1,4 +1,5 @@
 'use strict';
+const DDHQ = require('./ddhq');
 const { partyCode } = require('./civic');
 // Polls X through twitterapi.io: batched "from:" searches with a since filter so
 // only new posts are fetched. Free tier allows one request per 5 seconds.
@@ -107,24 +108,37 @@ class XPoll {
     if (!this.news) return;
     const fresh = [];
     for (const it of items) {
-      if ((it.handle || '').toLowerCase() !== 'decisiondeskhq' || !/\bprojects?\b/i.test(it.text)) continue;
-      const head = it.text.split('\n')[0];
-      const race = this.news.matchRace(head);
-      if (!race) continue;
-      const headWords = head.toLowerCase().replace(/[^a-z\u00c0-\u024f\s-]/g, ' ').split(/\s+/).filter(Boolean);
-      const winner = race.cands.find((x) => {
-        if (x.n === 'Write-in') return false;
-        const toks = x.n.toLowerCase().replace(/[^a-z\u00c0-\u024f\s-]/g, ' ').split(/\s+/).filter((w) => w.length > 1);
-        const last = toks[toks.length - 1];
-        return !!last && headWords.includes(last);
-      });
-      if (winner && !race.winner) this.civic.applyCall(race.id, winner.n, 'DDHQ');
-      const c = (this.news.calls[race.id] = this.news.calls[race.id] || {});
-      if (c.DDHQ) continue;
-      c.DDHQ = { ts: it.ts, url: it.url, title: head.slice(0, 140) };
-      fresh.push({ id: `ddhq:${race.id}`, kind: 'call', outlet: 'DDHQ', title: head.slice(0, 160), url: it.url, ts: it.ts, race_id: race.id, race_name: race.name });
+      if ((it.handle || '').toLowerCase() !== 'decisiondeskhq') continue;
+      const p = DDHQ.parse(it.text);
+      if (!p) continue;
+      for (const race of DDHQ.findRaces(p, this.civic.races)) {
+        const w = DDHQ.findWinner(p, race);
+        if (w && !race.winner) this.civic.applyCall(race.id, w.n, 'DDHQ');
+        const c = (this.news.calls[race.id] = this.news.calls[race.id] || {});
+        if (c.DDHQ) continue;
+        c.DDHQ = { ts: it.ts, url: it.url, title: p.head.slice(0, 140) };
+        fresh.push({ id: 'ddhq:' + race.id, kind: 'call', outlet: 'DDHQ', title: p.head.slice(0, 160), url: it.url, ts: it.ts, race_id: race.id, race_name: race.name });
+      }
     }
     if (fresh.length) this.emitFeed({ items: fresh, calls: this.news.calls });
+  }
+
+  // On boot, pull every DDHQ projection since polls opened so no call is missed across restarts.
+  async backfillDDHQ() {
+    const since = process.env.DDHQ_SINCE || '2026-11-03_10:00:00_UTC';
+    let cursor = '', pages = 0;
+    const all = [];
+    do {
+      const params = { query: 'from:DecisionDeskHQ projects since:' + since, queryType: 'Latest' };
+      if (cursor) params.cursor = cursor;
+      const j = await this.get('/twitter/tweet/advanced_search', params);
+      for (const t of j.tweets || []) all.push({ handle: 'DecisionDeskHQ', text: t.text || '', url: t.url || 'https://x.com/DecisionDeskHQ/status/' + t.id, ts: Date.parse(t.createdAt) || Date.now() });
+      cursor = j.has_next_page ? j.next_cursor : '';
+      pages++;
+      if (cursor) await new Promise((r) => setTimeout(r, SPACING_MS));
+    } while (cursor && pages < 25);
+    this.ddhq(all.sort((a, b) => a.ts - b.ts));
+    this.status.ddhqBackfill = { posts: all.length, at: new Date().toISOString() };
   }
 
   async loop() {
@@ -149,7 +163,7 @@ class XPoll {
   start() {
     if (!this.key) { console.log('xpoll: no TWITTERAPI_IO_KEY'); return; }
     if (!this.byHandle.size) { console.log('xpoll: no X accounts'); return; }
-    this.loop().catch((e) => console.error('xpoll fatal', e));
+    this.backfillDDHQ().catch((e) => { this.status.lastError = 'ddhq backfill: ' + e.message; }).finally(() => this.loop().catch((e) => console.error('xpoll fatal', e)));
   }
 }
 
