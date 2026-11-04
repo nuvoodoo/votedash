@@ -12,6 +12,7 @@ const CLOB = 'https://clob.polymarket.com/prices-history';
 const UA = { 'user-agent': 'VoteDash/1.0 (+https://votedash.net)' };
 const ELECTION_DAY = Date.parse('2026-11-03T10:00:00Z'); // polls open in the East
 const PM_LINE = 0.55;
+const PARTY = { D: 'Democrat', R: 'Republican', I: 'independent' };
 const MIN_RACES = 10; // scored races a source needs to be ranked
 // CNN and Pollgebra calls already made when we began reading those sources carry
 // the time we first saw them, not the time of the call; only later calls are timed.
@@ -92,18 +93,31 @@ class CallTimes {
     }
   }
 
-  // When the winner's market reached 55% and held it through the first accurate call.
-  // Already at 55% or more when Election Day began: pre.
+  async history(tok, endTs) {
+    const u = `${CLOB}?market=${tok}&startTs=${Math.floor(ELECTION_DAY / 1000)}&endTs=${endTs}&fidelity=1`;
+    const res = await fetch(u, { headers: UA, signal: AbortSignal.timeout(20000) });
+    if (!res.ok) throw new Error(`clob HTTP ${res.status}`);
+    return ((await res.json()).history || []).filter((x) => x && x.t && x.p != null).sort((a, b) => a.t - b.t);
+  }
+
+  // Polymarket's call: when the winner's market reached 55% and held it through the
+  // first accurate call (pre: already there when Election Day began). A losing
+  // market at 55% or more when Election Day began is a wrong call.
   async pmSignal(race, ev, firstCall) {
     const mk = ev.markets.find((m) => m.party === race.winner.p);
     const tok = mk && this.tokens[mk.id];
     if (!tok) return null;
     const end = Math.floor((firstCall || Date.now()) / 1000) + 3600;
-    const u = `${CLOB}?market=${tok}&startTs=${Math.floor(ELECTION_DAY / 1000)}&endTs=${end}&fidelity=1`;
-    const res = await fetch(u, { headers: UA, signal: AbortSignal.timeout(20000) });
-    if (!res.ok) throw new Error(`clob HTTP ${res.status}`);
-    const h = ((await res.json()).history || []).filter((x) => x && x.t && x.p != null).sort((a, b) => a.t - b.t);
+    const url = `https://polymarket.com/event/${ev.slug}`;
+    const h = await this.history(tok, end);
     if (!h.length) return null;
+    if (h[0].p < PM_LINE) {
+      for (const m of ev.markets) {
+        if (m === mk || !this.tokens[m.id]) continue;
+        const o = await this.history(this.tokens[m.id], Math.floor(ELECTION_DAY / 1000) + 3600);
+        if (o.length && o[0].p >= PM_LINE) return { ts: ELECTION_DAY, pre: true, wrong: true, fav: m.party, url };
+      }
+    }
     const until = firstCall ? firstCall / 1000 : Infinity;
     let start = null;
     for (const x of h) {
@@ -111,7 +125,6 @@ class CallTimes {
       if (x.p >= PM_LINE) { if (start == null) start = x.t; } else start = null;
     }
     if (start == null) return null;
-    const url = `https://polymarket.com/event/${ev.slug}`;
     return start === h[0].t ? { ts: ELECTION_DAY, pre: true, url } : { ts: start * 1000, pre: false, url };
   }
 
@@ -122,7 +135,7 @@ class CallTimes {
 
   races() {
     const out = [];
-    const ids = new Set([...Object.keys(this.news.calls), ...Object.keys(this.posted)]);
+    const ids = new Set([...Object.keys(this.news.calls), ...Object.keys(this.posted), ...Object.keys(this.pm)]);
     for (const id of ids) {
       const race = this.civic.races.get(Number(id));
       if (!race || !race.winner) continue;
@@ -132,6 +145,8 @@ class CallTimes {
       for (const [src, c] of Object.entries(this.posted[id] || {})) if (c && c.ts && (!best[src] || c.ts < best[src].ts)) best[src] = c;
       const list = Object.entries(best)
         .map(([src, c]) => ({ src, ts: c.ts, url: c.url, title: String(c.title || '').slice(0, 160), v: verdict(src, c, race) }));
+      const pm = this.pm[race.id];
+      if (pm) list.push({ src: 'Polymarket', ts: pm.ts, url: pm.url, pre: pm.pre, title: pm.wrong ? `Polymarket favored the ${PARTY[pm.fav] || pm.fav} at 55% or more` : `Polymarket: ${race.winner.n} at 55% or more`, v: pm.wrong ? 'wrong' : 'accurate' });
       if (!list.length) continue;
       list.sort((a, b) => a.ts - b.ts);
       out.push({ id: race.id, name: race.name, cat: race.cat, state: race.state, district: race.district, winner: { n: race.winner.n, p: race.winner.p }, calls: list, pm: this.pm[race.id] || null });
@@ -148,7 +163,7 @@ class CallTimes {
       const race = this.raceFor(cat, st);
       if (!race) continue;
       const r = byRace.get(race.id);
-      const first = r && r.calls.find((c) => c.v === 'accurate');
+      const first = r && r.calls.find((c) => c.v === 'accurate' && c.src !== 'Polymarket');
       try {
         const s = await this.pmSignal(race, ev, first && first.ts);
         if (s) { this.pm[race.id] = s; n++; } else delete this.pm[race.id];
@@ -174,12 +189,14 @@ class CallTimes {
       if (ok.length < 2) continue;
       scored++;
       r.scored = true;
-      const t0 = ok[0].ts;
+      // "Behind first" runs from the first timed call; Polymarket already at 55% when Election Day began has no time.
+      const t0 = ok[0].ts, timed = ok.find((c) => !c.pre);
       for (const c of ok) {
         const pts = (100 * ok.filter((x) => x.ts > c.ts).length) / (ok.length - 1);
         const s = S(c.src);
         s.races++; s.pts += pts; c.pts = Math.round(pts);
-        if (c.ts === t0) s.firsts++; else s.behind.push(c.ts - t0);
+        if (c.ts === t0) s.firsts++;
+        if (!c.pre && timed && c.ts > timed.ts) s.behind.push(c.ts - timed.ts);
       }
     }
     const board = Object.values(src).map((s) => {
@@ -191,8 +208,8 @@ class CallTimes {
     let priced = 0, before = 0, preDay = 0;
     for (const r of races) {
       if (!r.pm) continue;
-      const f = r.calls.find((c) => c.v === 'accurate');
-      if (!f) continue;
+      const f = r.calls.find((c) => c.v === 'accurate' && c.src !== 'Polymarket');
+      if (!f || r.pm.wrong) continue;
       priced++;
       if (r.pm.pre) preDay++;
       if (r.pm.ts <= f.ts) before++;

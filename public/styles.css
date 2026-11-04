@@ -253,6 +253,7 @@ button { cursor: pointer; }
 .call-tag.civic { background: var(--amber); color: var(--ink); }
 .call-tag.pg { background: var(--pm-fg); color: #fff; }
 .call-tag.ddhq { background: var(--dem); color: #fff; }
+.call-tag.pm { background: var(--pm-bg); color: var(--pm-fg); box-shadow: inset 0 0 0 1px var(--pm-b); }
 .called-note { font-size: 12px; color: var(--ink-2); }
 .avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; object-position: top; vertical-align: middle; margin-right: 6px; background: var(--paper-2); }
 .cands .cn { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -462,6 +463,7 @@ button { cursor: pointer; }
 .ct-mark.call.ddhq { background: var(--dem); color: #fff; }
 .ct-mark.call.wrong { background: var(--surface); color: var(--rep); box-shadow: inset 0 0 0 2px var(--rep), 0 0 0 2px var(--surface); }
 .ct-mark.pm { width: 12px; height: 12px; margin-top: 2px; background: var(--pm-fg); transform: translateX(-50%) rotate(45deg); box-shadow: 0 0 0 2px var(--surface); }
+.ct-mark.pm.wrong { background: var(--surface); box-shadow: inset 0 0 0 2px var(--rep), 0 0 0 2px var(--surface); }
 .ct-mark.pm.pre { background: var(--pm-bg); box-shadow: inset 0 0 0 2px var(--pm-fg), 0 0 0 2px var(--surface); }
 .ct-axis { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--steel); margin: 12px 0 8px; font-variant-numeric: tabular-nums; }
 .ct-seq { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }

@@ -484,7 +484,7 @@
     return CT.loading;
   }
   setInterval(() => { if (state.view === 'calls' && !state.raceId) loadCalls(true).then(renderCalls).catch(() => {}); }, 60000);
-  const srcClass = (k) => (k === 'civicAPI' ? ' civic' : k === 'Pollgebra' ? ' pg' : k === 'DDHQ' ? ' ddhq' : '');
+  const srcClass = (k) => (k === 'civicAPI' ? ' civic' : k === 'Pollgebra' ? ' pg' : k === 'DDHQ' ? ' ddhq' : k === 'Polymarket' ? ' pm' : '');
   function fmtDur(ms) {
     const m = Math.round(Math.abs(ms) / 60000);
     if (m < 1) return 'under 1 min';
@@ -496,25 +496,26 @@
   // Calls that count on the track: accurate and wrong ones; headlines that name no winner stay off.
   const ctEvents = (r) => r.calls.filter((c) => c.v !== 'unverified');
 
+  // Polymarket at 55% or more before Election Day began sits pinned at the left edge, off the time scale.
   function raceTimeline(r) {
     const calls = ctEvents(r);
-    const ok = calls.filter((c) => c.v === 'accurate');
-    const first = ok.length ? ok[0].ts : null;
-    const pts = calls.map((c) => c.ts).concat(r.pm && !r.pm.pre ? [r.pm.ts] : []);
+    const timed = calls.filter((c) => !c.pre);
+    const okTimed = timed.filter((c) => c.v === 'accurate');
+    const first = okTimed.length ? okTimed[0].ts : null;
+    const pts = timed.length ? timed.map((c) => c.ts) : calls.map((c) => c.ts);
     const t0 = Math.min(...pts), t1 = Math.max(...pts), span = Math.max(t1 - t0, 60000);
     const pos = (ts) => ((ts - t0) / span) * 100;
-    const track = el('div', { class: 'ct-track' + (r.pm && r.pm.pre ? ' pre' : '') });
+    const track = el('div', { class: 'ct-track' + (calls.some((c) => c.pre) ? ' pre' : '') });
     const marks = [];
-    if (r.pm) marks.push({ kind: 'pm', ts: r.pm.pre ? t0 : r.pm.ts, x: r.pm.pre ? 0 : pos(r.pm.ts), label: r.pm.pre ? 'Polymarket 55%+ from the start of Election Day' : `Polymarket 55%+ at ${fmtShort(r.pm.ts)}` });
-    calls.forEach((c) => marks.push({ kind: 'call', c, ts: c.ts, x: pos(c.ts), label: `${c.src} ${c.v === 'wrong' ? 'called the wrong candidate' : 'called it'} at ${fmtShort(c.ts)}` }));
+    calls.forEach((c) => marks.push({ c, x: c.pre ? 0 : pos(c.ts), label: c.src === 'Polymarket' ? c.title + (c.pre ? ' before Election Day' : ` at ${fmtShort(c.ts)}`) : `${c.src} ${c.v === 'wrong' ? 'called the wrong candidate' : 'called it'} at ${fmtShort(c.ts)}` }));
     marks.sort((a, b) => a.x - b.x);
     const lanes = [];
     for (const m of marks) {
       let lane = lanes.findIndex((x) => m.x - x >= 6);
       if (lane < 0) { lane = lanes.length < 3 ? lanes.length : lanes.indexOf(Math.min(...lanes)); }
       lanes[lane] = m.x;
-      const node = m.kind === 'pm'
-        ? el('span', { class: 'ct-mark pm' + (r.pm.pre ? ' pre' : ''), title: m.label, 'aria-hidden': 'true' })
+      const node = m.c.src === 'Polymarket'
+        ? el('span', { class: 'ct-mark pm' + (m.c.pre ? ' pre' : '') + (m.c.v === 'wrong' ? ' wrong' : ''), title: m.label, 'aria-hidden': 'true' })
         : el('span', { class: 'ct-mark call' + srcClass(m.c.src) + (m.c.v === 'wrong' ? ' wrong' : ''), title: m.label, 'aria-hidden': 'true' }, m.c.src.slice(0, 1));
       node.style.left = `${m.x}%`; node.style.bottom = `${lane * 20 - 8}px`; if (lane) node.style.setProperty('--stem', `${lane * 20 - 8}px`);
       track.append(node);
@@ -522,14 +523,6 @@
     track.style.height = `${Math.max(1, lanes.length) * 20}px`;
     const axis = el('div', { class: 'ct-axis' }, el('span', null, fmtShort(t0) + (TZ ? ' ' + TZ : '')), t1 > t0 ? el('span', null, fmtShort(t1)) : null);
     const seq = el('ol', { class: 'ct-seq' });
-    if (r.pm) {
-      const lead = first != null && r.pm.ts <= first && !r.pm.pre ? `${fmtDur(first - r.pm.ts)} before the first call` : null;
-      app(seq, el('li', { class: 'ct-step pm' },
-        el('span', { class: 'ct-pos' }, el('span', { class: 'ct-dia', 'aria-hidden': 'true' })),
-        el('a', { class: 'pm-lbl', href: r.pm.url, target: '_blank', rel: 'noopener' }, 'Polymarket 55%+'),
-        el('span', { class: 'ct-when' }, r.pm.pre ? 'before Election Day' : fmtShort(r.pm.ts)),
-        lead ? el('span', { class: 'ct-delta' }, lead) : null));
-    }
     let n = 0;
     for (const c of calls) {
       const right = c.v === 'accurate';
@@ -537,8 +530,8 @@
       app(seq, el('li', { class: 'ct-step' + (right ? '' : ' wrong') },
         el('span', { class: 'ct-pos' }, right ? String(n) : '×'),
         el('a', { class: 'call-tag' + srcClass(c.src), href: c.url, target: '_blank', rel: 'noopener', title: c.title }, c.src),
-        el('span', { class: 'ct-when' }, fmtShort(c.ts)),
-        el('span', { class: 'ct-delta' }, !right ? 'wrong candidate' : c.ts === first ? 'first' : `+${fmtDur(c.ts - first)}`)));
+        el('span', { class: 'ct-when' }, c.pre ? 'before Election Day' : fmtShort(c.ts)),
+        el('span', { class: 'ct-delta' }, !right ? (c.src === 'Polymarket' ? 'favored the loser' : 'wrong candidate') : c.pre ? '55%+ going in' : c.ts === first ? 'first' : c.ts < first ? `${fmtDur(first - c.ts)} early` : `+${fmtDur(c.ts - first)}`)));
     }
     return el('div', { class: 'ct-line' }, track, axis, seq);
   }
@@ -570,13 +563,13 @@
     if (!d) { box.replaceChildren(el('h1', null, 'Who called it'), el('p', { class: 'empty' }, 'Loading calls…')); loadCalls().then(renderCalls).catch(() => {}); return; }
     const head = el('div', { class: 'ct-head' },
       el('h1', null, 'Who called it'),
-      el('p', { class: 'ct-dek' }, `Ranked by who called the winner first. In each of the ${fmtN(d.scoredRaces)} races called by two or more sources, the first source to call the winner gets 100 points and the last gets 0; a call for the wrong candidate scores 0. A source's score is its average.`));
+      el('p', { class: 'ct-dek' }, `Ranked by who called the winner first. In each of the ${fmtN(d.scoredRaces)} races called by two or more sources, the first source to call the winner gets 100 points and the last gets 0; a call for the wrong candidate scores 0. A source's score is its average. Polymarket's call is the moment the winner's market reached 55% and held; a market favoring the loser at 55% or more when Election Day began is a wrong call.`));
     const ranked = d.board.filter((b) => b.ranked), rest = d.board.filter((b) => !b.ranked && b.races);
     const cols = el('li', { class: 'ct-row ct-cols', 'aria-hidden': 'true' }, el('span', null, '#'), el('span', null, 'Source'), el('span', null, 'Score'), el('span', null, 'First'), el('span', null, 'Scored'), el('span', null, 'Behind first'), el('span', null, 'Wrong'));
     const list = el('ol', { class: 'ct-board' }, cols, ...ranked.map((b, i) => boardRow(b, i + 1)));
     const extra = rest.length ? el('div', { class: 'ct-rest' }, el('h3', null, `Fewer than ${d.minRaces} scored races`), el('ol', { class: 'ct-board' }, ...rest.map((b) => boardRow(b, 0)))) : null;
     const pm = d.pm && d.pm.races ? el('aside', { class: 'ct-pmcard' },
-      el('div', { class: 'ct-pmhead' }, el('span', { class: 'ct-dia', 'aria-hidden': 'true' }), el('b', null, 'Polymarket 55%+'), el('span', null, 'Market odds, not a call')),
+      el('div', { class: 'ct-pmhead' }, el('span', { class: 'ct-dia', 'aria-hidden': 'true' }), el('b', null, 'Polymarket 55%+')),
       el('p', null, el('b', null, `${d.pm.beforeCall} of ${d.pm.races}`), ' priced races had the winner at 55% or better before anyone called it.'),
       el('p', null, el('b', null, fmtN(d.pm.preDay)), ' were there before Election Day began.', ...(d.pm.nightRaces ? [' The other ', el('b', null, fmtN(d.pm.nightRaces)), ' crossed on election night, a median ', el('b', null, fmtDur(d.pm.medianLead)), ' ahead of the first call.'] : []))) : null;
 
