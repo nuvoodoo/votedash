@@ -26,7 +26,7 @@ function broadcast(event, payload) {
 const civic = new Civic((ev, payload) => {
   if (ev === 'races') { snapshotDirty = true; broadcast('races', { ...payload, ts: Date.now() }); }
   else if (ev === 'calls') { feedCalls(payload); }
-  else if (ev === 'ready') { snapshotDirty = true; }
+  else if (ev === 'ready') { snapshotDirty = true; broadcast('reload', { ts: Date.now() }); }
 });
 const news = new News(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
 const social = new Social((ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });

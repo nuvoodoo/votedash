@@ -52,6 +52,7 @@
     state.bop = s.bop; state.feed = s.feed; state.social = s.social; state.calls = s.calls || {}; state.forecastTotals = s.forecastTotals;
     state.lastTs = s.status?.civic?.lastOk ? Date.parse(s.status.civic.lastOk) : s.ts;
     renderAll();
+    if (!s.races.length) setTimeout(() => loadSnapshot().catch(() => {}), 5000);
   }
 
   function applyRaces(rows) {
@@ -65,6 +66,7 @@
     const es = new EventSource('/events');
     state.sse = es;
     es.addEventListener('hello', () => { setStale(false); });
+    es.addEventListener('reload', () => { loadSnapshot().catch(() => {}); });
     es.addEventListener('races', (e) => {
       const d = JSON.parse(e.data);
       const ids = applyRaces(d.rows);
@@ -99,7 +101,7 @@
 
   // Polling fallback: if no SSE message in 70s, refetch snapshot.
   let lastMsg = Date.now();
-  ['races', 'tick', 'feed', 'social', 'hello'].forEach((ev) => document.addEventListener(ev, () => {}));
+  ['races', 'tick', 'feed', 'social', 'hello', 'reload'].forEach((ev) => document.addEventListener(ev, () => {}));
   setInterval(() => {
     if (!state.sse || state.sse.readyState === 2 || Date.now() - lastMsg > 70000) {
       loadSnapshot().then(() => { lastMsg = Date.now(); }).catch(() => setStale(true));
@@ -107,7 +109,7 @@
     }
   }, 30000);
   const origConnect = connect;
-  connect = function () { origConnect(); state.sse.onmessage = null; ['races', 'tick', 'feed', 'social', 'hello'].forEach((ev) => state.sse.addEventListener(ev, () => { lastMsg = Date.now(); })); };
+  connect = function () { origConnect(); state.sse.onmessage = null; ['races', 'tick', 'feed', 'social', 'hello', 'reload'].forEach((ev) => state.sse.addEventListener(ev, () => { lastMsg = Date.now(); })); };
 
   function setStale(v) { state.stale = v; $('#live').classList.toggle('stale', v); renderUpdated(); }
   function renderUpdated() {

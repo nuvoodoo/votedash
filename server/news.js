@@ -199,6 +199,7 @@ class News {
   }
 
   async poll() {
+    if (!this.civic.races.size) return; // wait for the race index so headlines can be matched
     const results = await Promise.allSettled(SOURCES.map((s) => this.fetchSource(s)));
     let fresh = [];
     results.forEach((r, i) => {
