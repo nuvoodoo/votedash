@@ -203,7 +203,7 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(req, res, { ok: true, added: n, total: social.items.size });
     }
 
-    if (p === '/api/status') return sendJSON(req, res, { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, clients: clients.size, races: civic.races.size, version: VERSION });
+    if (p === '/api/status') return sendJSON(req, res, { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, pollgebra: pollgebra.status, clients: clients.size, races: civic.races.size, version: VERSION });
 
     // static + SPA routes
     if (p === '/' || p.startsWith('/race/') || p === '/feed' || p.startsWith('/feed/') || p === '/board' || p.startsWith('/board/')) return sendFile(req, res, path.join(PUBLIC, 'index.html'));
