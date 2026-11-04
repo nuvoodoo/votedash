@@ -209,6 +209,11 @@ class Civic {
       const sig = this.signature(row);
       const prev = this.races.get(row.id);
       if (prev && this.sig.get(row.id) === sig && prev.rating === row.rating) continue;
+      // An alternate source (CNN, LA County) already holds a larger count: keep it, but take civicAPI's call if it has one.
+      if (prev && prev.src && prev.src !== 'civicAPI' && row.total < prev.total) {
+        if (row.winner && !prev.winner) { prev.winner = row.winner; prev.called = true; for (const c of prev.cands) c.w = !!row.cands.find((x) => x.n === c.n && x.w); prev.upd = Date.now(); this.sig.set(row.id, this.signature(prev)); changed.push(prev); }
+        continue;
+      }
       // Last update: when the votes, reporting or call last changed (kept from the previous row if only the rating moved).
       row.upd = prev && (this.sig.get(row.id) === sig || this.seedSig.get(row.id) === sig) ? prev.upd : Date.now();
       this.seedSig.delete(row.id);
@@ -235,6 +240,33 @@ class Civic {
     if (changed.length && !this.firstLoad) this.emit('races', { rows: changed, bop: this.bop() });
     if (calls.length) this.emit('calls', calls);
     return changed.length;
+  }
+
+  // Merge vote counts from another source into a race when they are larger
+  // (fresher) than what we hold. Candidates match by name.
+  applyAlt(raceId, src, altCands, meta) {
+    const row = this.races.get(raceId); if (!row) return false;
+    const altTotal = altCands.reduce((s, c) => s + (c.v || 0), 0);
+    if (altTotal <= 0) return false;
+    if (row.src === src ? altTotal < (row.altTotal || 0) : altTotal <= row.total) return false;
+    const pairs = [];
+    for (const a of altCands) {
+      if (/^write-?in/i.test(a.n) || a.v <= 0 && !row.cands.find((c) => sameName(c.n, a.n))) continue;
+      const c = row.cands.find((c) => c.n !== 'Write-in' && sameName(c.n, a.n) && !pairs.some((p) => p[0] === c));
+      if (!c) return false; // unknown candidate: do not mix sources
+      pairs.push([c, a]);
+    }
+    if (!pairs.length) return false;
+    for (const [c, a] of pairs) c.v = a.v;
+    const total = row.cands.reduce((s, c) => s + c.v, 0);
+    for (const c of row.cands) c.pc = total ? Math.round((c.v / total) * 1000) / 10 : 0;
+    row.cands.sort((a, b) => b.v - a.v);
+    row.total = total; row.altTotal = altTotal; row.src = src; row.srcTs = meta.ts || Date.now();
+    if (meta.pct != null && meta.pct > 0) row.pct = meta.pct;
+    row.upd = Date.now();
+    this.sig.set(row.id, this.signature(row));
+    if (!this.firstLoad) this.emit('races', { rows: [row], bop: this.bop() });
+    return true;
   }
 
   bop() {

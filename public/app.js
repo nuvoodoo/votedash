@@ -19,7 +19,7 @@
   const fmtTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: 'America/New_York' }) + ' ET';
   const fmtShort = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
   const PARTY = { D: 'Dem', R: 'Rep', I: 'Ind', O: '' };
-  const OUTLET_ORDER = ['DDHQ', 'AP', 'NBC', 'CNN', 'Fox', 'NYT', 'ABC', 'CBS', 'Reuters', 'Pollgebra', 'civicAPI'];
+  const OUTLET_ORDER = ['DDHQ', 'AP', 'CNN', 'NBC', 'Fox', 'NYT', 'ABC', 'CBS', 'Reuters', 'Pollgebra', 'civicAPI'];
 
   const state = {
     races: new Map(), bop: null, feed: [], social: [], calls: {}, forecastTotals: null,
@@ -284,7 +284,8 @@
         r.cat === 'governor' && r.incParty ? el('span', { class: 'open-seat' }, `Seat held by ${r.incParty}`) : null,
         r.called && r.winner ? el('span', { class: 'called-note' }, `Winner: ${r.winner.n}`) : null,
         pmChip(r, false),
-        r.upd ? el('span', { class: 'upd', title: 'Last change to this race on VoteDash' }, `Updated ${fmtShort(r.upd)}`) : null));
+        r.upd ? el('span', { class: 'upd', title: 'Last change to this race on VoteDash' }, `Updated ${fmtShort(r.upd)}`) : null,
+        r.src && r.src !== 'civicAPI' ? el('span', { class: 'src-tag', title: `Vote counts from ${r.src}` }, r.src) : null));
     const leadCell = el('td', { class: 'leader' });
     if (r.total > 0 && a) {
       app(leadCell, 
@@ -349,6 +350,7 @@
       const meta = el('div', { class: 'meta' },
         el('span', null, el('b', null, `${Math.round(d ? d.pct : r.pct)}%`), ' reporting'),
         r.upd ? el('span', null, 'Last update ', el('b', null, fmtTime(r.upd))) : null,
+        r.src && r.src !== 'civicAPI' ? el('span', null, 'Counts from ', el('b', null, r.src), r.srcTs ? ` as of ${fmtShort(r.srcTs)}` : '') : null,
         r.rating ? el('span', null, 'Rating ', el('b', null, r.rating)) : null,
         r.open ? el('span', null, el('b', null, 'Open seat')) : null,
         r.incParty && (r.open || r.cat === 'governor') ? el('span', null, 'Seat held by ', el('b', null, r.incParty)) : null,

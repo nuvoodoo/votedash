@@ -10,6 +10,8 @@ const { SocialPoll } = require('./socialpoll');
 const { XPoll } = require('./xpoll');
 const { Polymarket } = require('./polymarket');
 const { Pollgebra } = require('./pollgebra');
+const { LAVote } = require('./lavote');
+const { CNN } = require('./cnn');
 const { Usage } = require('./usage');
 const usage = new Usage();
 const USERS_KEY = process.env.USERS_KEY || '';
@@ -71,7 +73,7 @@ const civic = new Civic((ev, payload) => {
       if (Array.isArray(sn.social) && !social.items.size) social.ingestItems(sn.social);
       console.log(`seeded feed ${news.items.length}, social ${social.items.size}`);
     }
-    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start(); polymarket.start(); pollgebra.start();
+    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start(); polymarket.start(); pollgebra.start(); lavote.start(); cnn.start();
   }
 });
 const news = new News(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
@@ -79,6 +81,8 @@ const social = new Social((ev, payload) => { snapshotDirty = true; broadcast(ev,
 const socialPoll = new SocialPoll(civic, social);
 const xPoll = new XPoll(civic, social, process.env.TWITTERAPI_IO_KEY || '', news, (payload) => { news.items = payload.items.concat(news.items).slice(0, 500); snapshotDirty = true; broadcast('feed', payload); });
 const polymarket = new Polymarket(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
+const lavote = new LAVote(civic);
+const cnn = new CNN(civic, news, (payload) => { if (payload.items.length) news.items = payload.items.concat(news.items).slice(0, 500); snapshotDirty = true; broadcast('feed', payload); });
 const pollgebra = new Pollgebra(civic, news, (payload) => { if (payload.items.length) news.items = payload.items.concat(news.items).slice(0, 500); snapshotDirty = true; broadcast('feed', payload); });
 
 // civicAPI winner flips become feed items too.
@@ -104,7 +108,7 @@ function buildSnapshot() {
   const body = {
     ts: Date.now(),
     version: VERSION,
-    status: { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, pollgebra: pollgebra.status, clients: clients.size },
+    status: { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, pollgebra: pollgebra.status, lavote: lavote.status, cnn: cnn.status, clients: clients.size },
     bop: civic.bop(),
     national: civic.national,
     forecastTotals: {
@@ -219,7 +223,7 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(req, res, { ok: true, added: n, total: social.items.size });
     }
 
-    if (p === '/api/status') return sendJSON(req, res, { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, pollgebra: pollgebra.status, clients: clients.size, races: civic.races.size, version: VERSION });
+    if (p === '/api/status') return sendJSON(req, res, { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, pollgebra: pollgebra.status, lavote: lavote.status, cnn: cnn.status, clients: clients.size, races: civic.races.size, version: VERSION });
 
     // static + SPA routes
     if (p === '/' || p.startsWith('/race/') || p === '/feed' || p.startsWith('/feed/') || p === '/board' || p.startsWith('/board/')) {
