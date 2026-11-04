@@ -384,6 +384,7 @@
       container.querySelector('.map-stage').appendChild(svgEl);
       bind(svgEl);
       lastMode = mode; render.lastCount = countSig;
+      updateZoomBar();
     }
     if (zoom && !ctx.stateFilter) clearZoom();
     paint();
