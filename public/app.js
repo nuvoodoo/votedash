@@ -225,7 +225,6 @@
     const defs = [['senate', 'Senate', 'seats'], ['house', 'House', 'seats'], ['governor', 'Governors', 'states']];
     for (const [k, title, unit] of defs) {
       const d = b[k]; if (!d) continue;
-      const fc = state.forecastTotals && state.forecastTotals[k];
       const dw = (d.D / d.total) * 100, rw = (d.R / d.total) * 100, iw = (d.I / d.total) * 100;
       const dh = (d.hold.D / d.total) * 100, rh = (d.hold.R / d.total) * 100;
       const control = d.D >= d.majority ? 'D' : d.R >= d.majority ? 'R' : null;
@@ -245,7 +244,6 @@
         el('div', { class: 'bop-foot' },
           el('span', null, el('b', null, String(d.remaining)), ` of ${d.onBallot} ${unit} uncalled`),
           el('span', null, k === 'house' ? '' : `Not up tonight: D ${d.hold.D}, R ${d.hold.R}`),
-          fc ? el('span', { title: 'civicAPI forecast' }, `Forecast D ${fc.democrat} R ${fc.republican}, ${fc.tossup} tossups`) : null,
           state.pm.control && state.pm.control[k] ? el('a', { class: 'pm-chip', href: state.pm.control[k].url, target: '_blank', rel: 'noopener', title: 'Polymarket odds of control. Trader odds, not results.' }, el('span', { class: 'pm-lbl' }, 'Polymarket'), el('span', { class: 'p-D' }, `D ${Math.round(state.pm.control[k].D)}%`), el('span', { class: 'p-R' }, `R ${Math.round(state.pm.control[k].R)}%`)) : null)));
     }
   }
