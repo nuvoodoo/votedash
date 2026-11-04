@@ -73,7 +73,7 @@ function category(r) {
   return 'statewide';
 }
 
-async function getJSON(url, { tries = 3, timeout = 40000 } = {}) {
+async function getJSON(url, { tries = 3, timeout = 90000 } = {}) {
   let lastErr;
   for (let i = 0; i < tries; i++) {
     try {

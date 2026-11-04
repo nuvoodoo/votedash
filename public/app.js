@@ -23,7 +23,7 @@
 
   const state = {
     races: new Map(), bop: null, feed: [], social: [], calls: {}, forecastTotals: null,
-    cat: 'senate', q: '', stateFilter: null, uncalled: false, sort: 'state', feedTab: 'all', view: 'board', raceId: null,
+    cat: 'senate', q: '', stateFilter: null, sbKind: 'all', pm: { races: {}, control: {} }, uncalled: false, sort: 'state', feedTab: 'all', view: 'board', raceId: null,
     lastTs: 0, sse: null, stale: false, unseenFeed: 0,
   };
 
@@ -50,7 +50,7 @@
     const s = await r.json();
     if (!s.races.length && state.races.size) { setTimeout(() => loadSnapshot().catch(() => {}), 5000); return; } // keep last results
     state.races = new Map(s.races.map((x) => [x.id, x]));
-    state.southBayTiles = s.southBayTiles || state.southBayTiles; state.bop = s.bop; if (s.feed.length || !state.feed.length) state.feed = s.feed; if (s.social.length || !state.social.length) state.social = s.social; state.calls = Object.keys(s.calls || {}).length ? s.calls : state.calls; state.forecastTotals = s.forecastTotals || state.forecastTotals;
+    state.southBayTiles = s.southBayTiles || state.southBayTiles; if (s.polymarket && s.polymarket.ts) state.pm = s.polymarket; state.bop = s.bop; if (s.feed.length || !state.feed.length) state.feed = s.feed; if (s.social.length || !state.social.length) state.social = s.social; state.calls = Object.keys(s.calls || {}).length ? s.calls : state.calls; state.forecastTotals = s.forecastTotals || state.forecastTotals;
     state.lastTs = s.status?.civic?.lastOk ? Date.parse(s.status.civic.lastOk) : s.ts;
     renderAll();
     if (!s.races.length) setTimeout(() => loadSnapshot().catch(() => {}), 5000);
@@ -90,6 +90,11 @@
       patchRows(d.items.filter((i) => i.race_id).map((i) => i.race_id));
       if (state.raceId && d.items.some((i) => i.race_id === state.raceId)) renderDetail(true);
     });
+    es.addEventListener('polymarket', (e) => {
+      state.pm = JSON.parse(e.data); renderBop();
+      patchRows(Object.keys(state.pm.races).map(Number));
+      if (state.raceId && state.pm.races[state.raceId]) renderDetail(false);
+    });
     es.addEventListener('social', (e) => {
       const d = JSON.parse(e.data);
       const seen = new Set(state.social.map((s) => s.id));
@@ -102,7 +107,7 @@
 
   // Polling fallback: if no SSE message in 70s, refetch snapshot.
   let lastMsg = Date.now();
-  ['races', 'tick', 'feed', 'social', 'hello', 'reload'].forEach((ev) => document.addEventListener(ev, () => {}));
+  ['races', 'tick', 'feed', 'social', 'hello', 'reload', 'polymarket'].forEach((ev) => document.addEventListener(ev, () => {}));
   setInterval(() => {
     if (!state.sse || state.sse.readyState === 2 || Date.now() - lastMsg > 70000) {
       loadSnapshot().then(() => { lastMsg = Date.now(); }).catch(() => setStale(true));
@@ -144,6 +149,14 @@
     if (r.cat === 'governor') return `${r.stateName} Governor`;
     if (r.cat === 'local') return r.name.replace(/^California /, '').replace(/^City of /, '');
     return r.name;
+  }
+  function pmChip(r, full) {
+    const m = state.pm && state.pm.races[r.id]; if (!m) return null;
+    const parts = ['D', 'R', 'I'].filter((p) => m[p] != null).map((p) => el('span', { class: 'p-' + p }, `${p} ${Math.round(m[p])}%`));
+    const a = el('a', { class: 'pm-chip', href: m.url, target: '_blank', rel: 'noopener', title: `Polymarket: ${m.title}. Trader odds, not results.` }, el('span', { class: 'pm-lbl' }, 'Polymarket'));
+    parts.forEach((p) => a.append(p));
+    if (full && m.vol) a.append(el('span', { class: 'pm-vol' }, `$${(m.vol / 1e6).toFixed(1)}M`));
+    return a;
   }
   function callTags(r, withCivic) {
     const c = state.calls[r.id] || {};
@@ -188,7 +201,8 @@
         el('div', { class: 'bop-foot' },
           el('span', null, el('b', null, String(d.remaining)), ` of ${d.onBallot} ${unit} uncalled`),
           el('span', null, k === 'house' ? '' : `Not up tonight: D ${d.hold.D}, R ${d.hold.R}`),
-          fc ? el('span', { title: 'civicAPI forecast' }, `Forecast D ${fc.democrat} R ${fc.republican}, ${fc.tossup} tossups`) : null)));
+          fc ? el('span', { title: 'civicAPI forecast' }, `Forecast D ${fc.democrat} R ${fc.republican}, ${fc.tossup} tossups`) : null,
+          state.pm.control && state.pm.control[k] ? el('a', { class: 'pm-chip', href: state.pm.control[k].url, target: '_blank', rel: 'noopener', title: 'Polymarket odds of control. Trader odds, not results.' }, el('span', { class: 'pm-lbl' }, 'Polymarket'), el('span', { class: 'p-D' }, `D ${Math.round(state.pm.control[k].D)}%`), el('span', { class: 'p-R' }, `R ${Math.round(state.pm.control[k].R)}%`)) : null)));
     }
   }
 
@@ -197,6 +211,7 @@
     const q = state.q.trim().toLowerCase();
     let rows = state.cat === 'southbay' ? [...state.races.values()].filter((r) => r.sb) : [...state.races.values()].filter((r) => catOf(r) === state.cat);
     if (state.stateFilter) rows = rows.filter((r) => (state.cat === 'southbay' ? r.sb : r.state) === state.stateFilter);
+    if (state.cat === 'southbay' && state.sbKind !== 'all') rows = rows.filter((r) => (/referendum|proposition|ballot measure/i.test(r.type) ? 'measures' : 'offices') === state.sbKind);
     if (state.uncalled) rows = rows.filter((r) => !r.called);
     if (q) rows = rows.filter((r) => `${r.name} ${r.stateName} ${r.state} ${r.district || ''} ${r.cands.map((c) => c.n).join(' ')}`.toLowerCase().includes(q));
     const key = {
@@ -224,7 +239,8 @@
         state.cat === 'southbay' && r.sb ? el('span', null, r.sb) : null,
         (r.cat === 'house' || r.cat === 'senate' || r.cat === 'governor') ? null : el('span', null, r.type === r.name ? '' : r.type),
         r.rating ? el('span', { class: 'rating ' + ratingClass(r.rating) }, r.rating) : null,
-        r.called && r.winner ? el('span', { class: 'called-note' }, `Winner: ${r.winner.n}`) : null));
+        r.called && r.winner ? el('span', { class: 'called-note' }, `Winner: ${r.winner.n}`) : null,
+        pmChip(r, false)));
     const leadCell = el('td', { class: 'leader' });
     if (r.total > 0 && a) {
       app(leadCell, 
@@ -247,6 +263,13 @@
     app(tb, frag);
     $('#empty').hidden = rows.length > 0;
     $('#map-clear').hidden = !state.stateFilter;
+    const sbBar = $('#sb-bar'); sbBar.hidden = state.cat !== 'southbay';
+    if (state.cat === 'southbay') {
+      const sel = $('#sb-city'); const cities = (state.southBayTiles || []).map((t) => t[0]);
+      if (sel.options.length !== cities.length + 1) { sel.innerHTML = '<option value="">All cities</option>' + cities.map((c) => `<option value="${c}">${c}</option>`).join(''); }
+      sel.value = state.stateFilter || '';
+      $('#sb-kind').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.kind === state.sbKind ? 'true' : 'false'));
+    }
     if (window.VoteMap) VoteMap.render({ cat: state.cat, races: state.races, calls: state.calls, stateFilter: state.stateFilter, southBayTiles: state.southBayTiles,
       onOpen: (id) => go(`/race/${id}`),
       onState: (st) => { state.stateFilter = st === null ? null : (state.stateFilter === st ? null : st); renderBoard(); } }).catch(() => {});
@@ -285,7 +308,8 @@
         d && d.polls_close ? el('span', null, 'Polls close ', el('b', null, fmtShort(d.polls_close))) : null,
         d && d.updated ? el('span', null, 'civicAPI updated ', el('b', null, fmtTime(d.updated))) : null,
         d && d.registered ? el('span', null, 'Registered ', el('b', null, fmtN(d.registered))) : null,
-        d && d.disputed ? el('span', null, el('b', null, 'Disputed')) : null);
+        d && d.disputed ? el('span', null, el('b', null, 'Disputed')) : null,
+        pmChip(r, true));
       app(box, meta);
       if (r.winner || callKeys.length) {
         app(box, el('div', { class: 'call-banner' },
@@ -388,6 +412,8 @@
   function renderAll() { renderBop(); renderUpdated(); renderFeed(); renderMain(); }
 
   // ---- controls ---------------------------------------------------------
+  $('#sb-kind').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.sbKind = b.dataset.kind; renderBoard(); });
+  $('#sb-city').addEventListener('change', (e) => { state.stateFilter = e.target.value || null; renderBoard(); });
   $('#map-clear').addEventListener('click', () => { state.stateFilter = null; renderBoard(); });
   $('#cat-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.cat = b.dataset.cat; state.stateFilter = null; if (state.raceId) go('/board'); else renderBoard(); });
   $('#feed-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.feedTab = b.dataset.feed; renderFeed(); });

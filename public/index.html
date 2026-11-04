@@ -44,6 +44,14 @@
           <button role="tab" data-cat="legislature">State legislatures</button>
           <button role="tab" data-cat="southbay">South Bay</button>
         </div>
+        <div class="subbar" id="sb-bar" hidden>
+          <div class="tabs small" role="tablist" aria-label="South Bay filter" id="sb-kind">
+            <button role="tab" data-kind="all" aria-selected="true">All</button>
+            <button role="tab" data-kind="measures">Measures</button>
+            <button role="tab" data-kind="offices">Offices</button>
+          </div>
+          <label class="sort"><span class="vh">City</span><select id="sb-city"><option value="">All cities</option></select></label>
+        </div>
         <div class="controls">
           <label class="search"><span class="vh">Find a race</span><input id="q" type="search" placeholder="State, district, or candidate" autocomplete="off"></label>
           <label class="check"><input id="uncalled" type="checkbox"> Uncalled only</label>

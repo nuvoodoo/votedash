@@ -193,6 +193,15 @@ button { cursor: pointer; }
 .call-tag:hover { background: var(--ink-2); }
 .call-tag.civic { background: var(--amber); color: var(--ink); }
 .called-note { font-size: 12px; color: var(--ink-2); }
+.pm-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 1px 6px; border: 1px solid #C9B8E6; border-radius: 2px; background: #F3EEFB; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.pm-chip:hover { border-color: #7A5FB0; }
+.pm-chip .pm-lbl { font-weight: 600; color: #4E3A80; }
+.pm-chip .pm-vol { color: var(--ink-2); }
+.pm-chip .p-D, .pm-chip .p-R, .pm-chip .p-I { font-weight: 600; }
+.subbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 8px 0 0; }
+.subbar .tabs { border-bottom: 0; }
+.subbar .tabs button { padding: 6px 10px; border: 1px solid var(--rule); border-radius: 3px; margin: 0; }
+.subbar .tabs button[aria-selected="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
 .empty { color: var(--ink-2); padding: 24px 8px; }
 
 /* Detail */

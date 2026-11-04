@@ -8,6 +8,7 @@ const { News } = require('./news');
 const { Social } = require('./social');
 const { SocialPoll } = require('./socialpoll');
 const { XPoll } = require('./xpoll');
+const { Polymarket } = require('./polymarket');
 
 const PORT = Number(process.env.PORT || 8080);
 const SOCIAL_TOKEN = process.env.SOCIAL_TOKEN || '';
@@ -36,13 +37,14 @@ const civic = new Civic((ev, payload) => {
       if (Array.isArray(sn.social) && !social.items.size) social.ingestItems(sn.social);
       console.log(`seeded feed ${news.items.length}, social ${social.items.size}`);
     }
-    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start();
+    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start(); polymarket.start();
   }
 });
 const news = new News(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
 const social = new Social((ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
 const socialPoll = new SocialPoll(civic, social);
 const xPoll = new XPoll(civic, social, process.env.TWITTERAPI_IO_KEY || '');
+const polymarket = new Polymarket(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
 
 // civicAPI winner flips become feed items too.
 function feedCalls(items) {
@@ -67,7 +69,7 @@ function buildSnapshot() {
   const body = {
     ts: Date.now(),
     version: VERSION,
-    status: { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, xPoll: xPoll.status, clients: clients.size },
+    status: { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, clients: clients.size },
     bop: civic.bop(),
     national: civic.national,
     forecastTotals: {
@@ -77,6 +79,7 @@ function buildSnapshot() {
     },
     races: civic.snapshotRows(),
     southBayTiles: SOUTHBAY_TILES,
+    polymarket: polymarket.data,
     feed: news.items.slice(0, 300),
     calls: news.calls,
     social: social.list().slice(0, 200),
