@@ -159,7 +159,7 @@
       bg.setAttribute('aria-label', `${tdef.label} races`);
       tile.appendChild(bg);
       const label = sv('text', { x: x0 + 5, y: y0 + 13, class: 'tile-lbl' }); label.textContent = tdef.label; tile.appendChild(label);
-      const sb = /sb/.test(cls);
+      const sb = /(^| )sb( |$)/.test(cls);
       const pt = sv('text', sb ? { x: x0 + 5, y: y0 + 26, class: 'tile-lbl pct sbpct', 'data-pct': st } : { x: x0 + w - 5, y: y0 + 13, class: 'tile-lbl pct', 'data-pct': st }); tile.appendChild(pt);
       pctEls[st] = pt;
       const rs = tdef.rs;

@@ -113,6 +113,7 @@ button { cursor: pointer; }
 .cell.lead.D { fill: #8FAAD9; } .cell.lead.R { fill: #E2958F; } .cell.lead.I { fill: #A6C48F; } .cell.lead.O { fill: #B4B8BF; }
 .cell.called.D { fill: var(--dem); } .cell.called.R { fill: var(--rep); } .cell.called.I { fill: var(--ind); } .cell.called.O { fill: var(--oth); }
 .cell:hover, .cell:focus-visible { stroke: var(--ink); stroke-width: 1.5; outline: none; }
+.map-zoom[hidden] { display: none; }
 .map-zoom { display: flex; align-items: center; gap: 12px; padding: 6px 0 8px; }
 .map-zoom .zoom-text { display: flex; flex-direction: column; min-width: 0; }
 .map-zoom .zoom-title { font-weight: 600; }
