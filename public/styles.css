@@ -122,6 +122,8 @@ button { cursor: pointer; }
 .bop-nums { display: flex; justify-content: space-between; align-items: flex-end; margin: 4px 0 2px; }
 .bop-num { font-family: var(--cond); font-weight: 600; font-size: 46px; line-height: 1; }
 .bop-num.d { color: var(--dem); } .bop-num.r { color: var(--rep); }
+.bop-mid { font-family: var(--cond); font-weight: 600; font-size: 30px; line-height: 1; color: var(--steel); text-align: center; align-self: flex-end; }
+.bop-mid small { display: block; font-family: var(--font); font-size: 12px; font-weight: 500; color: var(--ink-2); margin-top: 2px; }
 .bop-num small { display: block; font-family: var(--font); font-size: 12px; font-weight: 500; color: var(--ink-2); margin-top: 2px; }
 .bop-bar { position: relative; height: 22px; background: var(--paper-2); overflow: hidden; }
 .bop-bar .fill { position: absolute; top: 0; bottom: 0; }

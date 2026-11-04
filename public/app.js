@@ -233,6 +233,7 @@
         el('div', { class: 'bop-title' }, el('h2', null, title), el('span', { class: 'need' }, `${d.majority} for control`)),
         el('div', { class: 'bop-nums' },
           el('div', { class: 'bop-num d' }, String(d.D), el('small', null, `Dem${k === 'senate' ? ' + Ind' : ''}${control === 'D' ? ', control' : ''}`)),
+          d.remaining > 0 ? el('div', { class: 'bop-mid' }, String(d.remaining), el('small', null, 'uncalled')) : null,
           el('div', { class: 'bop-num r' }, String(d.R), el('small', { style: 'text-align:right' }, `Rep${control === 'R' ? ', control' : ''}`))),
         el('div', { class: 'bop-bar', role: 'img', 'aria-label': `${title}: Democrats ${d.D}, Republicans ${d.R}, ${d.remaining} ${unit} uncalled` },
           el('div', { class: 'fill d', style: `width:${dw}%` }),
