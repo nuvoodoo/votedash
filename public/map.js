@@ -18,6 +18,7 @@
   const sv = (tag, attrs) => { const n = document.createElementNS(SVGNS, tag); for (const k in attrs || {}) n.setAttribute(k, attrs[k]); return n; };
   const fmtPct = (n) => `${(Math.round((n || 0) * 10) / 10).toFixed(1)}%`;
 
+  const VER = (document.currentScript && (document.currentScript.src.match(/[?&]v=([^&]+)/) || [])[1]) || '1';
   let topo = null, features = null, centroids = {};
   let container, tip, legend, svgEl, note;
   let ctx = { cat: 'senate', races: new Map(), calls: {}, stateFilter: null, onOpen: () => {}, onState: () => {} };
@@ -45,7 +46,8 @@
 
   async function load() {
     if (topo) return;
-    const r = await fetch('/data/states-albers-10m.json', { cache: 'force-cache' });
+    const r = await fetch(`/data/states-albers-10m.json?v=${VER}`);
+    if (!r.ok) throw new Error(`geometry ${r.status}`);
     topo = await r.json();
     features = topojson.feature(topo, topo.objects.states).features.filter((f) => FIPS[f.id] && f.id !== '72');
     for (const f of features) centroids[FIPS[f.id]] = centroidOf(f.geometry);
