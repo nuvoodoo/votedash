@@ -212,6 +212,7 @@ button { cursor: pointer; }
   .mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; background: var(--ink); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); gap: 6px; }
   .mobile-nav a { flex: 1; text-align: center; padding: 10px; }
   .mobile-nav a[aria-current="page"] { background: rgba(255,255,255,.14); }
+  .badge[hidden] { display: none; }
   .badge { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--amber); color: var(--ink); font-size: 12px; font-weight: 600; margin-left: 4px; }
   .bop { grid-template-columns: 1fr; gap: 10px; padding: 12px 16px 4px; }
   .bop-row { border-top-width: 1px; }
