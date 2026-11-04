@@ -13,6 +13,7 @@
     for (const k of kids) if (k != null) n.append(k);
     return n;
   };
+  const app = (n, ...kids) => { for (const k of kids) if (k != null) n.append(k); return n; };
   const fmtN = (n) => (n || 0).toLocaleString('en-US');
   const fmtPct = (n) => `${(Math.round((n || 0) * 10) / 10).toFixed(1)}%`;
   const fmtTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: 'America/New_York' }) + ' ET';
@@ -168,7 +169,7 @@
       const dw = (d.D / d.total) * 100, rw = (d.R / d.total) * 100, iw = (d.I / d.total) * 100;
       const dh = (d.hold.D / d.total) * 100, rh = (d.hold.R / d.total) * 100;
       const control = d.D >= d.majority ? 'D' : d.R >= d.majority ? 'R' : null;
-      box.append(el('div', { class: 'bop-row' },
+      app(box, el('div', { class: 'bop-row' },
         el('div', { class: 'bop-title' }, el('h2', null, title), el('span', { class: 'need' }, `${d.majority} for control`)),
         el('div', { class: 'bop-nums' },
           el('div', { class: 'bop-num d' }, String(d.D), el('small', null, `Dem${k === 'senate' ? ' + Ind' : ''}${control === 'D' ? ', control' : ''}`)),
@@ -220,24 +221,24 @@
         r.called && r.winner ? el('span', { class: 'called-note' }, `Winner: ${r.winner.n}`) : null));
     const leadCell = el('td', { class: 'leader' });
     if (r.total > 0 && a) {
-      leadCell.append(
+      app(leadCell, 
         el('div', { class: 'cand-line' + (a.w ? ' w' : '') }, el('span', { class: 'nm p-' + a.p }, `${a.n}${PARTY[a.p] ? ' (' + a.p + ')' : ''}`), el('span', { class: 'pc' }, fmtPct(a.pc))),
         b ? el('div', { class: 'cand-line' + (b.w ? ' w' : '') }, el('span', { class: 'nm p-' + b.p }, `${b.n}${PARTY[b.p] ? ' (' + b.p + ')' : ''}`), el('span', { class: 'pc' }, fmtPct(b.pc))) : null,
         barFor(r.cands));
     } else {
-      leadCell.append(el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, r.cands.filter((c) => c.n !== 'Write-in').slice(0, 3).map((c) => `${c.n}${PARTY[c.p] ? ' (' + c.p + ')' : ''}`).join(', ') || 'No candidates listed')), el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, 'No votes reported')));
+      app(leadCell, el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, r.cands.filter((c) => c.n !== 'Write-in').slice(0, 3).map((c) => `${c.n}${PARTY[c.p] ? ' (' + c.p + ')' : ''}`).join(', ') || 'No candidates listed')), el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, 'No votes reported')));
     }
     const marginCell = el('td', { class: 'num margin' }, r.total > 0 && b ? el('span', { class: 'p-' + a.p }, `${a.p} +${(Math.round(margin * 10) / 10).toFixed(1)}`) : '');
     const pctCell = el('td', { class: 'num pct' }, `${Math.round(r.pct)}%`, el('span', { class: 'pbar', 'aria-hidden': 'true' }, el('i', { style: `width:${Math.min(100, r.pct)}%` })));
     const callCell = el('td', { class: 'calls' }, ...callTags(r, true));
-    tr.append(nameCell, leadCell, marginCell, pctCell, callCell);
+    app(tr, nameCell, leadCell, marginCell, pctCell, callCell);
   }
   function renderBoard() {
     const rows = filtered();
     const tb = $('#race-rows'); tb.innerHTML = ''; rowEls.clear();
     const frag = document.createDocumentFragment();
-    for (const r of rows) { const tr = buildRow(r); rowEls.set(r.id, tr); frag.append(tr); }
-    tb.append(frag);
+    for (const r of rows) { const tr = buildRow(r); rowEls.set(r.id, tr); app(frag, tr); }
+    app(tb, frag);
     $('#empty').hidden = rows.length > 0;
     $('#cat-tabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.cat === state.cat ? 'true' : 'false'));
   }
@@ -258,7 +259,7 @@
   async function renderDetail(refresh) {
     const box = $('#detail'); const r = state.races.get(state.raceId);
     $('#board').hidden = true; box.hidden = false;
-    if (!r) { box.innerHTML = ''; box.append(el('button', { class: 'back', type: 'button', onclick: () => go('/board') }, 'Back to board'), el('p', { class: 'empty' }, 'Race not found.')); return; }
+    if (!r) { box.innerHTML = ''; app(box, el('button', { class: 'back', type: 'button', onclick: () => go('/board') }, 'Back to board'), el('p', { class: 'empty' }, 'Race not found.')); return; }
     if (detailFor !== r.id) { detailData = null; detailFor = r.id; regionSort = { key: 'name', dir: 1 }; }
     const draw = () => {
       box.innerHTML = '';
@@ -266,8 +267,8 @@
       const cands = (d ? d.cands : r.cands);
       const c = state.calls[r.id] || {};
       const callKeys = Object.keys(c);
-      box.append(el('button', { class: 'back', type: 'button', onclick: () => go('/board') }, 'Back to board'));
-      box.append(el('h1', null, r.name));
+      app(box, el('button', { class: 'back', type: 'button', onclick: () => go('/board') }, 'Back to board'));
+      app(box, el('h1', null, r.name));
       const meta = el('div', { class: 'meta' },
         el('span', null, el('b', null, `${Math.round(d ? d.pct : r.pct)}%`), ' reporting'),
         r.rating ? el('span', null, 'Rating ', el('b', null, r.rating)) : null,
@@ -275,9 +276,9 @@
         d && d.updated ? el('span', null, 'civicAPI updated ', el('b', null, fmtTime(d.updated))) : null,
         d && d.registered ? el('span', null, 'Registered ', el('b', null, fmtN(d.registered))) : null,
         d && d.disputed ? el('span', null, el('b', null, 'Disputed')) : null);
-      box.append(meta);
+      app(box, meta);
       if (r.winner || callKeys.length) {
-        box.append(el('div', { class: 'call-banner' },
+        app(box, el('div', { class: 'call-banner' },
           el('span', { class: 'lead' }, r.winner ? `${r.winner.n} wins.` : 'Called by'),
           r.winner && callKeys.length ? el('span', null, 'Called by') : null,
           ...callTags(r, true)));
@@ -285,16 +286,16 @@
       const tbl = el('table', { class: 'cands' }, el('tbody'));
       const tb = tbl.firstChild; const totalV = cands.reduce((s, x) => s + x.v, 0) || 1;
       for (const x of cands) {
-        tb.append(el('tr', { class: x.w ? 'w' : '' },
+        app(tb, el('tr', { class: x.w ? 'w' : '' },
           el('td', { class: 'cn p-' + x.p }, x.n, el('span', { class: 'party' }, x.pf || ''), x.inc ? el('span', { class: 'inc' }, 'Incumbent') : null),
           el('td', { class: 'cb' }, el('div', { class: 'bar' }, el('i', { class: x.p, style: `width:${(x.v / totalV) * 100}%` }))),
           el('td', { class: 'cv' }, fmtN(x.v)),
           el('td', { class: 'cp' }, fmtPct(x.pc))));
       }
-      box.append(tbl);
+      app(box, tbl);
       if (d && d.regions && d.regions.length) {
         const top2 = cands.slice(0, 2);
-        box.append(el('h2', null, `${d.regions[0].type || 'Region'} results`));
+        app(box, el('h2', null, `${d.regions[0].type || 'Region'} results`));
         const th = (label, key, num) => { const h = el('th', { scope: 'col', class: num ? 'num' : '' }, label + (regionSort.key === key ? (regionSort.dir > 0 ? ' ▲' : ' ▼') : '')); h.addEventListener('click', () => { regionSort = { key, dir: regionSort.key === key ? -regionSort.dir : 1 }; draw(); }); return h; };
         const rt = el('table', { class: 'regions' }, el('thead', null, el('tr', null, th('Name', 'name'), th('In', 'pct', true), ...top2.map((x) => { const h = th(x.n.split(' ').pop(), 'c' + x.n, true); h.classList.add('p-' + x.p); return h; }), th('Margin', 'margin', true))), el('tbody'));
         const rb = rt.lastChild;
@@ -302,15 +303,15 @@
         regs.sort((x, y) => { const k = regionSort.key; let v = 0; if (k === 'name') v = x.g.name.localeCompare(y.g.name); else if (k === 'pct') v = x.g.pct - y.g.pct; else if (k === 'margin') v = x.margin - y.margin; else if (k.startsWith('c')) { const n = k.slice(1); v = (n === top2[0].n ? x.a.v - y.a.v : x.b.v - y.b.v); } return v * regionSort.dir; });
         for (const { g, a, b, margin } of regs) {
           const lead = g.pct > 0 || a.v || b.v ? (a.v > b.v ? top2[0] : b.v > a.v ? top2[1] : null) : null;
-          rb.append(el('tr', null, el('td', null, g.name), el('td', { class: 'num' }, `${Math.round(g.pct)}%`), el('td', { class: 'num' }, `${fmtN(a.v)} (${fmtPct(a.pc)})`), el('td', { class: 'num' }, `${fmtN(b.v)} (${fmtPct(b.pc)})`), el('td', { class: 'num ' + (lead ? 'lead-' + lead.p : '') }, lead ? `${lead.p} +${Math.abs(Math.round(margin * 10) / 10).toFixed(1)}` : '')));
+          app(rb, el('tr', null, el('td', null, g.name), el('td', { class: 'num' }, `${Math.round(g.pct)}%`), el('td', { class: 'num' }, `${fmtN(a.v)} (${fmtPct(a.pc)})`), el('td', { class: 'num' }, `${fmtN(b.v)} (${fmtPct(b.pc)})`), el('td', { class: 'num ' + (lead ? 'lead-' + lead.p : '') }, lead ? `${lead.p} +${Math.abs(Math.round(margin * 10) / 10).toFixed(1)}` : '')));
         }
-        box.append(rt);
+        app(box, rt);
       } else if (!d) {
-        box.append(el('p', { class: 'empty' }, 'Loading county results.'));
+        app(box, el('p', { class: 'empty' }, 'Loading county results.'));
       }
       const related = state.feed.filter((i) => i.race_id === r.id);
-      if (related.length) { box.append(el('h2', null, 'In the feed')); const ol = el('ol', { class: 'feed-list' }); related.slice(0, 20).forEach((i) => ol.append(feedItem(i))); box.append(ol); }
-      box.append(el('p', { class: 'civic-link' }, el('a', { href: `https://civicapi.org/results/elections/${r.id}`, target: '_blank', rel: 'noopener' }, 'This race on civicAPI')));
+      if (related.length) { app(box, el('h2', null, 'In the feed')); const ol = el('ol', { class: 'feed-list' }); related.slice(0, 20).forEach((i) => ol.append(feedItem(i))); app(box, ol); }
+      app(box, el('p', { class: 'civic-link' }, el('a', { href: `https://civicapi.org/results/elections/${r.id}`, target: '_blank', rel: 'noopener' }, 'This race on civicAPI')));
     };
     draw();
     if (!detailData || refresh) {
@@ -325,14 +326,14 @@
   function feedItem(i) {
     const li = el('li', { class: i.kind + (i._new ? ' new' : '') });
     if (i.kind === 'social') {
-      li.append(
+      app(li, 
         el('div', { class: 'who' }, el('span', { class: 'outlet' }, i.author || i.handle || i.platform), i.handle ? el('span', { class: 'handle' }, '@' + i.handle) : null, el('span', { class: 'kind social' }, i.platform || 'Social'), el('time', { datetime: new Date(i.ts).toISOString() }, fmtShort(i.ts))),
         el('p', { class: 'txt' }, i.text || ''),
         i.url ? el('a', { class: 'race-link', href: i.url, target: '_blank', rel: 'noopener' }, 'Open post') : null);
       return li;
     }
     const kindLabel = { call: 'Call', exitpoll: 'Exit poll', news: 'News' }[i.kind] || i.kind;
-    li.append(
+    app(li, 
       el('div', { class: 'who' }, el('span', { class: 'outlet' }, i.outlet || 'News'), el('span', { class: 'kind ' + i.kind }, kindLabel), el('time', { datetime: new Date(i.ts).toISOString() }, fmtShort(i.ts))),
       el('a', { class: 'ttl', href: i.url, target: '_blank', rel: 'noopener' }, i.title),
       i.race_id ? el('button', { class: 'race-link', type: 'button', onclick: () => go(`/race/${i.race_id}`) }, i.race_name || 'Open race') : null);
@@ -347,8 +348,8 @@
     const list = $('#feed-list'); list.innerHTML = '';
     const items = feedRows();
     const frag = document.createDocumentFragment();
-    items.forEach((i) => frag.append(feedItem(i)));
-    list.append(frag);
+    items.forEach((i) => app(frag, feedItem(i)));
+    app(list, frag);
     $('#feed-empty').hidden = items.length > 0;
     $('#feed-tabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.feed === state.feedTab ? 'true' : 'false'));
   }

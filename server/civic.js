@@ -238,13 +238,14 @@ class Civic {
   }
 
   async start() {
-    await this.pollForecasts();
+    this.pollForecasts().catch(() => {});
     const loop = async (scope, every, key) => {
       for (;;) {
         const t0 = Date.now();
         try {
           const list = await this.pollScope(scope);
-          this.applyRaces(list, scope);
+          const n = this.applyRaces(list, scope);
+          console.log(`poll ${scope}: ${list.length} races, ${n} changed, ${Date.now() - t0}ms`);
           this.status[key] = new Date().toISOString();
           this.status.lastOk = this.status[key];
           this.status.lastError = null;
@@ -257,6 +258,7 @@ class Civic {
       }
     };
     // First General load before serving diffs; Statewide loads in its own loop.
+    console.log('initial General load');
     try { this.applyRaces(await this.pollScope('General'), 'General'); this.status.lastGeneral = new Date().toISOString(); this.status.lastOk = this.status.lastGeneral; } catch (e) { console.error('init General', e.message); }
     this.firstLoad = false;
     this.emit('ready', {});

@@ -14,7 +14,6 @@ const SOURCES = [
   { outlet: 'NBC', url: 'https://feeds.nbcnews.com/nbcnews/public/politics' },
   { outlet: 'ABC', url: 'https://abcnews.go.com/abcnews/politicsheadlines' },
   { outlet: 'CBS', url: 'https://www.cbsnews.com/latest/rss/politics' },
-  { outlet: 'AP', url: 'https://apnews.com/hub/election-2026', html: true },
   { outlet: null, url: 'https://news.google.com/rss/search?q=%22projected%22+OR+%22projects%22+OR+%22calls%22+OR+%22wins%22+senate+OR+governor+OR+house+OR+congressional+when:1d&hl=en-US&gl=US&ceid=US:en', google: true },
   { outlet: null, url: 'https://news.google.com/rss/search?q=%22exit+poll%22+OR+%22exit+polls%22+when:1d&hl=en-US&gl=US&ceid=US:en', google: true },
   { outlet: null, url: 'https://news.google.com/rss/search?q=midterm+election+results+when:1d&hl=en-US&gl=US&ceid=US:en', google: true },
@@ -38,8 +37,11 @@ const OUTLET_MAP = [
   [/wall street journal|wsj/i, 'WSJ'],
   [/axios/i, 'Axios'],
   [/the hill/i, 'The Hill'],
+  [/pbs/i, 'PBS'],
+  [/usa today/i, 'USA Today'],
 ];
 
+const REPUTABLE = new Set(['AP','NBC','Fox','CNN','NYT','ABC','CBS','Reuters','WaPo','Politico','DDHQ','NPR','Bloomberg','WSJ','Axios','The Hill','PBS','USA Today']);
 const CALL_RE = /\b(projects?|projected|projection|calls?|called|declares?|declared|wins?|has won|winner|flips?|flipped|defeats?|unseats?|ousts?|re-?elected|elected|holds? (on|off)|holds? seat|retains?|clinch(es)?)\b/i;
 const EXIT_RE = /exit poll/i;
 const SKIP_RE = /(opinion|how to watch|what to watch|live updates|guide to|explained|podcast)/i;
@@ -161,8 +163,10 @@ class News {
         const m = title.match(/^(.*)\s-\s([^-]+)$/);
         if (m) { title = m[1].trim(); outlet = outletOf(m[2].trim(), outletOf(it.source)); }
       }
-      const kind = this.classify({ ...it, title });
-      const race = kind !== 'news' || /senate|governor|house|district/i.test(title) ? this.matchRace(title) : null;
+      if (src.google && !REPUTABLE.has(outlet)) continue;
+      let kind = this.classify({ ...it, title });
+      const race = this.matchRace(title);
+      if (kind === 'call' && !race) kind = 'news';
       const ts = it.date ? Date.parse(it.date) || Date.now() : Date.now();
       const item = {
         id: key,
