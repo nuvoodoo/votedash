@@ -318,7 +318,7 @@ class Civic {
     const snap = await res.json();
     if (!snap.races || !snap.races.length) throw new Error('empty snapshot');
     // Rows are seeded without signatures so the first live poll re-normalises every one.
-    for (const row of snap.races) this.races.set(row.id, row);
+    for (const row of snap.races) { row.sb = SOUTHBAY[row.id] || null; this.races.set(row.id, row); }
     if (snap.national) this.national = snap.national;
     this.status.lastOk = snap.status?.civic?.lastOk || new Date().toISOString();
     return snap;
