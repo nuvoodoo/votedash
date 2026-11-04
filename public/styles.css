@@ -320,6 +320,9 @@ button { cursor: pointer; }
   .races th:nth-child(5), .races td:nth-child(5) { display: none; }
   .races td { padding: 8px 4px; }
   .leader { min-width: 120px; }
+  .cand-line .nm { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.25; }
+  .cand-line { align-items: start; }
+  .races td { vertical-align: top; }
   .pct { font-size: 13px; }
   .pct .pbar { width: 28px; }
   .margin { font-size: 13px; }
