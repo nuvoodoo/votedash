@@ -134,6 +134,7 @@ class Civic {
     this.forecasts = { senate: null, house: null, governor: null };
     this.status = { lastGeneral: null, lastStatewide: null, lastError: null, lastOk: null };
     this.detailCache = new Map(); // id -> {ts, data}
+    this.seedSig = new Map(); // signatures of seeded rows, so a re-apply with identical votes keeps the seeded update time
     this.firstLoad = true;
   }
 
@@ -208,6 +209,9 @@ class Civic {
       const sig = this.signature(row);
       const prev = this.races.get(row.id);
       if (prev && this.sig.get(row.id) === sig && prev.rating === row.rating) continue;
+      // Last update: when the votes, reporting or call last changed (kept from the previous row if only the rating moved).
+      row.upd = prev && (this.sig.get(row.id) === sig || this.seedSig.get(row.id) === sig) ? prev.upd : Date.now();
+      this.seedSig.delete(row.id);
       if (prev) {
         const prevW = prev.winner ? prev.winner.n : null;
         const nowW = row.winner ? row.winner.n : null;
@@ -318,7 +322,7 @@ class Civic {
     const snap = await res.json();
     if (!snap.races || !snap.races.length) throw new Error('empty snapshot');
     // Rows are seeded without signatures so the first live poll re-normalises every one.
-    for (const row of snap.races) { row.sb = SOUTHBAY[row.id] || null; this.races.set(row.id, row); }
+    for (const row of snap.races) { row.sb = SOUTHBAY[row.id] || null; row.upd = row.upd || Date.now(); this.races.set(row.id, row); this.seedSig.set(row.id, this.signature(row)); }
     if (snap.national) this.national = snap.national;
     this.status.lastOk = snap.status?.civic?.lastOk || new Date().toISOString();
     return snap;

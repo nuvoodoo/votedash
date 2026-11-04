@@ -283,7 +283,8 @@
         r.open ? el('span', { class: 'open-seat' }, 'Open seat') : null,
         r.cat === 'governor' && r.incParty ? el('span', { class: 'open-seat' }, `Seat held by ${r.incParty}`) : null,
         r.called && r.winner ? el('span', { class: 'called-note' }, `Winner: ${r.winner.n}`) : null,
-        pmChip(r, false)));
+        pmChip(r, false),
+        r.upd ? el('span', { class: 'upd', title: 'Last change to this race on VoteDash' }, `Updated ${fmtShort(r.upd)}`) : null));
     const leadCell = el('td', { class: 'leader' });
     if (r.total > 0 && a) {
       app(leadCell, 
@@ -347,6 +348,7 @@
       app(box, el('h1', null, r.name));
       const meta = el('div', { class: 'meta' },
         el('span', null, el('b', null, `${Math.round(d ? d.pct : r.pct)}%`), ' reporting'),
+        r.upd ? el('span', null, 'Last update ', el('b', null, fmtTime(r.upd))) : null,
         r.rating ? el('span', null, 'Rating ', el('b', null, r.rating)) : null,
         r.open ? el('span', null, el('b', null, 'Open seat')) : null,
         r.incParty && (r.open || r.cat === 'governor') ? el('span', null, 'Seat held by ', el('b', null, r.incParty)) : null,
