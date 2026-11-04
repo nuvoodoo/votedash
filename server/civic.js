@@ -209,6 +209,11 @@ class Civic {
       const sig = this.signature(row);
       const prev = this.races.get(row.id);
       if (prev && this.sig.get(row.id) === sig && prev.rating === row.rating) continue;
+      // Keep an outlet's call until civicAPI makes its own.
+      if (prev && prev.callSrc && !row.winner && prev.winner) {
+        const c = row.cands.find((x) => sameName(x.n, prev.winner.n));
+        if (c) { for (const x of row.cands) x.w = x === c; row.winner = c; row.called = true; row.callSrc = prev.callSrc; }
+      }
       // An alternate source (CNN, LA County) already holds a larger count: keep it, but take civicAPI's call if it has one.
       if (prev && prev.src && prev.src !== 'civicAPI' && row.total < prev.total) {
         if (row.winner && !prev.winner) { prev.winner = row.winner; prev.called = true; for (const c of prev.cands) c.w = !!row.cands.find((x) => x.n === c.n && x.w); prev.upd = Date.now(); this.sig.set(row.id, this.signature(prev)); changed.push(prev); }
@@ -240,6 +245,19 @@ class Civic {
     if (changed.length && !this.firstLoad) this.emit('races', { rows: changed, bop: this.bop() });
     if (calls.length) this.emit('calls', calls);
     return changed.length;
+  }
+
+  // A projection from an authoritative caller (DDHQ, CNN) colours the map and
+  // counts toward the balance of power when civicAPI has not called the race.
+  applyCall(raceId, candName, src) {
+    const row = this.races.get(raceId); if (!row || row.winner) return false;
+    const c = row.cands.find((x) => x.n !== 'Write-in' && sameName(x.n, candName));
+    if (!c) return false;
+    for (const x of row.cands) x.w = x === c;
+    row.winner = c; row.called = true; row.callSrc = src; row.upd = Date.now();
+    this.sig.set(row.id, this.signature(row));
+    if (!this.firstLoad) this.emit('races', { rows: [row], bop: this.bop() });
+    return true;
   }
 
   // Merge vote counts from another source into a race when they are larger

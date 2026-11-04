@@ -42,11 +42,13 @@ class CNN {
       const w = (race.candidates || []).find((c) => c.winner);
       if (w && (race.status === 'W' || race.editorialStatus === 'called')) {
         const key = `${r.id}:${w.fullName}`;
+        if (!r.winner) this.civic.applyCall(r.id, w.fullName, 'CNN');
         if (!this.seen.has(key)) {
           this.seen.add(key);
           const c = (this.news.calls[r.id] = this.news.calls[r.id] || {});
           const url = `https://www.cnn.com/election/2026/results/${race.stateNameSlug}`;
           if (!c.CNN) c.CNN = { ts, url, title: `CNN projects ${w.fullName} wins ${r.name}` };
+          this.civic.applyCall(r.id, w.fullName, 'CNN');
           fresh.push({ id: `cnn:${r.id}:${w.candidateId}`, kind: 'call', outlet: 'CNN', title: `CNN projects ${w.fullName} wins ${r.name}`, url, ts, race_id: r.id, race_name: r.name });
         }
       }

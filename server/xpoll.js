@@ -109,6 +109,15 @@ class XPoll {
         const c = (this.news.calls[race.id] = this.news.calls[race.id] || {});
         if (c.DDHQ) continue;
         c.DDHQ = { ts: it.ts, url: it.url, title: head.slice(0, 140) };
+        // Who won: the candidate whose last name appears in the projection text.
+        const headWords = head.toLowerCase().replace(/[^a-z\u00c0-\u024f\s-]/g, " ").split(/\s+/).filter(Boolean);
+        const winner = race.cands.find((x) => {
+          if (x.n === "Write-in") return false;
+          const toks = x.n.toLowerCase().replace(/[^a-z\u00c0-\u024f\s-]/g, " ").split(/\s+/).filter((w) => w.length > 1);
+          const last = toks[toks.length - 1];
+          return !!last && headWords.includes(last);
+        });
+        if (winner) this.civic.applyCall(race.id, winner.n, 'DDHQ');
         fresh.push({ id: `ddhq:${race.id}`, kind: 'call', outlet: 'DDHQ', title: head.slice(0, 160), url: it.url, ts: it.ts, race_id: race.id, race_name: race.name });
       }
       if (fresh.length) this.emitFeed({ items: fresh, calls: this.news.calls });

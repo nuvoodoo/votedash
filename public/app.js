@@ -282,7 +282,7 @@
         r.rating ? el('span', { class: 'rating ' + ratingClass(r.rating) }, r.rating) : null,
         r.open ? el('span', { class: 'open-seat' }, 'Open seat') : null,
         r.cat === 'governor' && r.incParty ? el('span', { class: 'open-seat' }, `Seat held by ${r.incParty}`) : null,
-        r.called && r.winner ? el('span', { class: 'called-note' }, `Winner: ${r.winner.n}`) : null,
+        r.called && r.winner ? el('span', { class: 'called-note' }, `Winner: ${r.winner.n}${r.callSrc ? ' (' + r.callSrc + ')' : ''}`) : null,
         pmChip(r, false),
         r.upd ? el('span', { class: 'upd', title: 'Last change to this race on VoteDash' }, `Updated ${fmtShort(r.upd)}`) : null,
         r.src && r.src !== 'civicAPI' ? el('span', { class: 'src-tag', title: `Vote counts from ${r.src}` }, r.src) : null));
@@ -362,7 +362,7 @@
       app(box, meta);
       if (r.winner || callKeys.length) {
         app(box, el('div', { class: 'call-banner' },
-          el('span', { class: 'lead' }, r.winner ? `${r.winner.n} wins.` : 'Called by'),
+          el('span', { class: 'lead' }, r.winner ? `${r.winner.n} wins${r.callSrc ? ', projected by ' + r.callSrc : ''}.` : 'Called by'),
           r.winner && callKeys.length ? el('span', null, 'Called by') : null,
           ...callTags(r, true)));
       }
