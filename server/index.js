@@ -17,6 +17,7 @@ const { Usage } = require('./usage');
 const usage = new Usage();
 const USERS_KEY = process.env.USERS_KEY || '';
 const og = require('./og');
+const titles = require('../public/titles');
 // Candidate photos (tools/gather-photos.js). Served as one cached map.
 let photosRaw = null, photosGz = null, photosMtime = 0;
 let photosRemote = null; // latest manifest pulled from PHOTOS_URL, so new photos ship without a deploy
@@ -149,13 +150,13 @@ function sendJSON(req, res, obj, { raw, gz } = {}) {
   }
 }
 
-function sendFile(req, res, file) {
+function sendFile(req, res, file, transform) {
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
     const ext = path.extname(file);
     const headers = { 'content-type': MIME[ext] || 'application/octet-stream' };
     headers['cache-control'] = /\.(html|js|css)$/.test(ext) ? 'no-cache' : 'public, max-age=300';
-    if (ext === '.html') data = Buffer.from(data.toString('utf8').replace(/__V__/g, VERSION));
+    if (ext === '.html') data = Buffer.from((transform || ((h) => h))(data.toString('utf8').replace(/__V__/g, VERSION)));
     if (/\bgzip\b/.test(req.headers['accept-encoding'] || '') && /\.(html|js|css|svg)$/.test(ext)) {
       headers['content-encoding'] = 'gzip';
       data = zlib.gzipSync(data);
@@ -172,6 +173,22 @@ function readBody(req, limit = 5 * 1024 * 1024) {
     req.on('end', () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
+}
+
+// Each page's own title, description and share tags in the served HTML.
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function pageHead(html, p) {
+  const m = titles.page(p, civic.races);
+  if (!m) return html;
+  const t = esc(m.title), d = esc(m.desc), u = esc('https://votedash.net' + p);
+  return html
+    .replace(/<title>[^<]*<\/title>/, `<title>${t}</title>`)
+    .replace(/(<meta name="description" content=")[^"]*/, `$1${d}`)
+    .replace(/(<meta property="og:title" content=")[^"]*/, `$1${t}`)
+    .replace(/(<meta property="og:description" content=")[^"]*/, `$1${d}`)
+    .replace(/(<meta property="og:url" content=")[^"]*/, `$1${u}`)
+    .replace(/(<meta name="twitter:title" content=")[^"]*/, `$1${t}`)
+    .replace(/(<meta name="twitter:description" content=")[^"]*/, `$1${d}`);
 }
 
 // ---- server --------------------------------------------------------------
@@ -232,7 +249,7 @@ const server = http.createServer(async (req, res) => {
     if (p === '/' || p.startsWith('/race/') || p === '/feed' || p.startsWith('/feed/') || p === '/board' || p.startsWith('/board/') || p === '/calls') {
       const rm = p.match(/^\/race\/(\d+)/);
       usage.hit(req, rm ? 'race' : p.startsWith('/feed') ? 'feed' : p.startsWith('/board/') ? 'board:' + p.split('/')[2] : 'home', rm ? Number(rm[1]) : null);
-      return sendFile(req, res, path.join(PUBLIC, 'index.html'));
+      return sendFile(req, res, path.join(PUBLIC, 'index.html'), (h) => pageHead(h, p));
     }
     const safe = path.normalize(p).replace(/^(\.\.[/\\])+/, '');
     const file = path.join(PUBLIC, safe);

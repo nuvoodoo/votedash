@@ -25,7 +25,7 @@
 
   const state = {
     races: new Map(), bop: null, feed: [], social: [], calls: {}, forecastTotals: null,
-    cat: 'senate', q: '', stateFilter: null, photos: {}, sbKind: 'all', pm: { races: {}, control: {} }, uncalled: false, sort: 'state', feedTab: 'all', view: 'board', raceId: null,
+    cat: 'senate', q: '', stateFilter: null, sbKind: 'all', pm: { races: {}, control: {} }, uncalled: false, sort: 'state', feedTab: 'all', view: 'board', raceId: null,
     lastTs: 0, sse: null, stale: false, unseenFeed: 0,
   };
 
@@ -77,17 +77,6 @@
   window.addEventListener('popstate', route);
 
   // ---- data -------------------------------------------------------------
-  async function loadPhotos() {
-    try { const r = await fetch('/api/photos'); if (r.ok) { state.photos = await r.json(); renderMain(); } } catch (e) { /* none */ }
-  }
-  function photoOf(r, c) { return state.photos[`${r.id}|${c.n}`] || null; }
-  function avatar(r, c, size) {
-    const ph = photoOf(r, c); const src = ph && ((ph.portrait && ph.portrait.url) || (ph.campaign && ph.campaign.url));
-    if (!src) return null;
-    const img = el('img', { class: 'avatar', src, alt: '', width: size, height: size, loading: 'lazy', referrerpolicy: 'no-referrer' });
-    img.addEventListener('error', () => img.remove());
-    return img;
-  }
   async function loadSnapshot() {
     const r = await fetch('/api/snapshot', { cache: 'no-store' });
     const s = await r.json();
@@ -290,8 +279,8 @@
     const leadCell = el('td', { class: 'leader' });
     if (r.total > 0 && a) {
       app(leadCell, 
-        el('div', { class: 'cand-line' + (a.w ? ' w' : '') }, el('span', { class: 'nm p-' + a.p }, avatar(r, a, 26), `${a.n}${PARTY[a.p] ? ' (' + a.p + ')' : ''}`, a.inc ? el('span', { class: 'inc-tag' }, 'Incumbent') : null), el('span', { class: 'pc' }, fmtPct(a.pc))),
-        b ? el('div', { class: 'cand-line' + (b.w ? ' w' : '') }, el('span', { class: 'nm p-' + b.p }, avatar(r, b, 26), `${b.n}${PARTY[b.p] ? ' (' + b.p + ')' : ''}`, b.inc ? el('span', { class: 'inc-tag' }, 'Incumbent') : null), el('span', { class: 'pc' }, fmtPct(b.pc))) : null,
+        el('div', { class: 'cand-line' + (a.w ? ' w' : '') }, el('span', { class: 'nm p-' + a.p }, `${a.n}${PARTY[a.p] ? ' (' + a.p + ')' : ''}`, a.inc ? el('span', { class: 'inc-tag' }, 'Incumbent') : null), el('span', { class: 'pc' }, fmtPct(a.pc))),
+        b ? el('div', { class: 'cand-line' + (b.w ? ' w' : '') }, el('span', { class: 'nm p-' + b.p }, `${b.n}${PARTY[b.p] ? ' (' + b.p + ')' : ''}`, b.inc ? el('span', { class: 'inc-tag' }, 'Incumbent') : null), el('span', { class: 'pc' }, fmtPct(b.pc))) : null,
         barFor(r.cands));
     } else {
       app(leadCell, el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, r.cands.filter((c) => c.n !== 'Write-in').slice(0, 3).map((c) => `${c.n}${PARTY[c.p] ? ' (' + c.p + ')' : ''}${c.inc ? ' [Inc]' : ''}`).join(', ') || 'No candidates listed')), el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, 'No votes reported')));
@@ -339,6 +328,7 @@
     const box = $('#detail'); const r = state.races.get(state.raceId);
     $('#board').hidden = true; box.hidden = false;
     if (!r) { box.innerHTML = ''; app(box, el('button', { class: 'back', type: 'button', onclick: () => { state.raceId = null; go(boardURL()); } }, 'Back to board'), el('p', { class: 'empty' }, 'Race not found.')); return; }
+    if (window.VDTitles) document.title = VDTitles.race(r).title; // follows the count and the call
     if (detailFor !== r.id) { detailData = null; detailFor = r.id; regionSort = { key: 'name', dir: 1 }; }
     const draw = () => {
       box.innerHTML = '';
@@ -378,25 +368,12 @@
       const tb = tbl.firstChild; const totalV = cands.reduce((s, x) => s + x.v, 0) || 1;
       for (const x of cands) {
         app(tb, el('tr', { class: x.w ? 'w' : '' },
-          el('td', { class: 'cn p-' + x.p }, avatar(r, x, 56), x.n, el('span', { class: 'party' }, x.pf || ''), x.inc ? el('span', { class: 'inc' }, 'Incumbent') : null),
+          el('td', { class: 'cn p-' + x.p }, x.n, el('span', { class: 'party' }, x.pf || ''), x.inc ? el('span', { class: 'inc' }, 'Incumbent') : null),
           el('td', { class: 'cb' }, el('div', { class: 'bar' }, el('i', { class: x.p, style: `width:${(x.v / totalV) * 100}%` }))),
           el('td', { class: 'cv' }, fmtN(x.v)),
           el('td', { class: 'cp' }, fmtPct(x.pc))));
       }
       app(box, tbl);
-      const strip = el('div', { class: 'photo-strip' });
-      for (const x of cands.slice(0, 3)) {
-        const ph = photoOf(r, x); if (!ph) continue;
-        const shots = [ph.portrait && { ...ph.portrait, kind: 'Portrait' }, ph.action && { ...ph.action, kind: 'On the trail' }, ph.campaign && !ph.portrait && { ...ph.campaign, kind: 'Campaign photo' }].filter(Boolean);
-        for (const s of shots) {
-          const fig = el('figure', { class: 'shot' });
-          const img = el('img', { src: s.url, alt: `${x.n}: ${s.kind}`, loading: 'lazy', referrerpolicy: 'no-referrer' });
-          img.addEventListener('error', () => fig.remove());
-          fig.append(img, el('figcaption', null, el('b', null, x.n), ` ${s.kind}. `, el('a', { href: s.page, target: '_blank', rel: 'noopener' }, s.credit || 'Source'), s.license ? ` (${s.license})` : ''));
-          strip.append(fig);
-        }
-      }
-      if (strip.children.length) app(box, strip);
       if (d && d.regions && d.regions.length) {
         const top2 = cands.slice(0, 2);
         app(box, el('h2', null, `${d.regions[0].type || 'Region'} results`));
@@ -600,7 +577,8 @@
   function renderMain() {
     const r0 = state.raceId && state.races.get(state.raceId);
     const calls = !state.raceId && state.view === 'calls';
-    document.title = r0 ? `${r0.name}: VoteDash` : calls ? 'Who called it: VoteDash' : 'VoteDash: Live 2026 Midterm Results';
+    const meta = window.VDTitles && (r0 ? VDTitles.race(r0) : VDTitles.page(location.pathname));
+    document.title = meta ? meta.title : 'VoteDash: Live 2026 Midterm Results';
     $('#calls').hidden = !calls;
     if (state.raceId) { renderDetail(false); }
     else if (calls) { $('#detail').hidden = true; $('#board').hidden = true; detailFor = null; renderCalls(); }
@@ -635,6 +613,5 @@
   });
   applyTheme();
   route();
-  loadPhotos();
   loadSnapshot().then(connect).catch(() => { setStale(true); setTimeout(() => loadSnapshot().then(connect), 5000); });
 })();
