@@ -80,7 +80,7 @@
     return rs.map((r) => {
       const { a, b } = leader(r);
       const calls = Object.keys(ctx.calls[r.id] || {}).filter((k) => k !== 'civicAPI');
-      const line = (c) => c ? `<div class="tl"><span class="p-${c.p}">${c.w ? '✓ ' : ''}${c.n} (${c.p})</span><b>${fmtPct(c.pc)}</b></div>` : '';
+      const line = (c) => c ? `<div class="tl"><span class="p-${c.p}">${c.w ? '✓ ' : ''}${c.n} (${c.p})${c.inc ? ' <i class="tinc">Inc</i>' : ''}</span><b>${fmtPct(c.pc)}</b></div>` : '';
       return `<div class="tr"><div class="tn">${r.name}${r.rating ? ` <span class="tr-rating">${r.rating}</span>` : ''}</div>${r.total > 0 ? line(a) + line(b) : '<div class="tl muted">No votes reported</div>'}<div class="tm">${Math.round(r.pct)}% reporting${calls.length ? ` · called by ${calls.join(', ')}` : ''}</div></div>`;
     }).join('');
   }

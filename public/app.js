@@ -239,16 +239,18 @@
         state.cat === 'southbay' && r.sb ? el('span', null, r.sb) : null,
         (r.cat === 'house' || r.cat === 'senate' || r.cat === 'governor') ? null : el('span', null, r.type === r.name ? '' : r.type),
         r.rating ? el('span', { class: 'rating ' + ratingClass(r.rating) }, r.rating) : null,
+        r.open ? el('span', { class: 'open-seat' }, 'Open seat') : null,
+        r.cat === 'governor' && r.incParty ? el('span', { class: 'open-seat' }, `Seat held by ${r.incParty}`) : null,
         r.called && r.winner ? el('span', { class: 'called-note' }, `Winner: ${r.winner.n}`) : null,
         pmChip(r, false)));
     const leadCell = el('td', { class: 'leader' });
     if (r.total > 0 && a) {
       app(leadCell, 
-        el('div', { class: 'cand-line' + (a.w ? ' w' : '') }, el('span', { class: 'nm p-' + a.p }, `${a.n}${PARTY[a.p] ? ' (' + a.p + ')' : ''}`), el('span', { class: 'pc' }, fmtPct(a.pc))),
-        b ? el('div', { class: 'cand-line' + (b.w ? ' w' : '') }, el('span', { class: 'nm p-' + b.p }, `${b.n}${PARTY[b.p] ? ' (' + b.p + ')' : ''}`), el('span', { class: 'pc' }, fmtPct(b.pc))) : null,
+        el('div', { class: 'cand-line' + (a.w ? ' w' : '') }, el('span', { class: 'nm p-' + a.p }, `${a.n}${PARTY[a.p] ? ' (' + a.p + ')' : ''}`, a.inc ? el('span', { class: 'inc-tag' }, 'Incumbent') : null), el('span', { class: 'pc' }, fmtPct(a.pc))),
+        b ? el('div', { class: 'cand-line' + (b.w ? ' w' : '') }, el('span', { class: 'nm p-' + b.p }, `${b.n}${PARTY[b.p] ? ' (' + b.p + ')' : ''}`, b.inc ? el('span', { class: 'inc-tag' }, 'Incumbent') : null), el('span', { class: 'pc' }, fmtPct(b.pc))) : null,
         barFor(r.cands));
     } else {
-      app(leadCell, el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, r.cands.filter((c) => c.n !== 'Write-in').slice(0, 3).map((c) => `${c.n}${PARTY[c.p] ? ' (' + c.p + ')' : ''}`).join(', ') || 'No candidates listed')), el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, 'No votes reported')));
+      app(leadCell, el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, r.cands.filter((c) => c.n !== 'Write-in').slice(0, 3).map((c) => `${c.n}${PARTY[c.p] ? ' (' + c.p + ')' : ''}${c.inc ? ' [Inc]' : ''}`).join(', ') || 'No candidates listed')), el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, 'No votes reported')));
     }
     const marginCell = el('td', { class: 'num margin' }, r.total > 0 && b ? el('span', { class: 'p-' + a.p }, `${a.p} +${(Math.round(margin * 10) / 10).toFixed(1)}`) : '');
     const pctCell = el('td', { class: 'num pct' }, `${Math.round(r.pct)}%`, el('span', { class: 'pbar', 'aria-hidden': 'true' }, el('i', { style: `width:${Math.min(100, r.pct)}%` })));
@@ -305,6 +307,8 @@
       const meta = el('div', { class: 'meta' },
         el('span', null, el('b', null, `${Math.round(d ? d.pct : r.pct)}%`), ' reporting'),
         r.rating ? el('span', null, 'Rating ', el('b', null, r.rating)) : null,
+        r.open ? el('span', null, el('b', null, 'Open seat')) : null,
+        r.incParty && (r.open || r.cat === 'governor') ? el('span', null, 'Seat held by ', el('b', null, r.incParty)) : null,
         d && d.polls_close ? el('span', null, 'Polls close ', el('b', null, fmtShort(d.polls_close))) : null,
         d && d.updated ? el('span', null, 'civicAPI updated ', el('b', null, fmtTime(d.updated))) : null,
         d && d.registered ? el('span', null, 'Registered ', el('b', null, fmtN(d.registered))) : null,

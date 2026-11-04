@@ -51,6 +51,28 @@ const SOUTHBAY_TILES = [
   ['PV Peninsula schools',0,3],['LA County',1,3],['Water and colleges',2,3],['Congress and Assembly',3,3],
 ];
 
+// Incumbents running tonight (Senate by state, House by district), from the
+// Ballotpedia-sourced directory. SC is overridden: the sheet mis-flags a
+// candidate who shares the sitting senator's surname.
+const fs = require('fs');
+const path = require('path');
+let INCUMBENTS = { senate: {}, house: {} };
+try { INCUMBENTS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'incumbents.json'), 'utf8')); } catch (e) { /* none */ }
+INCUMBENTS.senate.SC = [];
+// Sitting senators the sheet missed who are on tonight's ballot (verified against candidate lists).
+INCUMBENTS.senate.FL = ['Ashley Moody'];
+INCUMBENTS.senate.OH = ['Jon Husted'];
+INCUMBENTS.senate.RI = ['John F. Reed'];
+function nameKey(n) {
+  const toks = String(n || '').toLowerCase().replace(/["“”().,']/g, ' ').split(/\s+/).filter((t) => t && t.length > 1 && !/^(jr|sr|ii|iii|iv|dr|mr|mrs|ms)$/.test(t));
+  return { first: toks[0] || '', last: toks[toks.length - 1] || '' };
+}
+function sameName(a, b) {
+  const x = nameKey(a), y = nameKey(b);
+  if (!x.last || x.last !== y.last) return false;
+  return x.first === y.first || x.first.startsWith(y.first) || y.first.startsWith(x.first);
+}
+
 function partyCode(p) {
   if (!p) return 'O';
   if (/^dem/i.test(p)) return 'D';
@@ -129,6 +151,16 @@ class Civic {
       }))
       .sort((a, b) => b.v - a.v || (a.n === 'Write-in' ? 1 : 0) - (b.n === 'Write-in' ? 1 : 0));
     const total = cands.reduce((s, c) => s + c.v, 0);
+    let open = null;
+    if (cat === 'senate' || cat === 'house' || cat === 'delegate') {
+      const list = cat === 'senate' ? INCUMBENTS.senate[r.province] : INCUMBENTS.house[r.district];
+      const names = Array.isArray(list) ? list : []; // seats absent from the directory have no incumbent running
+      for (const c of cands) if (names.some((n) => sameName(n, c.n))) c.inc = true;
+      open = !cands.some((c) => c.inc);
+    }
+    const fc = this.forecasts;
+    const seat = cat === 'senate' ? fc.senate?.states?.[r.province] : cat === 'governor' ? fc.governor?.states?.[r.province] : cat === 'house' ? fc.house?.states?.[r.district] : null;
+    const incParty = seat && seat.incumbent_party ? seat.incumbent_party : null;
     return {
       id: r.id,
       cat,
@@ -142,6 +174,8 @@ class Civic {
       total,
       rating: this.rating(cat, r.province, r.district),
       called: cands.some((c) => c.w),
+      open,
+      incParty,
       winner: cands.find((c) => c.w) || null,
       territory: TERRITORIES.has(r.province),
       sb: SOUTHBAY[r.id] || null,
@@ -256,7 +290,7 @@ class Civic {
       disputed: !!raw.is_disputed,
       cands: (raw.candidates || []).map((c) => ({
         n: c.name, p: partyCode(c.party), pf: c.party || '', v: c.votes || 0, pc: c.percent || 0, w: !!c.winner, inc: !!c.incumbent,
-      })).sort((a, b) => b.v - a.v),
+      })).map((c) => { const list = raw.election_type === 'US Senate' ? INCUMBENTS.senate[raw.province] : INCUMBENTS.house[raw.district]; if (Array.isArray(list) && list.some((n) => sameName(n, c.n))) c.inc = true; return c; }).sort((a, b) => b.v - a.v),
       regions: Object.values(raw.region_results || {}).map((g) => ({
         name: g.name, type: g.type, fips: g.fips || null, pct: g.percent_reporting ?? 0,
         cands: (g.candidates || []).map((c) => ({ n: c.name, p: partyCode(c.party), v: c.votes || 0, pc: c.percent || 0 })),
