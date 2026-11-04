@@ -10,6 +10,31 @@ const { SocialPoll } = require('./socialpoll');
 const { XPoll } = require('./xpoll');
 const { Polymarket } = require('./polymarket');
 const og = require('./og');
+// Candidate photos (tools/gather-photos.js). Served as one cached map.
+let photosRaw = null, photosGz = null, photosMtime = 0;
+let photosRemote = null; // latest manifest pulled from PHOTOS_URL, so new photos ship without a deploy
+async function pullPhotos() {
+  const u = process.env.PHOTOS_URL; if (!u) return;
+  try {
+    const r = await fetch(u + (u.includes('?') ? '&' : '?') + 't=' + Date.now(), { signal: AbortSignal.timeout(30000), headers: { 'user-agent': 'VoteDash/1.0' } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const txt = await r.text(); JSON.parse(txt);
+    if (txt !== photosRemote) { photosRemote = txt; photosRaw = null; console.log('photos manifest updated', txt.length, 'bytes'); }
+  } catch (e) { console.error('photos pull', e.message); }
+}
+pullPhotos(); setInterval(pullPhotos, 5 * 60 * 1000);
+function photosPayload() {
+  const p = path.join(__dirname, 'data', 'photos.json');
+  let st = null; try { st = fs.statSync(p); } catch (e) { st = { mtimeMs: 0 }; }
+  if (!photosRaw || st.mtimeMs !== photosMtime) {
+    let all = {};
+    if (photosRemote) all = JSON.parse(photosRemote); else if (st.mtimeMs) all = JSON.parse(fs.readFileSync(p, 'utf8')); else return null;
+    const slim = {};
+    for (const k in all) { const v = all[k]; if (!v || v.none) continue; const o = {}; for (const f of ['portrait', 'action', 'campaign']) if (v[f]) o[f] = { url: v[f].url, credit: v[f].credit, license: v[f].license, page: v[f].page }; if (v.article) o.article = v.article; if (Object.keys(o).length) slim[k] = o; }
+    photosRaw = Buffer.from(JSON.stringify(slim)); photosGz = zlib.gzipSync(photosRaw); photosMtime = st.mtimeMs;
+  }
+  return { raw: photosRaw, gz: photosGz };
+}
 
 const PORT = Number(process.env.PORT || 8080);
 const SOCIAL_TOKEN = process.env.SOCIAL_TOKEN || '';
@@ -158,6 +183,7 @@ const server = http.createServer(async (req, res) => {
       catch (e) { console.error('og', e.message); res.writeHead(500); return res.end('og error'); }
     }
     if (p === '/og.svg') { res.writeHead(200, { 'content-type': 'image/svg+xml', 'cache-control': 'no-cache' }); return res.end(og.buildSVG(civic)); }
+    if (p === '/api/photos') { const pp = photosPayload(); if (!pp) return sendJSON(req, res, {}); return sendJSON(req, res, null, { raw: pp.raw, gz: pp.gz }); }
     if (p === '/api/snapshot') { buildSnapshot(); return sendJSON(req, res, null, { raw: snapshotRaw, gz: snapshotGz }); }
 
     if (p.startsWith('/api/race/')) {

@@ -32,6 +32,7 @@ for (const r of cands) {
   out.push({
     kind: 'candidate', name: r.Candidate, party: r.Party, state, office, district, race: r.Race,
     x: String(r['X handle'] || '').replace(/^@/, ''), bsky: bskyHandle(r.Bluesky), threads: String(r['Threads handle'] || '').replace(/^@/, ''),
+    site: String(r['Campaign website'] || '').trim(), ballotpedia: String(r['Ballotpedia page'] || '').trim(),
   });
 }
 for (const r of media) {
