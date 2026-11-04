@@ -1,4 +1,5 @@
 'use strict';
+const { partyCode } = require('./civic');
 // Polls X through twitterapi.io: batched "from:" searches with a since filter so
 // only new posts are fetched. Free tier allows one request per 5 seconds.
 
@@ -72,6 +73,7 @@ class XPoll {
       image: img,
       tag: a.kind === 'candidate' ? `${a.party}${race ? ', ' + race.name : ''}` : [a.outlet, a.role].filter(Boolean).join(', '),
       kind: a.kind,
+      party: a.kind === 'candidate' ? partyCode(a.party) : null,
       tier: a.kind === 'media' || a.office === 'senate' ? 'A' : 'B',
       race_id: race ? race.id : null,
       race_name: race ? race.name : null,

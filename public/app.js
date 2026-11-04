@@ -330,11 +330,16 @@
   }
 
   // ---- feed -------------------------------------------------------------
+  const ICONS = {
+    X: '<svg viewBox="0 0 24 24" width="16" height="16" aria-label="X" role="img"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+    Bluesky: '<svg viewBox="0 0 24 24" width="16" height="16" aria-label="Bluesky" role="img"><path fill="currentColor" d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.815 2.736 3.713 3.66 6.383 3.364-4.668.69-4.672 6.49.015 6.8-2.1.2-3.9 1.1-4.6 2.3 0 0 .35 1.04 2.35 1.04 1.9 0 4.4-1.1 6.2-4.5 1.8 3.4 4.3 4.5 6.2 4.5 2 0 2.35-1.04 2.35-1.04-.7-1.2-2.5-2.1-4.6-2.3 4.687-.31 4.683-6.11.015-6.8 2.67.296 5.568-.628 6.383-3.364.246-.828.624-5.79.624-6.479 0-.69-.139-1.86-.902-2.203-.659-.299-1.664-.621-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8z"/></svg>',
+  };
+  function platformIcon(p) { const s = el('span', { class: 'plat', html: ICONS[p] || '' }); if (!ICONS[p]) s.textContent = p || ''; return s; }
   function feedItem(i) {
-    const li = el('li', { class: i.kind + (i._new ? ' new' : '') });
+    const li = el('li', { class: i.kind + (i._new ? ' new' : '') + (i.kind === 'social' ? ' p-' + (i.party || 'N') : '') });
     if (i.kind === 'social') {
       app(li, 
-        el('div', { class: 'who' }, el('span', { class: 'outlet' }, i.author || i.handle || i.platform), i.handle ? el('span', { class: 'handle' }, '@' + i.handle) : null, el('span', { class: 'kind social' }, i.platform || 'Social'), el('time', { datetime: new Date(i.ts).toISOString() }, fmtShort(i.ts))),
+        el('div', { class: 'who' }, platformIcon(i.platform), el('span', { class: 'outlet' }, i.author || i.handle || i.platform), i.handle ? el('span', { class: 'handle' }, '@' + i.handle) : null, el('time', { datetime: new Date(i.ts).toISOString() }, fmtShort(i.ts))),
         i.tag ? el('div', { class: 'tag' }, i.tag) : null,
         el('p', { class: 'txt' }, i.text || ''),
         i.image ? el('img', { class: 'post-img', src: i.image, alt: '', loading: 'lazy' }) : null,

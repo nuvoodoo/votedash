@@ -212,16 +212,23 @@ button { cursor: pointer; }
 .feed-head { padding: 10px 12px 0; }
 .feed-head h2 { margin: 0 0 6px; font-size: 15px; }
 .feed-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
-.feed-list li { padding: 10px 12px; border-bottom: 1px solid var(--rule); }
-.feed-list li.call { border-left: 4px solid var(--amber); padding-left: 8px; }
-.feed-list li.new { background: var(--amber-soft); }
-@media (prefers-reduced-motion: no-preference) { .feed-list li { transition: background 2s ease; } }
+.feed-list li { padding: 10px 12px; border-bottom: 1px solid var(--rule); border-left: 4px solid transparent; background: #fff; }
+.feed-list li.call { background: var(--amber-soft); border-left-color: var(--amber); }
+.feed-list li.news { background: #EFEDF5; border-left-color: #B9B2CF; }
+.feed-list li.exitpoll { background: #E3EFEE; border-left-color: #8DBDB8; }
+.feed-list li.social { background: #EBEFE6; border-left-color: #A9BE93; }
+.feed-list li.social.p-D { background: var(--dem-soft); border-left-color: var(--dem); }
+.feed-list li.social.p-R { background: #F7DDE4; border-left-color: #D9748C; }
+.feed-list li.social.p-I { background: var(--ind-soft); border-left-color: var(--ind); }
+.feed-list li.new { box-shadow: inset 0 0 0 2px var(--ink); }
+@media (prefers-reduced-motion: no-preference) { .feed-list li { transition: box-shadow 2s ease; } }
 .feed-list .who { display: flex; gap: 8px; align-items: baseline; font-size: 12px; color: var(--ink-2); margin-bottom: 2px; }
 .feed-list .outlet { font-weight: 600; color: var(--ink); }
-.feed-list .kind { text-transform: none; padding: 0 5px; border-radius: 2px; background: var(--paper-2); }
+.feed-list .kind { text-transform: none; padding: 0 5px; border-radius: 2px; background: #DCD8E6; color: #3B3552; }
 .feed-list .kind.call { background: var(--amber); color: var(--ink); font-weight: 600; }
-.feed-list .kind.exitpoll { background: var(--dem-soft); color: #173D80; }
-.feed-list .kind.social { background: var(--ind-soft); color: #2E5219; }
+.feed-list .kind.exitpoll { background: #C9E3E1; color: #1F4F4B; }
+.feed-list .plat { display: inline-flex; align-items: center; color: var(--ink); margin-right: 2px; }
+.feed-list .plat svg { display: block; }
 .feed-list .ttl { display: block; color: var(--ink); text-decoration: none; font-weight: 500; line-height: 1.35; }
 .feed-list .ttl:hover { text-decoration: underline; }
 .feed-list .race-link { all: unset; cursor: pointer; font-size: 12.5px; color: var(--link); text-decoration: underline; }

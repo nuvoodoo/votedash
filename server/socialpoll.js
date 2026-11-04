@@ -1,4 +1,5 @@
 'use strict';
+const { partyCode } = require('./civic');
 // Polls Bluesky's public API for every account in server/data/accounts.json
 // that has a Bluesky handle, and feeds new posts into the social store.
 
@@ -59,6 +60,7 @@ class SocialPoll {
         image: img,
         tag: a.kind === 'candidate' ? `${a.party}${race ? ', ' + race.name : ''}` : [a.outlet, a.role].filter(Boolean).join(', '),
         kind: a.kind,
+        party: a.kind === 'candidate' ? partyCode(a.party) : null,
         tier: a.kind === 'media' || a.office === 'senate' ? 'A' : 'B',
         race_id: race ? race.id : null,
         race_name: race ? race.name : null,
