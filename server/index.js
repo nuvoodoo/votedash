@@ -113,7 +113,7 @@ function sendFile(req, res, file) {
     if (err) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
     const ext = path.extname(file);
     const headers = { 'content-type': MIME[ext] || 'application/octet-stream' };
-    headers['cache-control'] = ext === '.html' ? 'no-cache' : 'public, max-age=300';
+    headers['cache-control'] = /\.(html|js|css)$/.test(ext) ? 'no-cache' : 'public, max-age=300';
     if (ext === '.html') data = Buffer.from(data.toString('utf8').replace(/__V__/g, VERSION));
     if (/\bgzip\b/.test(req.headers['accept-encoding'] || '') && /\.(html|js|css|svg)$/.test(ext)) {
       headers['content-encoding'] = 'gzip';
