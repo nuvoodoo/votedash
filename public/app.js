@@ -202,10 +202,19 @@
     }
     return out;
   }
+  // Bar colour: party for partisan candidates; nonpartisan ones (and Yes/No) get neutral
+  // colours that stay with the candidate as the count moves (alphabetical, Yes and No fixed).
+  function barClass(cands, c) {
+    if (c.p !== 'O') return c.p;
+    if (/^yes$/i.test(c.n)) return 'n1';
+    if (/^no$/i.test(c.n)) return 'n2';
+    const names = cands.filter((x) => x.p === 'O').map((x) => x.n).sort();
+    return 'n' + ((names.indexOf(c.n) % 4) + 1);
+  }
   function barFor(cands, h) {
     const bar = el('div', { class: 'bar', 'aria-hidden': 'true' });
     const total = cands.reduce((s, c) => s + c.v, 0) || 1;
-    for (const c of cands) if (c.v > 0) bar.append(el('i', { class: c.p, style: `width:${(c.v / total) * 100}%` }));
+    for (const c of cands) if (c.v > 0) bar.append(el('i', { class: barClass(cands, c), style: `width:${(c.v / total) * 100}%` }));
     return bar;
   }
 
@@ -371,7 +380,7 @@
       for (const x of cands) {
         app(tb, el('tr', { class: x.w ? 'w' : '' },
           el('td', { class: 'cn p-' + x.p }, x.n, el('span', { class: 'party' }, x.pf || ''), x.inc ? el('span', { class: 'inc' }, 'Incumbent') : null),
-          el('td', { class: 'cb' }, el('div', { class: 'bar' }, el('i', { class: x.p, style: `width:${(x.v / totalV) * 100}%` }))),
+          el('td', { class: 'cb' }, el('div', { class: 'bar' }, el('i', { class: barClass(cands, x), style: `width:${(x.v / totalV) * 100}%` }))),
           el('td', { class: 'cv' }, fmtN(x.v)),
           el('td', { class: 'cp' }, fmtPct(x.pc))));
       }

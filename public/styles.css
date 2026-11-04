@@ -12,6 +12,7 @@
   --ind: #5C8E3E;
   --ind-soft: #DDE8D4;
   --oth: #8A8F98;
+  --np1: #1A8A82; --np2: #C7861A; --np3: #8A5A3C; --np4: #5E6B7A;
   --amber: #D48A00;
   --amber-soft: #FBEFD4;
   --link: #1D4F9C;
@@ -49,6 +50,7 @@
   --ind: #7FB55C;
   --ind-soft: #22321A;
   --oth: #9AA0A8;
+  --np1: #3DB5AC; --np2: #E3A53E; --np3: #B9825F; --np4: #8A97A6;
   --amber: #F0A52A;
   --amber-soft: #3B2B0E;
   --link: #8FB4F0;
@@ -242,6 +244,7 @@ button { cursor: pointer; }
 .bar { position: relative; height: 8px; background: var(--paper-2); margin-top: 5px; display: flex; overflow: hidden; }
 .bar i { display: block; height: 100%; }
 .bar i.D { background: var(--dem); } .bar i.R { background: var(--rep); } .bar i.I { background: var(--ind); } .bar i.O { background: var(--oth); }
+.bar i.n1 { background: var(--np1); } .bar i.n2 { background: var(--np2); } .bar i.n3 { background: var(--np3); } .bar i.n4 { background: var(--np4); }
 .p-D { color: var(--dem); } .p-R { color: var(--rep); } .p-I { color: var(--ind); } .p-O { color: var(--ink-2); }
 .margin { font-weight: 600; white-space: nowrap; }
 .pct { white-space: nowrap; }
