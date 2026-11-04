@@ -276,7 +276,7 @@
     tr.innerHTML = '';
     const { a, b, margin } = leaderInfo(r);
     const nameCell = el('td', null,
-      el('span', { class: 'race-name' }, el('button', { type: 'button', onclick: () => go(`/race/${r.id}`) }, raceLabel(r))),
+      el('span', { class: 'race-name' }, el('a', { href: `/race/${r.id}`, onclick: (e) => { e.preventDefault(); go(`/race/${r.id}`); } }, raceLabel(r))),
       el('span', { class: 'race-sub' },
         state.cat === 'southbay' && r.sb ? el('span', null, r.sb) : null,
         (r.cat === 'house' || r.cat === 'senate' || r.cat === 'governor') ? null : el('span', null, r.type === r.name ? '' : r.type),

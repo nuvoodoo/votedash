@@ -18,6 +18,7 @@ const usage = new Usage();
 const USERS_KEY = process.env.USERS_KEY || '';
 const og = require('./og');
 const titles = require('../public/titles');
+const seo = require('./seo');
 // Candidate photos (tools/gather-photos.js). Served as one cached map.
 let photosRaw = null, photosGz = null, photosMtime = 0;
 let photosRemote = null; // latest manifest pulled from PHOTOS_URL, so new photos ship without a deploy
@@ -150,7 +151,8 @@ function sendJSON(req, res, obj, { raw, gz } = {}) {
   }
 }
 
-function sendFile(req, res, file, transform) {
+let sitemapXml = null, sitemapTs = 0;
+function sendFile(req, res, file, transform, statusOf) {
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
     const ext = path.extname(file);
@@ -162,7 +164,7 @@ function sendFile(req, res, file, transform) {
       data = zlib.gzipSync(data);
     }
     headers['content-length'] = data.length;
-    res.writeHead(200, headers); res.end(data);
+    res.writeHead(statusOf ? statusOf() : 200, headers); res.end(data);
   });
 }
 
@@ -180,7 +182,7 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 function pageHead(html, p) {
   const m = titles.page(p, civic.races);
   if (!m) return html;
-  const t = esc(m.title), d = esc(m.desc), u = esc('https://votedash.net' + p);
+  const t = esc(m.title), d = esc(m.desc), u = esc('https://votedash.net' + (seo.canonical(p, civic.races) || p));
   return html
     .replace(/<title>[^<]*<\/title>/, `<title>${t}</title>`)
     .replace(/(<meta name="description" content=")[^"]*/, `$1${d}`)
@@ -249,8 +251,14 @@ const server = http.createServer(async (req, res) => {
     if (p === '/' || p.startsWith('/race/') || p === '/feed' || p.startsWith('/feed/') || p === '/board' || p.startsWith('/board/') || p === '/calls') {
       const rm = p.match(/^\/race\/(\d+)/);
       usage.hit(req, rm ? 'race' : p.startsWith('/feed') ? 'feed' : p.startsWith('/board/') ? 'board:' + p.split('/')[2] : 'home', rm ? Number(rm[1]) : null);
-      return sendFile(req, res, path.join(PUBLIC, 'index.html'), (h) => pageHead(h, p));
+      let status = 200;
+      return sendFile(req, res, path.join(PUBLIC, 'index.html'), (h) => { const r = seo.render(pageHead(h, p), p, civic.races, callTimes.build()); status = r.status; return r.html; }, () => status);
     }
+    if (p === '/sitemap.xml') {
+      if (!sitemapXml || Date.now() - sitemapTs > 300000) { sitemapXml = seo.sitemap(civic.races); sitemapTs = Date.now(); }
+      res.writeHead(200, { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=300' }); return res.end(sitemapXml);
+    }
+    if (p === '/robots.txt') { res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=3600' }); return res.end(seo.robots()); }
     const safe = path.normalize(p).replace(/^(\.\.[/\\])+/, '');
     const file = path.join(PUBLIC, safe);
     if (file.startsWith(PUBLIC) && fs.existsSync(file) && fs.statSync(file).isFile()) return sendFile(req, res, file);
