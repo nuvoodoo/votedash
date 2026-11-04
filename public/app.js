@@ -23,7 +23,7 @@
 
   const state = {
     races: new Map(), bop: null, feed: [], social: [], calls: {}, forecastTotals: null,
-    cat: 'senate', q: '', uncalled: false, sort: 'state', feedTab: 'all', view: 'board', raceId: null,
+    cat: 'senate', q: '', stateFilter: null, uncalled: false, sort: 'state', feedTab: 'all', view: 'board', raceId: null,
     lastTs: 0, sse: null, stale: false, unseenFeed: 0,
   };
 
@@ -194,6 +194,7 @@
   function filtered() {
     const q = state.q.trim().toLowerCase();
     let rows = [...state.races.values()].filter((r) => catOf(r) === state.cat);
+    if (state.stateFilter) rows = rows.filter((r) => r.state === state.stateFilter);
     if (state.uncalled) rows = rows.filter((r) => !r.called);
     if (q) rows = rows.filter((r) => `${r.name} ${r.stateName} ${r.state} ${r.district || ''} ${r.cands.map((c) => c.n).join(' ')}`.toLowerCase().includes(q));
     const key = {
@@ -242,6 +243,10 @@
     for (const r of rows) { const tr = buildRow(r); rowEls.set(r.id, tr); app(frag, tr); }
     app(tb, frag);
     $('#empty').hidden = rows.length > 0;
+    $('#map-clear').hidden = !state.stateFilter;
+    if (window.VoteMap) VoteMap.render({ cat: state.cat, races: state.races, calls: state.calls, stateFilter: state.stateFilter,
+      onOpen: (id) => go(`/race/${id}`),
+      onState: (st) => { state.stateFilter = state.stateFilter === st ? null : st; renderBoard(); } }).catch(() => {});
     $('#cat-tabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.cat === state.cat ? 'true' : 'false'));
   }
   function patchRows(ids) {
@@ -253,7 +258,7 @@
       tr.classList.add('flash'); setTimeout(() => tr.classList.remove('flash'), 1500);
       if (state.sort !== 'state' || (state.uncalled && r.called)) resort = true;
     }
-    if (resort) renderBoard();
+    if (resort) renderBoard(); else if (window.VoteMap) VoteMap.update({ races: state.races, calls: state.calls });
   }
 
   // ---- detail -----------------------------------------------------------
@@ -373,7 +378,8 @@
   function renderAll() { renderBop(); renderUpdated(); renderFeed(); renderMain(); }
 
   // ---- controls ---------------------------------------------------------
-  $('#cat-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.cat = b.dataset.cat; if (state.raceId) go('/board'); else renderBoard(); });
+  $('#map-clear').addEventListener('click', () => { state.stateFilter = null; renderBoard(); });
+  $('#cat-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.cat = b.dataset.cat; state.stateFilter = null; if (state.raceId) go('/board'); else renderBoard(); });
   $('#feed-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.feedTab = b.dataset.feed; renderFeed(); });
   $('#q').addEventListener('input', (e) => { state.q = e.target.value; renderBoard(); });
   $('#uncalled').addEventListener('change', (e) => { state.uncalled = e.target.checked; renderBoard(); });
