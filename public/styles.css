@@ -250,6 +250,7 @@ button { cursor: pointer; }
 .call-tag:hover { background: var(--ink-2); }
 .call-tag.civic { background: var(--amber); color: var(--ink); }
 .call-tag.pg { background: var(--pm-fg); color: #fff; }
+.call-tag.ddhq { background: var(--dem); color: #fff; }
 .called-note { font-size: 12px; color: var(--ink-2); }
 .avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; object-position: top; vertical-align: middle; margin-right: 6px; background: var(--paper-2); }
 .cands .cn { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }

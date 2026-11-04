@@ -15,6 +15,7 @@ const UA = 'VoteDash/1.0 (https://votedash.net; russgilbert@gmail.com) photo-gat
 const cats = (process.argv[2] || 'senate,governor').split(',');
 const limitArg = process.argv.indexOf('--limit');
 const LIMIT = limitArg > 0 ? Number(process.argv[limitArg + 1]) : Infinity;
+const RETRY = process.argv.includes('--retry');
 const STATE_NAMES = { AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',DC:'District of Columbia' };
 
 const ACCOUNTS = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'server', 'data', 'accounts.json'), 'utf8')); } catch (e) { return []; } })();
@@ -85,20 +86,31 @@ async function fileInfo(title) {
 }
 function nameTokens(n) { return n.toLowerCase().replace(/["“”().,']/g, ' ').split(/\s+/).filter((t) => t.length > 1 && !/^(jr|sr|ii|iii|iv|dr)$/.test(t)); }
 
+const NICK = { john: ['jack', 'johnny'], jack: ['john'], william: ['bill', 'billy', 'will'], bill: ['william'], robert: ['bob', 'rob', 'bobby'], bob: ['robert'], richard: ['dick', 'rick', 'rich'], rick: ['richard'], james: ['jim', 'jimmy'], jim: ['james'], edward: ['ed', 'eddie', 'ted'], ed: ['edward'], thomas: ['tom', 'tommy'], tom: ['thomas'], daniel: ['dan', 'danny'], dan: ['daniel'], michael: ['mike'], mike: ['michael'], joseph: ['joe'], joe: ['joseph'], charles: ['chuck', 'charlie'], anthony: ['tony'], elizabeth: ['liz', 'beth'], katherine: ['kathy', 'kate', 'katie'], margaret: ['peggy', 'meg'], christopher: ['chris'], chris: ['christopher'], jonathan: ['jon'], jon: ['jonathan'], benjamin: ['ben'], ben: ['benjamin'], andrew: ['andy', 'drew'], andy: ['andrew'], steven: ['steve'], stephen: ['steve'], steve: ['steven', 'stephen'], timothy: ['tim'], tim: ['timothy'], matthew: ['matt'], matt: ['matthew'], gregory: ['greg'], greg: ['gregory'], patrick: ['pat'], nicholas: ['nick'], samuel: ['sam'], donald: ['don'], ronald: ['ron'], raymond: ['ray'], kenneth: ['ken'], douglas: ['doug'], lawrence: ['larry'], theodore: ['ted'], frederick: ['fred'], alexander: ['alex'], jennifer: ['jen', 'jenny'], deborah: ['deb', 'debbie'], susan: ['sue'], patricia: ['pat', 'patty'], rebecca: ['becky'], cynthia: ['cindy', 'cinde'], jacqueline: ['jackie'] };
+function firstMatches(a, b) { if (a === b || a.startsWith(b) || b.startsWith(a)) return true; return (NICK[a] || []).includes(b) || (NICK[b] || []).includes(a); }
 async function findArticle(c, race) {
   const st = STATE_NAMES[race.state] || race.state;
   const office = race.cat === 'senate' ? 'senator' : race.cat === 'governor' ? 'governor' : race.cat === 'house' ? 'representative' : 'politician';
-  const q = `"${c.n}" ${st} ${office}`;
-  const j = await api('en.wikipedia.org', { action: 'query', list: 'search', srsearch: q, srlimit: 5, srnamespace: 0 });
   const toks = nameTokens(c.n);
   const last = toks[toks.length - 1], first = toks[0];
-  for (const hit of j.query?.search || []) {
-    const t = hit.title.toLowerCase();
-    if (!t.includes(last)) continue;
-    if (!(t.includes(first) || first.length <= 3)) continue;
-    const snippet = clean(hit.snippet).toLowerCase();
-    if (!/politic|senator|representative|governor|congress|mayor|council|attorney|candidate|legislat|assembly|election|judge|sheriff|businessman|businesswoman|activist|lawyer|physician|veteran/.test(snippet + ' ' + t)) continue;
-    return hit.title;
+  const short = `${first} ${last}`;
+  const queries = [`"${c.n}" ${st} ${office}`, `${short} ${st} ${office}`, `${short} politician`];
+  const POL = /politic|senator|representative|governor|congress|mayor|council|attorney|candidate|legislat|assembly|election|judge|sheriff|businessman|businesswoman|activist|lawyer|physician|veteran|secretary|treasurer|auditor|commissioner|official|party/;
+  for (const q of queries) {
+    const j = await api('en.wikipedia.org', { action: 'query', list: 'search', srsearch: q, srlimit: 6, srnamespace: 0 });
+    for (const hit of j.query?.search || []) {
+      const t = hit.title.toLowerCase();
+      const tt = nameTokens(hit.title.replace(/\(.*\)/, ''));
+      if (!t.includes(last)) continue;
+      const tfirst = tt[0] || '';
+      if (!(firstMatches(tfirst, first) || first.length <= 3)) continue;
+      const snippet = clean(hit.snippet).toLowerCase();
+      const exact = tt[tt.length - 1] === last && firstMatches(tfirst, first);
+      if (!exact && !POL.test(snippet + ' ' + t)) continue;
+      if (exact && !POL.test(snippet + ' ' + t) && !snippet.includes(st.toLowerCase())) continue;
+      return hit.title;
+    }
+    await sleep(150);
   }
   return null;
 }
@@ -137,7 +149,7 @@ async function actionFor(c, portraitFile) {
     for (const c of r.cands) {
       if (c.n === 'Write-in' || !/^[DRI]$/.test(c.p) && r.cat !== 'local') continue;
       const key = `${r.id}|${c.n}`;
-      if (out[key]) { skipped++; continue; }
+      if (out[key] && !(RETRY && !out[key].portrait && !out[key].campaign)) { skipped++; continue; }
       if (done >= LIMIT) break;
       done++;
       try {

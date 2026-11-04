@@ -124,11 +124,14 @@ class News {
     const abbr = t.match(/\b([A-Z]{2})-(\d{1,2}|AL)\b/);
     let district = abbr ? `${abbr[1]}-${abbr[2] === 'AL' ? 'AL' : abbr[2].padStart(2, '0')}` : null;
     if (district) state = state || abbr[1];
+    const abbr2 = !state && t.match(/\b([A-Z]{2})[ -](?:Senate|Sen|Governor|Gov|House)\b/);
+    if (abbr2 && STATES[abbr2[1]]) state = abbr2[1];
     if (!state) return null;
     let cat = null;
     if (/\b(senate|senator)\b/i.test(t) && !/state senate/i.test(t)) cat = 'senate';
     else if (/\b(governor|gubernatorial)\b/i.test(t)) cat = 'governor';
     else if (/\b(house|congressional|district|congress)\b/i.test(t) && !/state house/i.test(t)) cat = 'house';
+    if (!cat && district) cat = 'house';
     if (!cat) return null;
     if (cat === 'house' && !district) {
       const dm = t.match(/(\d{1,2})(?:st|nd|rd|th)?\s+(?:congressional\s+)?district/i) || t.match(/district\s+(\d{1,2})/i);

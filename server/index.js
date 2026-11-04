@@ -10,6 +10,9 @@ const { SocialPoll } = require('./socialpoll');
 const { XPoll } = require('./xpoll');
 const { Polymarket } = require('./polymarket');
 const { Pollgebra } = require('./pollgebra');
+const { Usage } = require('./usage');
+const usage = new Usage();
+const USERS_KEY = process.env.USERS_KEY || '';
 const og = require('./og');
 // Candidate photos (tools/gather-photos.js). Served as one cached map.
 let photosRaw = null, photosGz = null, photosMtime = 0;
@@ -57,6 +60,10 @@ const civic = new Civic((ev, payload) => {
   if (ev === 'races') { snapshotDirty = true; broadcast('races', { ...payload, ts: Date.now() }); }
   else if (ev === 'calls') { feedCalls(payload); }
   else if (ev === 'ready') {
+    if (process.env.SEED_URL && USERS_KEY) {
+      fetch(process.env.SEED_URL.replace(/\/api\/snapshot.*/, '') + '/api/usage-dump?key=' + encodeURIComponent(USERS_KEY), { signal: AbortSignal.timeout(15000) })
+        .then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) { usage.load(d); console.log('usage seeded', usage.visitors.size, 'visitors'); } }).catch(() => {});
+    }
     if (civic.seed) {
       const sn = civic.seed; civic.seed = null;
       if (Array.isArray(sn.feed) && !news.items.length) { news.items = sn.feed; for (const it of sn.feed) news.seen.add(it.id); }
@@ -70,7 +77,7 @@ const civic = new Civic((ev, payload) => {
 const news = new News(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
 const social = new Social((ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
 const socialPoll = new SocialPoll(civic, social);
-const xPoll = new XPoll(civic, social, process.env.TWITTERAPI_IO_KEY || '');
+const xPoll = new XPoll(civic, social, process.env.TWITTERAPI_IO_KEY || '', news, (payload) => { news.items = payload.items.concat(news.items).slice(0, 500); snapshotDirty = true; broadcast('feed', payload); });
 const polymarket = new Polymarket(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
 const pollgebra = new Pollgebra(civic, news, (payload) => { if (payload.items.length) news.items = payload.items.concat(news.items).slice(0, 500); snapshotDirty = true; broadcast('feed', payload); });
 
@@ -186,8 +193,17 @@ const server = http.createServer(async (req, res) => {
     }
     if (p === '/og.svg') { res.writeHead(200, { 'content-type': 'image/svg+xml', 'cache-control': 'no-cache' }); return res.end(og.buildSVG(civic)); }
     if (p === '/api/photos') { const pp = photosPayload(); if (!pp) return sendJSON(req, res, {}); return sendJSON(req, res, null, { raw: pp.raw, gz: pp.gz }); }
+    if (p === '/api/usage' || p === '/api/usage-dump') {
+      if (!USERS_KEY || url.searchParams.get('key') !== USERS_KEY) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+      return sendJSON(req, res, p === '/api/usage' ? usage.report(civic, clients.size) : usage.dump());
+    }
+    if (p === '/users' || p === '/users/') {
+      if (!USERS_KEY || url.searchParams.get('key') !== USERS_KEY) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+      return sendFile(req, res, path.join(PUBLIC, 'users.html'));
+    }
     if (p === '/api/snapshot') { buildSnapshot(); return sendJSON(req, res, null, { raw: snapshotRaw, gz: snapshotGz }); }
 
+    if (p === '/api/view') { const rm = (url.searchParams.get('p') || '').match(/^\/race\/(\d+)/); const vp = url.searchParams.get('p') || ''; usage.hit(req, rm ? 'race' : vp.startsWith('/feed') ? 'feed' : vp.startsWith('/board/') ? 'board:' + vp.split('/')[2] : 'home', rm ? Number(rm[1]) : null); res.writeHead(204); return res.end(); }
     if (p.startsWith('/api/race/')) {
       const id = Number(p.split('/')[3]);
       if (!id) { res.writeHead(400); return res.end('bad id'); }
@@ -206,7 +222,11 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/status') return sendJSON(req, res, { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, pollgebra: pollgebra.status, clients: clients.size, races: civic.races.size, version: VERSION });
 
     // static + SPA routes
-    if (p === '/' || p.startsWith('/race/') || p === '/feed' || p.startsWith('/feed/') || p === '/board' || p.startsWith('/board/')) return sendFile(req, res, path.join(PUBLIC, 'index.html'));
+    if (p === '/' || p.startsWith('/race/') || p === '/feed' || p.startsWith('/feed/') || p === '/board' || p.startsWith('/board/')) {
+      const rm = p.match(/^\/race\/(\d+)/);
+      usage.hit(req, rm ? 'race' : p.startsWith('/feed') ? 'feed' : p.startsWith('/board/') ? 'board:' + p.split('/')[2] : 'home', rm ? Number(rm[1]) : null);
+      return sendFile(req, res, path.join(PUBLIC, 'index.html'));
+    }
     const safe = path.normalize(p).replace(/^(\.\.[/\\])+/, '');
     const file = path.join(PUBLIC, safe);
     if (file.startsWith(PUBLIC) && fs.existsSync(file) && fs.statSync(file).isFile()) return sendFile(req, res, file);
@@ -220,6 +240,7 @@ const server = http.createServer(async (req, res) => {
 
 // SSE heartbeat keeps proxies from closing idle streams.
 setInterval(() => { for (const res of clients) { if (res.writableEnded) clients.delete(res); else res.write(': ping\n\n'); } }, 20000);
+setInterval(() => usage.sample(clients.size), 60000);
 // Periodic clock tick so every client shows a fresh "updated" time and BOP.
 setInterval(() => broadcast('tick', { ts: Date.now(), bop: civic.bop(), status: { civic: civic.status.lastOk, err: civic.status.lastError } }), 15000);
 

@@ -17,8 +17,8 @@ function sinceStr(ts) {
 }
 
 class XPoll {
-  constructor(civic, social, key) {
-    this.civic = civic; this.social = social; this.key = key;
+  constructor(civic, social, key, news, emitFeed) {
+    this.civic = civic; this.social = social; this.key = key; this.news = news; this.emitFeed = emitFeed;
     const all = loadAccounts().filter((a) => a.x);
     this.byHandle = new Map(all.map((a) => [a.x.toLowerCase(), a]));
     const tierA = all.filter((a) => a.kind === 'media' || a.office === 'senate');
@@ -98,6 +98,21 @@ class XPoll {
     } while (cursor && pages < MAX_PAGES);
     b.since = newest;
     if (items.length) this.status.posts += this.social.ingestItems(items);
+    // Decision Desk HQ projections become DDHQ race calls.
+    if (this.news) {
+      const fresh = [];
+      for (const it of items) {
+        if (it.handle.toLowerCase() !== 'decisiondeskhq' || !/\bprojects?\b/i.test(it.text)) continue;
+        const head = it.text.split('\n')[0];
+        const race = this.news.matchRace(head);
+        if (!race) continue;
+        const c = (this.news.calls[race.id] = this.news.calls[race.id] || {});
+        if (c.DDHQ) continue;
+        c.DDHQ = { ts: it.ts, url: it.url, title: head.slice(0, 140) };
+        fresh.push({ id: `ddhq:${race.id}`, kind: 'call', outlet: 'DDHQ', title: head.slice(0, 160), url: it.url, ts: it.ts, race_id: race.id, race_name: race.name });
+      }
+      if (fresh.length) this.emitFeed({ items: fresh, calls: this.news.calls });
+    }
   }
 
   async loop() {
