@@ -28,19 +28,49 @@
   };
 
   // ---- routing ----------------------------------------------------------
+  // URL scheme: /  |  /board/{senate|house|governor|ballot|statewide|legislature|southbay}?state=GA&kind=measures&city=Hawthorne&uncalled=1&sort=margin
+  //             /race/{id}  |  /feed/{all|call|news|exitpoll|social}
+  const CATS = ['senate', 'house', 'governor', 'ballot', 'statewide', 'legislature', 'southbay'];
+  const FEEDS = ['all', 'call', 'news', 'exitpoll', 'social'];
   function route() {
-    const m = location.pathname.match(/^\/race\/(\d+)/);
+    const path = location.pathname, qs = new URLSearchParams(location.search);
+    const m = path.match(/^\/race\/(\d+)/);
     state.raceId = m ? Number(m[1]) : null;
-    state.view = location.pathname === '/feed' ? 'feed' : 'board';
+    const f = path.match(/^\/feed(?:\/([a-z]+))?/);
+    state.view = f ? 'feed' : 'board';
+    if (f && FEEDS.includes(f[1] || '')) state.feedTab = f[1];
+    const b = path.match(/^\/board\/([a-z]+)/);
+    if (b && CATS.includes(b[1])) state.cat = b[1];
+    if (!state.raceId) {
+      state.stateFilter = qs.get('state') || qs.get('city') || null;
+      state.sbKind = ['all', 'measures', 'offices'].includes(qs.get('kind') || '') ? qs.get('kind') : 'all';
+      state.uncalled = qs.get('uncalled') === '1';
+      if (['state', 'pct', 'margin', 'updated'].includes(qs.get('sort') || '')) state.sort = qs.get('sort');
+      $('#uncalled').checked = state.uncalled; $('#sort').value = state.sort;
+    }
     document.body.dataset.view = state.view;
     document.querySelectorAll('[data-nav]').forEach((a) => a.setAttribute('aria-current', a.dataset.nav === state.view ? 'page' : 'false'));
-    if (state.view === 'feed') { state.unseenFeed = 0; renderBadge(); }
+    if (state.view === 'feed') { state.unseenFeed = 0; renderBadge(); renderFeed(); }
     renderMain();
+  }
+  function boardURL() {
+    const qs = new URLSearchParams();
+    if (state.stateFilter) qs.set(state.cat === 'southbay' ? 'city' : 'state', state.stateFilter);
+    if (state.cat === 'southbay' && state.sbKind !== 'all') qs.set('kind', state.sbKind);
+    if (state.uncalled) qs.set('uncalled', '1');
+    if (state.sort !== 'state') qs.set('sort', state.sort);
+    const q = qs.toString();
+    return `/board/${state.cat}${q ? '?' + q : ''}`;
+  }
+  function syncURL(replace) {
+    const url = state.raceId ? `/race/${state.raceId}` : state.view === 'feed' ? `/feed/${state.feedTab}` : boardURL();
+    if (url === location.pathname + location.search) return;
+    history[replace ? 'replaceState' : 'pushState'](null, '', url);
   }
   function go(path) { history.pushState(null, '', path); route(); }
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a[data-nav]');
-    if (a) { e.preventDefault(); go(a.getAttribute('href')); }
+    if (a) { e.preventDefault(); const h = a.getAttribute('href'); go(h === '/feed' ? `/feed/${state.feedTab}` : h === '/board' ? boardURL() : h); }
   });
   window.addEventListener('popstate', route);
 
@@ -274,7 +304,7 @@
     }
     if (window.VoteMap) VoteMap.render({ cat: state.cat, races: state.races, calls: state.calls, stateFilter: state.stateFilter, southBayTiles: state.southBayTiles,
       onOpen: (id) => go(`/race/${id}`),
-      onState: (st) => { state.stateFilter = st === null ? null : (state.stateFilter === st ? null : st); renderBoard(); } }).catch(() => {});
+      onState: (st) => { state.stateFilter = st === null ? null : (state.stateFilter === st ? null : st); renderBoard(); syncURL(); } }).catch(() => {});
     $('#cat-tabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.cat === state.cat ? 'true' : 'false'));
   }
   function patchRows(ids) {
@@ -294,7 +324,7 @@
   async function renderDetail(refresh) {
     const box = $('#detail'); const r = state.races.get(state.raceId);
     $('#board').hidden = true; box.hidden = false;
-    if (!r) { box.innerHTML = ''; app(box, el('button', { class: 'back', type: 'button', onclick: () => go('/board') }, 'Back to board'), el('p', { class: 'empty' }, 'Race not found.')); return; }
+    if (!r) { box.innerHTML = ''; app(box, el('button', { class: 'back', type: 'button', onclick: () => { state.raceId = null; go(boardURL()); } }, 'Back to board'), el('p', { class: 'empty' }, 'Race not found.')); return; }
     if (detailFor !== r.id) { detailData = null; detailFor = r.id; regionSort = { key: 'name', dir: 1 }; }
     const draw = () => {
       box.innerHTML = '';
@@ -302,7 +332,7 @@
       const cands = (d ? d.cands : r.cands);
       const c = state.calls[r.id] || {};
       const callKeys = Object.keys(c);
-      app(box, el('button', { class: 'back', type: 'button', onclick: () => go('/board') }, 'Back to board'));
+      app(box, el('button', { class: 'back', type: 'button', onclick: () => { state.raceId = null; go(boardURL()); } }, 'Back to board'));
       app(box, el('h1', null, r.name));
       const meta = el('div', { class: 'meta' },
         el('span', null, el('b', null, `${Math.round(d ? d.pct : r.pct)}%`), ' reporting'),
@@ -410,20 +440,22 @@
 
   // ---- main -------------------------------------------------------------
   function renderMain() {
+    const r0 = state.raceId && state.races.get(state.raceId);
+    document.title = r0 ? `${r0.name}: VoteDash` : 'VoteDash: Live 2026 Midterm Results';
     if (state.raceId) { renderDetail(false); }
     else { $('#detail').hidden = true; $('#board').hidden = false; detailFor = null; renderBoard(); }
   }
   function renderAll() { renderBop(); renderUpdated(); renderFeed(); renderMain(); }
 
   // ---- controls ---------------------------------------------------------
-  $('#sb-kind').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.sbKind = b.dataset.kind; renderBoard(); });
-  $('#sb-city').addEventListener('change', (e) => { state.stateFilter = e.target.value || null; renderBoard(); });
-  $('#map-clear').addEventListener('click', () => { state.stateFilter = null; renderBoard(); });
-  $('#cat-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.cat = b.dataset.cat; state.stateFilter = null; if (state.raceId) go('/board'); else renderBoard(); });
-  $('#feed-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.feedTab = b.dataset.feed; renderFeed(); });
+  $('#sb-kind').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.sbKind = b.dataset.kind; renderBoard(); syncURL(); });
+  $('#sb-city').addEventListener('change', (e) => { state.stateFilter = e.target.value || null; renderBoard(); syncURL(); });
+  $('#map-clear').addEventListener('click', () => { state.stateFilter = null; renderBoard(); syncURL(); });
+  $('#cat-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.cat = b.dataset.cat; state.stateFilter = null; state.sbKind = 'all'; if (state.raceId) { state.raceId = null; go(boardURL()); } else { renderBoard(); syncURL(); } });
+  $('#feed-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.feedTab = b.dataset.feed; renderFeed(); if (state.view === 'feed') syncURL(); });
   $('#q').addEventListener('input', (e) => { state.q = e.target.value; renderBoard(); });
-  $('#uncalled').addEventListener('change', (e) => { state.uncalled = e.target.checked; renderBoard(); });
-  $('#sort').addEventListener('change', (e) => { state.sort = e.target.value; renderBoard(); });
+  $('#uncalled').addEventListener('change', (e) => { state.uncalled = e.target.checked; renderBoard(); syncURL(true); });
+  $('#sort').addEventListener('change', (e) => { state.sort = e.target.value; renderBoard(); syncURL(true); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) loadSnapshot().catch(() => {}); });
 
   route();

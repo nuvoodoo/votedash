@@ -387,6 +387,7 @@
       updateZoomBar();
     }
     if (zoom && !ctx.stateFilter) clearZoom();
+    if (mode === 'geo' && ctx.stateFilter && (!zoom || zoom.st !== ctx.stateFilter)) zoomTo(ctx.stateFilter).catch(() => {});
     paint();
   }
   function update(next) { if (!svgEl) return; Object.assign(ctx, next || {}); paint(); }

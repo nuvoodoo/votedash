@@ -178,7 +178,7 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/status') return sendJSON(req, res, { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, clients: clients.size, races: civic.races.size, version: VERSION });
 
     // static + SPA routes
-    if (p === '/' || p.startsWith('/race/') || p === '/feed' || p === '/board') return sendFile(req, res, path.join(PUBLIC, 'index.html'));
+    if (p === '/' || p.startsWith('/race/') || p === '/feed' || p.startsWith('/feed/') || p === '/board' || p.startsWith('/board/')) return sendFile(req, res, path.join(PUBLIC, 'index.html'));
     const safe = path.normalize(p).replace(/^(\.\.[/\\])+/, '');
     const file = path.join(PUBLIC, safe);
     if (file.startsWith(PUBLIC) && fs.existsSync(file) && fs.statSync(file).isFile()) return sendFile(req, res, file);
