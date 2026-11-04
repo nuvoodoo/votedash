@@ -12,6 +12,7 @@ const { Polymarket } = require('./polymarket');
 const { Pollgebra } = require('./pollgebra');
 const { LAVote } = require('./lavote');
 const { CNN } = require('./cnn');
+const { CallTimes } = require('./calltimes');
 const { Usage } = require('./usage');
 const usage = new Usage();
 const USERS_KEY = process.env.USERS_KEY || '';
@@ -73,7 +74,7 @@ const civic = new Civic((ev, payload) => {
       if (Array.isArray(sn.social) && !social.items.size) social.ingestItems(sn.social);
       console.log(`seeded feed ${news.items.length}, social ${social.items.size}`);
     }
-    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start(); polymarket.start(); pollgebra.start(); lavote.start(); cnn.start();
+    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start(); polymarket.start(); pollgebra.start(); lavote.start(); cnn.start(); callTimes.start();
   }
 });
 const news = new News(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
@@ -84,6 +85,7 @@ const polymarket = new Polymarket(civic, (ev, payload) => { snapshotDirty = true
 const lavote = new LAVote(civic);
 const cnn = new CNN(civic, news, (payload) => { if (payload.items.length) news.items = payload.items.concat(news.items).slice(0, 500); snapshotDirty = true; broadcast('feed', payload); });
 const pollgebra = new Pollgebra(civic, news, (payload) => { if (payload.items.length) news.items = payload.items.concat(news.items).slice(0, 500); snapshotDirty = true; broadcast('feed', payload); });
+const callTimes = new CallTimes(civic, news);
 
 // civicAPI winner flips become feed items too.
 function feedCalls(items) {
@@ -205,6 +207,7 @@ const server = http.createServer(async (req, res) => {
       if (!USERS_KEY || url.searchParams.get('key') !== USERS_KEY) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
       return sendFile(req, res, path.join(PUBLIC, 'users.html'));
     }
+    if (p === '/api/calls') { callTimes.build(); return sendJSON(req, res, null, { raw: callTimes.raw, gz: callTimes.gz }); }
     if (p === '/api/snapshot') { buildSnapshot(); return sendJSON(req, res, null, { raw: snapshotRaw, gz: snapshotGz }); }
 
     if (p === '/api/view') { const rm = (url.searchParams.get('p') || '').match(/^\/race\/(\d+)/); const vp = url.searchParams.get('p') || ''; usage.hit(req, rm ? 'race' : vp.startsWith('/feed') ? 'feed' : vp.startsWith('/board/') ? 'board:' + vp.split('/')[2] : 'home', rm ? Number(rm[1]) : null); res.writeHead(204); return res.end(); }
@@ -223,10 +226,10 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(req, res, { ok: true, added: n, total: social.items.size });
     }
 
-    if (p === '/api/status') return sendJSON(req, res, { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, pollgebra: pollgebra.status, lavote: lavote.status, cnn: cnn.status, clients: clients.size, races: civic.races.size, version: VERSION });
+    if (p === '/api/status') return sendJSON(req, res, { civic: civic.status, news: news.status, social: social.status, socialPoll: socialPoll.status, xPoll: xPoll.status, polymarket: polymarket.status, pollgebra: pollgebra.status, lavote: lavote.status, cnn: cnn.status, callTimes: callTimes.status, clients: clients.size, races: civic.races.size, version: VERSION });
 
     // static + SPA routes
-    if (p === '/' || p.startsWith('/race/') || p === '/feed' || p.startsWith('/feed/') || p === '/board' || p.startsWith('/board/')) {
+    if (p === '/' || p.startsWith('/race/') || p === '/feed' || p.startsWith('/feed/') || p === '/board' || p.startsWith('/board/') || p === '/calls') {
       const rm = p.match(/^\/race\/(\d+)/);
       usage.hit(req, rm ? 'race' : p.startsWith('/feed') ? 'feed' : p.startsWith('/board/') ? 'board:' + p.split('/')[2] : 'home', rm ? Number(rm[1]) : null);
       return sendFile(req, res, path.join(PUBLIC, 'index.html'));

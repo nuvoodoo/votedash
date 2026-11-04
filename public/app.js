@@ -39,7 +39,7 @@
     const m = path.match(/^\/race\/(\d+)/);
     state.raceId = m ? Number(m[1]) : null;
     const f = path.match(/^\/feed(?:\/([a-z]+))?/);
-    state.view = f ? 'feed' : 'board';
+    state.view = f ? 'feed' : /^\/calls\b/.test(path) ? 'calls' : 'board';
     if (f && FEEDS.includes(f[1] || '')) state.feedTab = f[1];
     const b = path.match(/^\/board\/([a-z]+)/);
     if (b && CATS.includes(b[1])) state.cat = b[1];
@@ -65,7 +65,7 @@
     return `/board/${state.cat}${q ? '?' + q : ''}`;
   }
   function syncURL(replace) {
-    const url = state.raceId ? `/race/${state.raceId}` : state.view === 'feed' ? `/feed/${state.feedTab}` : boardURL();
+    const url = state.raceId ? `/race/${state.raceId}` : state.view === 'feed' ? `/feed/${state.feedTab}` : state.view === 'calls' ? '/calls' : boardURL();
     if (url === location.pathname + location.search) return;
     history[replace ? 'replaceState' : 'pushState'](null, '', url);
   }
@@ -367,6 +367,13 @@
           r.winner && callKeys.length ? el('span', null, 'Called by') : null,
           ...callTags(r, true)));
       }
+      const ctBox = el('div', { class: 'ct-detail' });
+      app(box, ctBox);
+      loadCalls().then((cd) => {
+        const rr = cd.races.find((x) => x.id === r.id);
+        if (!rr || !ctBox.isConnected || ctEvents(rr).length < 2) return;
+        ctBox.replaceChildren(el('h2', null, 'Who called it'), raceTimeline(rr), el('a', { class: 'ct-all', href: '/calls', onclick: (e) => { e.preventDefault(); go('/calls'); } }, 'Every source ranked'));
+      }).catch(() => {});
       const tbl = el('table', { class: 'cands' }, el('tbody'));
       const tb = tbl.firstChild; const totalV = cands.reduce((s, x) => s + x.v, 0) || 1;
       for (const x of cands) {
@@ -467,11 +474,143 @@
   }
   function renderBadge() { const b = $('#feed-badge'); b.hidden = !state.unseenFeed; b.textContent = state.unseenFeed > 99 ? '99+' : String(state.unseenFeed); }
 
+  // ---- who called it ----------------------------------------------------
+  // /calls: sources ranked by who called the winner first, then every race's calls on a time track.
+  const CT = { data: null, at: 0, loading: null, cat: 'all', q: '', sort: 'recent', shown: 30 };
+  function loadCalls(force) {
+    if (CT.loading) return CT.loading;
+    if (!force && CT.data && Date.now() - CT.at < 60000) return Promise.resolve(CT.data);
+    CT.loading = fetch('/api/calls', { cache: 'no-store' }).then((r) => r.json()).then((d) => { CT.data = d; CT.at = Date.now(); return d; }).finally(() => { CT.loading = null; });
+    return CT.loading;
+  }
+  setInterval(() => { if (state.view === 'calls' && !state.raceId) loadCalls(true).then(renderCalls).catch(() => {}); }, 60000);
+  const srcClass = (k) => (k === 'civicAPI' ? ' civic' : k === 'Pollgebra' ? ' pg' : k === 'DDHQ' ? ' ddhq' : '');
+  function fmtDur(ms) {
+    const m = Math.round(Math.abs(ms) / 60000);
+    if (m < 1) return 'under 1 min';
+    if (m < 60) return `${m} min`;
+    const h = Math.floor(m / 60), r = m % 60;
+    return r ? `${h} h ${r} min` : `${h} h`;
+  }
+  const ctCat = (r) => (r.cat === 'senate' ? 'senate' : r.cat === 'house' || r.cat === 'delegate' ? 'house' : r.cat === 'governor' ? 'governor' : 'other');
+  // Calls that count on the track: accurate and wrong ones; headlines that name no winner stay off.
+  const ctEvents = (r) => r.calls.filter((c) => c.v !== 'unverified');
+
+  function raceTimeline(r) {
+    const calls = ctEvents(r);
+    const ok = calls.filter((c) => c.v === 'accurate');
+    const first = ok.length ? ok[0].ts : null;
+    const pts = calls.map((c) => c.ts).concat(r.pm && !r.pm.pre ? [r.pm.ts] : []);
+    const t0 = Math.min(...pts), t1 = Math.max(...pts), span = Math.max(t1 - t0, 60000);
+    const pos = (ts) => ((ts - t0) / span) * 100;
+    const track = el('div', { class: 'ct-track' + (r.pm && r.pm.pre ? ' pre' : '') });
+    const marks = [];
+    if (r.pm) marks.push({ kind: 'pm', ts: r.pm.pre ? t0 : r.pm.ts, x: r.pm.pre ? 0 : pos(r.pm.ts), label: r.pm.pre ? 'Polymarket 55%+ from the start of Election Day' : `Polymarket 55%+ at ${fmtShort(r.pm.ts)}` });
+    calls.forEach((c) => marks.push({ kind: 'call', c, ts: c.ts, x: pos(c.ts), label: `${c.src} ${c.v === 'wrong' ? 'called the wrong candidate' : 'called it'} at ${fmtShort(c.ts)}` }));
+    marks.sort((a, b) => a.x - b.x);
+    const lanes = [];
+    for (const m of marks) {
+      let lane = lanes.findIndex((x) => m.x - x >= 6);
+      if (lane < 0) { lane = lanes.length < 3 ? lanes.length : lanes.indexOf(Math.min(...lanes)); }
+      lanes[lane] = m.x;
+      const node = m.kind === 'pm'
+        ? el('span', { class: 'ct-mark pm' + (r.pm.pre ? ' pre' : ''), title: m.label, 'aria-hidden': 'true' })
+        : el('span', { class: 'ct-mark call' + srcClass(m.c.src) + (m.c.v === 'wrong' ? ' wrong' : ''), title: m.label, 'aria-hidden': 'true' }, m.c.src.slice(0, 1));
+      node.style.left = `${m.x}%`; node.style.bottom = `${lane * 20 - 8}px`; if (lane) node.style.setProperty('--stem', `${lane * 20 - 8}px`);
+      track.append(node);
+    }
+    track.style.height = `${Math.max(1, lanes.length) * 20}px`;
+    const axis = el('div', { class: 'ct-axis' }, el('span', null, fmtShort(t0) + (TZ ? ' ' + TZ : '')), t1 > t0 ? el('span', null, fmtShort(t1)) : null);
+    const seq = el('ol', { class: 'ct-seq' });
+    if (r.pm) {
+      const lead = first != null && r.pm.ts <= first && !r.pm.pre ? `${fmtDur(first - r.pm.ts)} before the first call` : null;
+      app(seq, el('li', { class: 'ct-step pm' },
+        el('span', { class: 'ct-pos' }, el('span', { class: 'ct-dia', 'aria-hidden': 'true' })),
+        el('a', { class: 'pm-lbl', href: r.pm.url, target: '_blank', rel: 'noopener' }, 'Polymarket 55%+'),
+        el('span', { class: 'ct-when' }, r.pm.pre ? 'before Election Day' : fmtShort(r.pm.ts)),
+        lead ? el('span', { class: 'ct-delta' }, lead) : null));
+    }
+    let n = 0;
+    for (const c of calls) {
+      const right = c.v === 'accurate';
+      if (right) n++;
+      app(seq, el('li', { class: 'ct-step' + (right ? '' : ' wrong') },
+        el('span', { class: 'ct-pos' }, right ? String(n) : '×'),
+        el('a', { class: 'call-tag' + srcClass(c.src), href: c.url, target: '_blank', rel: 'noopener', title: c.title }, c.src),
+        el('span', { class: 'ct-when' }, fmtShort(c.ts)),
+        el('span', { class: 'ct-delta' }, !right ? 'wrong candidate' : c.ts === first ? 'first' : `+${fmtDur(c.ts - first)}`)));
+    }
+    return el('div', { class: 'ct-line' }, track, axis, seq);
+  }
+
+  function raceCard(r) {
+    const w = r.winner;
+    return el('article', { class: 'ct-race' },
+      el('header', null,
+        el('a', { class: 'ct-name', href: `/race/${r.id}`, onclick: (e) => { e.preventDefault(); go(`/race/${r.id}`); } }, r.name),
+        el('span', { class: 'ct-win' }, el('i', { class: 'sw ' + (w.p || 'O'), 'aria-hidden': 'true' }), w.n)),
+      raceTimeline(r));
+  }
+
+  function boardRow(b, rank) {
+    return el('li', { class: 'ct-row' + (b.ranked ? '' : ' unranked') },
+      el('span', { class: 'ct-rank' }, rank ? String(rank) : ''),
+      el('span', { class: 'ct-src' }, el('span', { class: 'call-tag' + srcClass(b.src) }, b.src)),
+      el('span', { class: 'ct-score' }, el('b', null, b.score.toFixed(1)), el('span', { class: 'ct-bar', 'aria-hidden': 'true' }, el('i', { style: `width:${b.score}%` }))),
+      el('span', { class: 'ct-stats' },
+      el('span', { class: 'ct-stat' }, el('b', null, fmtN(b.firsts)), el('small', null, 'first')),
+      el('span', { class: 'ct-stat' }, el('b', null, fmtN(b.races)), el('small', null, 'scored')),
+      el('span', { class: 'ct-stat' }, el('b', null, b.medianBehind ? '+' + fmtDur(b.medianBehind) : 'none'), el('small', null, 'behind')),
+      el('span', { class: 'ct-stat' + (b.wrong ? ' bad' : '') }, el('b', null, fmtN(b.wrong)), el('small', null, 'wrong'))));
+  }
+
+  function renderCalls() {
+    const box = $('#calls');
+    const d = CT.data;
+    if (!d) { box.replaceChildren(el('h1', null, 'Who called it'), el('p', { class: 'empty' }, 'Loading calls…')); loadCalls().then(renderCalls).catch(() => {}); return; }
+    const head = el('div', { class: 'ct-head' },
+      el('h1', null, 'Who called it'),
+      el('p', { class: 'ct-dek' }, `Ranked by who called the winner first. In each of the ${fmtN(d.scoredRaces)} races called by two or more sources, the first source to call the winner gets 100 points and the last gets 0; a call for the wrong candidate scores 0. A source's score is its average.`));
+    const ranked = d.board.filter((b) => b.ranked), rest = d.board.filter((b) => !b.ranked && b.races);
+    const cols = el('li', { class: 'ct-row ct-cols', 'aria-hidden': 'true' }, el('span', null, '#'), el('span', null, 'Source'), el('span', null, 'Score'), el('span', null, 'First'), el('span', null, 'Scored'), el('span', null, 'Behind first'), el('span', null, 'Wrong'));
+    const list = el('ol', { class: 'ct-board' }, cols, ...ranked.map((b, i) => boardRow(b, i + 1)));
+    const extra = rest.length ? el('div', { class: 'ct-rest' }, el('h3', null, `Fewer than ${d.minRaces} scored races`), el('ol', { class: 'ct-board' }, ...rest.map((b) => boardRow(b, 0)))) : null;
+    const pm = d.pm && d.pm.races ? el('aside', { class: 'ct-pmcard' },
+      el('div', { class: 'ct-pmhead' }, el('span', { class: 'ct-dia', 'aria-hidden': 'true' }), el('b', null, 'Polymarket 55%+'), el('span', null, 'Market odds, not a call')),
+      el('p', null, el('b', null, `${d.pm.beforeCall} of ${d.pm.races}`), ' priced races had the winner at 55% or better before anyone called it.'),
+      el('p', null, el('b', null, fmtN(d.pm.preDay)), ' were there before Election Day began.', ...(d.pm.nightRaces ? [' The other ', el('b', null, fmtN(d.pm.nightRaces)), ' crossed on election night, a median ', el('b', null, fmtDur(d.pm.medianLead)), ' ahead of the first call.'] : []))) : null;
+
+    const tabs = el('div', { class: 'tabs small', role: 'tablist', 'aria-label': 'Race type' },
+      ...[['all', 'All'], ['senate', 'Senate'], ['house', 'House'], ['governor', 'Governors'], ['other', 'Other races']].map(([k, label]) =>
+        el('button', { role: 'tab', type: 'button', 'aria-selected': CT.cat === k ? 'true' : 'false', onclick: () => { CT.cat = k; CT.shown = 30; renderCalls(); } }, label)));
+    const q = el('input', { type: 'search', placeholder: 'State, district, or candidate', value: CT.q, autocomplete: 'off' });
+    q.addEventListener('input', () => { CT.q = q.value; CT.shown = 30; drawList(); });
+    const sort = el('select', null, ...[['recent', 'Latest first call'], ['sources', 'Most sources'], ['spread', 'Longest from first to last call']].map(([k, label]) => { const o = el('option', { value: k }, label); if (CT.sort === k) o.selected = true; return o; }));
+    sort.addEventListener('change', () => { CT.sort = sort.value; drawList(); });
+    const controls = el('div', { class: 'ct-controls' }, tabs, el('div', { class: 'controls' }, el('label', { class: 'search' }, el('span', { class: 'vh' }, 'Find a race'), q), el('label', { class: 'sort' }, el('span', { class: 'vh' }, 'Sort'), sort)));
+    const listBox = el('div', { class: 'ct-races' });
+    function drawList() {
+      const needle = CT.q.trim().toLowerCase();
+      let rows = d.races.filter((r) => ctEvents(r).length >= 2 && (CT.cat === 'all' || ctCat(r) === CT.cat) && (!needle || (r.name + ' ' + r.winner.n + ' ' + (r.district || '')).toLowerCase().includes(needle)));
+      const firstTs = (r) => (ctEvents(r)[0] || { ts: 0 }).ts;
+      const spread = (r) => { const t = ctEvents(r).map((c) => c.ts); return Math.max(...t) - Math.min(...t); };
+      rows.sort(CT.sort === 'sources' ? (a, b) => ctEvents(b).length - ctEvents(a).length || firstTs(b) - firstTs(a) : CT.sort === 'spread' ? (a, b) => spread(b) - spread(a) : (a, b) => firstTs(b) - firstTs(a));
+      listBox.replaceChildren(...rows.slice(0, CT.shown).map(raceCard));
+      if (!rows.length) listBox.append(el('p', { class: 'empty' }, 'No races match.'));
+      if (rows.length > CT.shown) listBox.append(el('button', { class: 'ct-more', type: 'button', onclick: () => { CT.shown += 30; drawList(); } }, `Show more (${fmtN(rows.length - CT.shown)} left)`));
+    }
+    drawList();
+    box.replaceChildren(head, el('div', { class: 'ct-top' }, el('div', { class: 'ct-boardwrap' }, list, extra), pm), el('h2', { class: 'ct-h2' }, 'Race by race'), controls, listBox);
+  }
+
   // ---- main -------------------------------------------------------------
   function renderMain() {
     const r0 = state.raceId && state.races.get(state.raceId);
-    document.title = r0 ? `${r0.name}: VoteDash` : 'VoteDash: Live 2026 Midterm Results';
+    const calls = !state.raceId && state.view === 'calls';
+    document.title = r0 ? `${r0.name}: VoteDash` : calls ? 'Who called it: VoteDash' : 'VoteDash: Live 2026 Midterm Results';
+    $('#calls').hidden = !calls;
     if (state.raceId) { renderDetail(false); }
+    else if (calls) { $('#detail').hidden = true; $('#board').hidden = true; detailFor = null; renderCalls(); }
     else { $('#detail').hidden = true; $('#board').hidden = false; detailFor = null; renderBoard(); }
   }
   function renderAll() { renderBop(); renderUpdated(); renderFeed(); renderMain(); }

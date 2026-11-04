@@ -31,10 +31,12 @@
 <header class="top" role="banner">
   <a class="brand" href="/" aria-label="VoteDash home">Vote<span>Dash</span></a>
   <div class="live" id="live"><span class="dot" aria-hidden="true"></span><span class="live-label">Live</span><time id="updated">connecting</time></div>
+  <a class="hdr-link" href="/calls" data-nav="calls">Who called it</a>
   <button type="button" class="theme-btn" id="theme-btn" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9c0-.5 0-.9-.1-1.4A5.5 5.5 0 0 1 13.4 3.1C13 3 12.5 3 12 3z"/></svg><span>Dark</span></button>
   <nav class="topnav" aria-label="Sections">
     <a href="/board" data-nav="board">Board</a>
     <a href="/feed" data-nav="feed">Feed</a>
+    <a href="/calls" data-nav="calls">Who called it</a>
   </nav>
 </header>
 
@@ -82,6 +84,8 @@
       </div>
     </section>
 
+    <section class="calls-view" id="calls" hidden aria-label="Who called it"></section>
+
     <section class="detail" id="detail" hidden aria-live="polite"></section>
 
     <aside class="feed" id="feed" aria-label="Live feed">
@@ -105,6 +109,7 @@
 <nav class="mobile-nav" aria-label="Mobile sections">
   <a href="/board" data-nav="board">Board</a>
   <a href="/feed" data-nav="feed">Feed <span class="badge" id="feed-badge" hidden></span></a>
+  <a href="/calls" data-nav="calls">Calls</a>
 </nav>
 
 <footer class="foot">
