@@ -50,12 +50,24 @@ try {
     SOUTHBAY[d.id] = d.type === 'State Senate' ? 'State Senate, LA County' : 'Assembly, LA County';
   }
 } catch (e) { /* none */ }
+// Every other Los Angeles County race civicAPI carries: City of Los Angeles races join the
+// Los Angeles tile, the rest group by kind so the whole county is on the board.
+function sbOf(r) {
+  if (SOUTHBAY[r.id]) return SOUTHBAY[r.id];
+  if (r.district !== 'Los Angeles' || (r.province || r.state) !== 'CA') return null;
+  const name = String(r.election_name || r.name || '');
+  if (/^Los Angeles (?!County|Community College)/i.test(name)) return 'Los Angeles';
+  if (r.type === 'School Board' || /school|college|unified/i.test(name)) return 'Other LA schools';
+  if (/city of /i.test(name)) return 'Other LA cities';
+  return 'LA special districts';
+}
 const SOUTHBAY_TILES = [
   ['El Segundo',0,0],['Hawthorne',1,0],['Lawndale',2,0],['Los Angeles',3,0],
   ['Manhattan Beach',0,1],['Hermosa Beach',1,1],['Redondo Beach',2,1],['Torrance',3,1],
   ['Palos Verdes Estates',0,2],['Rolling Hills',1,2],['Rancho Palos Verdes',2,2],['Carson',3,2],
   ['PV Peninsula schools',0,3],['LA County',1,3],['Water and colleges',2,3],['Congress',3,3],
-  ['State Senate, LA County',0,4],['Assembly, LA County',1,4],
+  ['State Senate, LA County',0,4],['Assembly, LA County',1,4],['Other LA cities',2,4],['Other LA schools',3,4],
+  ['LA special districts',0,5],
 ];
 
 // Incumbents running tonight (Senate by state, House by district), from the
@@ -188,7 +200,7 @@ class Civic {
       incParty,
       winner: cands.find((c) => c.w) || null,
       territory: TERRITORIES.has(r.province),
-      sb: SOUTHBAY[r.id] || null,
+      sb: sbOf(r),
       cands,
     };
   }
@@ -320,8 +332,8 @@ class Civic {
     const url = `${BASE}/race/search?startDate=${DATE}&endDate=${DATE}&country=US${extra}${scope === 'LocalSenate' ? '' : '&limit=5000'}`;
     const data = await getJSON(url, scope === 'LocalSenate' ? { tries: 2, timeout: 240000 } : {});
     if (!data || !Array.isArray(data.races)) throw new Error('bad search payload');
-    if (scope === 'LocalSenate') return data.races.filter((r) => r.type === 'State Senate' || SOUTHBAY[r.id]);
-    return scope === 'CALocal' ? data.races.filter((r) => SOUTHBAY[r.id]) : data.races;
+    if (scope === 'LocalSenate') return data.races.filter((r) => r.type === 'State Senate' || sbOf(r));
+    return scope === 'CALocal' ? data.races.filter((r) => sbOf(r)) : data.races;
   }
 
   async pollForecasts() {
@@ -372,7 +384,7 @@ class Civic {
     const snap = await res.json();
     if (!snap.races || !snap.races.length) throw new Error('empty snapshot');
     // Rows are seeded without signatures so the first live poll re-normalises every one.
-    for (const row of snap.races) { row.sb = SOUTHBAY[row.id] || null; row.upd = row.upd || Date.now(); this.races.set(row.id, row); this.seedSig.set(row.id, this.signature(row)); }
+    for (const row of snap.races) { row.sb = sbOf(row); row.upd = row.upd || Date.now(); this.races.set(row.id, row); this.seedSig.set(row.id, this.signature(row)); }
     if (snap.national) this.national = snap.national;
     this.status.lastOk = snap.status?.civic?.lastOk || new Date().toISOString();
     return snap;
