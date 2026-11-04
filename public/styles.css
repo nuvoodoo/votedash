@@ -393,6 +393,17 @@ button { cursor: pointer; }
   .pct .pbar { width: 28px; }
   .margin { font-size: 13px; }
   .races td { padding: 8px 3px; }
+  /* Fixed columns so the table always fits the phone; long words wrap inside their cell. */
+  .races { table-layout: fixed; }
+  .races th:nth-child(1) { width: 34%; }
+  .races th:nth-child(2) { width: 38%; }
+  .races th:nth-child(3) { width: 17%; }
+  .races th:nth-child(4) { width: 11%; }
+  .races td { overflow-wrap: anywhere; }
+  .leader { min-width: 0; }
+  .cand-line { font-size: 12.5px; gap: 2px 6px; }
+  .margin .mv { font-size: 10.5px; }
+  .races .pm-chip { flex-wrap: wrap; gap: 0 6px; max-width: 100%; }
   .bop-foot span:nth-child(3) { display: none; }
   .detail { padding: 12px; }
   .detail h1 { font-size: 26px; }
