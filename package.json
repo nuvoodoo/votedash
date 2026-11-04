@@ -1,0 +1,12 @@
+{
+  "name": "votedash",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VoteDash.net live midterm results dashboard",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server/index.js"
+  }
+}

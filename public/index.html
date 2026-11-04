@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VoteDash: Live 2026 Midterm Results</title>
+<meta name="description" content="Live 2026 midterm election results: Senate, House, and governor balance of power, every race, race calls from AP, NBC, CNN, Fox and the New York Times, and a live feed.">
+<meta name="theme-color" content="#15181D">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=__V__">
+</head>
+<body>
+<a class="skip" href="#board">Skip to results</a>
+<header class="top" role="banner">
+  <a class="brand" href="/" aria-label="VoteDash home">Vote<span>Dash</span></a>
+  <div class="live" id="live"><span class="dot" aria-hidden="true"></span><span class="live-label">Live</span><time id="updated">connecting</time></div>
+  <nav class="topnav" aria-label="Sections">
+    <a href="/board" data-nav="board">Board</a>
+    <a href="/feed" data-nav="feed">Feed</a>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="bop" aria-label="Balance of power" id="bop"></section>
+
+  <div class="split">
+    <section class="board" id="board" aria-label="Race board">
+      <div class="board-head">
+        <div class="tabs" role="tablist" aria-label="Race type" id="cat-tabs">
+          <button role="tab" data-cat="senate">Senate</button>
+          <button role="tab" data-cat="house">House</button>
+          <button role="tab" data-cat="governor">Governors</button>
+          <button role="tab" data-cat="ballot">Ballot measures</button>
+          <button role="tab" data-cat="statewide">Statewide offices</button>
+          <button role="tab" data-cat="legislature">State legislatures</button>
+        </div>
+        <div class="controls">
+          <label class="search"><span class="vh">Find a race</span><input id="q" type="search" placeholder="State, district, or candidate" autocomplete="off"></label>
+          <label class="check"><input id="uncalled" type="checkbox"> Uncalled only</label>
+          <label class="sort"><span class="vh">Sort</span><select id="sort"><option value="state">State</option><option value="pct">Most reported</option><option value="margin">Closest</option><option value="updated">Most recent</option></select></label>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="races" id="races">
+          <thead><tr><th scope="col">Race</th><th scope="col">Leader</th><th scope="col" class="num">Margin</th><th scope="col" class="num">In</th><th scope="col">Called by</th></tr></thead>
+          <tbody id="race-rows"></tbody>
+        </table>
+        <p class="empty" id="empty" hidden>No races match.</p>
+      </div>
+    </section>
+
+    <section class="detail" id="detail" hidden aria-live="polite"></section>
+
+    <aside class="feed" id="feed" aria-label="Live feed">
+      <div class="feed-head">
+        <h2>Feed</h2>
+        <div class="tabs small" role="tablist" aria-label="Feed filter" id="feed-tabs">
+          <button role="tab" data-feed="all" aria-selected="true">All</button>
+          <button role="tab" data-feed="call">Calls</button>
+          <button role="tab" data-feed="news">News</button>
+          <button role="tab" data-feed="exitpoll">Exit polls</button>
+          <button role="tab" data-feed="social">Social</button>
+        </div>
+      </div>
+      <ol class="feed-list" id="feed-list"></ol>
+      <p class="empty" id="feed-empty" hidden>Nothing yet.</p>
+    </aside>
+  </div>
+</main>
+
+<nav class="mobile-nav" aria-label="Mobile sections">
+  <a href="/board" data-nav="board">Board</a>
+  <a href="/feed" data-nav="feed">Feed <span class="badge" id="feed-badge" hidden></span></a>
+</nav>
+
+<footer class="foot">
+  <p>Results and forecasts from <a href="https://civicapi.org" target="_blank" rel="noopener">civicAPI</a>. Race calls from each outlet link to the outlet's own report.</p>
+  <p class="powered"><a href="https://aileronshift.com" target="_blank" rel="noopener">Powered by Aileron Shift</a></p>
+</footer>
+
+<script src="/app.js?v=__V__" defer></script>
+</body>
+</html>

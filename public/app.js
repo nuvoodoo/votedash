@@ -1,0 +1,382 @@
+/* VoteDash front end. Snapshot over HTTP, diffs over SSE, polling fallback. */
+(function () {
+  'use strict';
+  const $ = (s, el) => (el || document).querySelector(s);
+  const el = (tag, attrs, ...kids) => {
+    const n = document.createElement(tag);
+    for (const k in attrs || {}) {
+      if (k === 'class') n.className = attrs[k];
+      else if (k === 'html') n.innerHTML = attrs[k];
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] != null) n.setAttribute(k, attrs[k]);
+    }
+    for (const k of kids) if (k != null) n.append(k);
+    return n;
+  };
+  const fmtN = (n) => (n || 0).toLocaleString('en-US');
+  const fmtPct = (n) => `${(Math.round((n || 0) * 10) / 10).toFixed(1)}%`;
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: 'America/New_York' }) + ' ET';
+  const fmtShort = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+  const PARTY = { D: 'Dem', R: 'Rep', I: 'Ind', O: '' };
+  const OUTLET_ORDER = ['AP', 'NBC', 'CNN', 'Fox', 'NYT', 'ABC', 'CBS', 'DDHQ', 'Reuters', 'civicAPI'];
+
+  const state = {
+    races: new Map(), bop: null, feed: [], social: [], calls: {}, forecastTotals: null,
+    cat: 'senate', q: '', uncalled: false, sort: 'state', feedTab: 'all', view: 'board', raceId: null,
+    lastTs: 0, sse: null, stale: false, unseenFeed: 0,
+  };
+
+  // ---- routing ----------------------------------------------------------
+  function route() {
+    const m = location.pathname.match(/^\/race\/(\d+)/);
+    state.raceId = m ? Number(m[1]) : null;
+    state.view = location.pathname === '/feed' ? 'feed' : 'board';
+    document.body.dataset.view = state.view;
+    document.querySelectorAll('[data-nav]').forEach((a) => a.setAttribute('aria-current', a.dataset.nav === state.view ? 'page' : 'false'));
+    if (state.view === 'feed') { state.unseenFeed = 0; renderBadge(); }
+    renderMain();
+  }
+  function go(path) { history.pushState(null, '', path); route(); }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-nav]');
+    if (a) { e.preventDefault(); go(a.getAttribute('href')); }
+  });
+  window.addEventListener('popstate', route);
+
+  // ---- data -------------------------------------------------------------
+  async function loadSnapshot() {
+    const r = await fetch('/api/snapshot', { cache: 'no-store' });
+    const s = await r.json();
+    state.races = new Map(s.races.map((x) => [x.id, x]));
+    state.bop = s.bop; state.feed = s.feed; state.social = s.social; state.calls = s.calls || {}; state.forecastTotals = s.forecastTotals;
+    state.lastTs = s.status?.civic?.lastOk ? Date.parse(s.status.civic.lastOk) : s.ts;
+    renderAll();
+  }
+
+  function applyRaces(rows) {
+    const flash = [];
+    for (const r of rows) { state.races.set(r.id, r); flash.push(r.id); }
+    return flash;
+  }
+
+  function connect() {
+    if (state.sse) state.sse.close();
+    const es = new EventSource('/events');
+    state.sse = es;
+    es.addEventListener('hello', () => { setStale(false); });
+    es.addEventListener('races', (e) => {
+      const d = JSON.parse(e.data);
+      const ids = applyRaces(d.rows);
+      state.bop = d.bop; state.lastTs = d.ts; setStale(false);
+      renderBop(); renderUpdated();
+      patchRows(ids);
+      if (state.raceId && ids.includes(state.raceId)) renderDetail(true);
+    });
+    es.addEventListener('tick', (e) => {
+      const d = JSON.parse(e.data);
+      if (d.bop) { state.bop = d.bop; renderBop(); }
+      if (d.status && d.status.civic) state.lastTs = Date.parse(d.status.civic);
+      setStale(false); renderUpdated();
+    });
+    es.addEventListener('feed', (e) => {
+      const d = JSON.parse(e.data);
+      state.calls = d.calls || state.calls;
+      prependFeed(d.items.map((i) => ({ ...i, _new: true })));
+      // calls change the "Called by" column
+      patchRows(d.items.filter((i) => i.race_id).map((i) => i.race_id));
+      if (state.raceId && d.items.some((i) => i.race_id === state.raceId)) renderDetail(true);
+    });
+    es.addEventListener('social', (e) => {
+      const d = JSON.parse(e.data);
+      const seen = new Set(state.social.map((s) => s.id));
+      const fresh = d.items.filter((s) => !seen.has(s.id)).map((s) => ({ ...s, kind: 'social', _new: true }));
+      state.social = fresh.concat(state.social).slice(0, 300);
+      if (fresh.length) { if (state.view !== 'feed') state.unseenFeed += fresh.length; renderFeed(); renderBadge(); }
+    });
+    es.onerror = () => { setStale(true); };
+  }
+
+  // Polling fallback: if no SSE message in 70s, refetch snapshot.
+  let lastMsg = Date.now();
+  ['races', 'tick', 'feed', 'social', 'hello'].forEach((ev) => document.addEventListener(ev, () => {}));
+  setInterval(() => {
+    if (!state.sse || state.sse.readyState === 2 || Date.now() - lastMsg > 70000) {
+      loadSnapshot().then(() => { lastMsg = Date.now(); }).catch(() => setStale(true));
+      if (!state.sse || state.sse.readyState === 2) connect();
+    }
+  }, 30000);
+  const origConnect = connect;
+  connect = function () { origConnect(); state.sse.onmessage = null; ['races', 'tick', 'feed', 'social', 'hello'].forEach((ev) => state.sse.addEventListener(ev, () => { lastMsg = Date.now(); })); };
+
+  function setStale(v) { state.stale = v; $('#live').classList.toggle('stale', v); renderUpdated(); }
+  function renderUpdated() {
+    const t = $('#updated');
+    t.textContent = state.lastTs ? (state.stale ? 'reconnecting, last ' : 'updated ') + fmtTime(state.lastTs) : 'connecting';
+    if (state.lastTs) t.setAttribute('datetime', new Date(state.lastTs).toISOString());
+  }
+
+  // ---- helpers ----------------------------------------------------------
+  function catOf(r) {
+    if (r.cat === 'state-senate' || r.cat === 'state-house') return 'legislature';
+    if (r.cat === 'delegate') return 'house';
+    return r.cat;
+  }
+  function leaderInfo(r) {
+    const c = r.cands.filter((x) => x.n !== 'Write-in');
+    const a = c[0], b = c[1];
+    const margin = a && b ? a.pc - b.pc : a ? a.pc : 0;
+    return { a, b, margin };
+  }
+  function ratingClass(rt) {
+    if (!rt) return '';
+    if (/toss/i.test(rt)) return 'T';
+    if (/\bD$/.test(rt)) return 'D';
+    if (/\bR$/.test(rt)) return 'R';
+    return '';
+  }
+  function raceLabel(r) {
+    if (r.cat === 'house' || r.cat === 'delegate') return `${r.stateName} ${r.district ? r.district.split('-')[1] === 'AL' ? 'at large' : 'District ' + Number(r.district.split('-')[1]) : ''}`.trim();
+    if (r.cat === 'senate') return `${r.stateName} Senate`;
+    if (r.cat === 'governor') return `${r.stateName} Governor`;
+    return r.name;
+  }
+  function callTags(r, withCivic) {
+    const c = state.calls[r.id] || {};
+    const out = [];
+    const keys = Object.keys(c).sort((x, y) => (OUTLET_ORDER.indexOf(x) + 1 || 99) - (OUTLET_ORDER.indexOf(y) + 1 || 99));
+    for (const k of keys) {
+      if (k === 'civicAPI' && !withCivic) continue;
+      out.push(el('a', { class: 'call-tag' + (k === 'civicAPI' ? ' civic' : ''), href: c[k].url, target: '_blank', rel: 'noopener', title: `${c[k].title} (${fmtShort(c[k].ts)})` }, k));
+    }
+    return out;
+  }
+  function barFor(cands, h) {
+    const bar = el('div', { class: 'bar', 'aria-hidden': 'true' });
+    const total = cands.reduce((s, c) => s + c.v, 0) || 1;
+    for (const c of cands) if (c.v > 0) bar.append(el('i', { class: c.p, style: `width:${(c.v / total) * 100}%` }));
+    return bar;
+  }
+
+  // ---- balance of power -------------------------------------------------
+  function renderBop() {
+    const b = state.bop; if (!b) return;
+    const box = $('#bop'); box.innerHTML = '';
+    const defs = [['senate', 'Senate', 'seats'], ['house', 'House', 'seats'], ['governor', 'Governors', 'states']];
+    for (const [k, title, unit] of defs) {
+      const d = b[k]; if (!d) continue;
+      const fc = state.forecastTotals && state.forecastTotals[k];
+      const dw = (d.D / d.total) * 100, rw = (d.R / d.total) * 100, iw = (d.I / d.total) * 100;
+      const dh = (d.hold.D / d.total) * 100, rh = (d.hold.R / d.total) * 100;
+      const control = d.D >= d.majority ? 'D' : d.R >= d.majority ? 'R' : null;
+      box.append(el('div', { class: 'bop-row' },
+        el('div', { class: 'bop-title' }, el('h2', null, title), el('span', { class: 'need' }, `${d.majority} for control`)),
+        el('div', { class: 'bop-nums' },
+          el('div', { class: 'bop-num d' }, String(d.D), el('small', null, `Dem${k === 'senate' ? ' + Ind' : ''}${control === 'D' ? ', control' : ''}`)),
+          el('div', { class: 'bop-num r' }, String(d.R), el('small', { style: 'text-align:right' }, `Rep${control === 'R' ? ', control' : ''}`))),
+        el('div', { class: 'bop-bar', role: 'img', 'aria-label': `${title}: Democrats ${d.D}, Republicans ${d.R}, ${d.remaining} ${unit} uncalled` },
+          el('div', { class: 'fill d', style: `width:${dw}%` }),
+          el('div', { class: 'fill d hold', style: `width:${dh}%` }),
+          iw ? el('div', { class: 'fill i', style: `left:${dw}%;width:${iw}%` }) : null,
+          el('div', { class: 'fill r', style: `width:${rw}%` }),
+          el('div', { class: 'fill r hold', style: `width:${rh}%` }),
+          el('div', { class: 'line' })),
+        el('div', { class: 'bop-foot' },
+          el('span', null, el('b', null, String(d.remaining)), ` of ${d.onBallot} ${unit} uncalled`),
+          el('span', null, k === 'house' ? '' : `Not up tonight: D ${d.hold.D}, R ${d.hold.R}`),
+          fc ? el('span', { title: 'civicAPI forecast' }, `Forecast D ${fc.democrat} R ${fc.republican}, ${fc.tossup} tossups`) : null)));
+    }
+  }
+
+  // ---- board ------------------------------------------------------------
+  function filtered() {
+    const q = state.q.trim().toLowerCase();
+    let rows = [...state.races.values()].filter((r) => catOf(r) === state.cat);
+    if (state.uncalled) rows = rows.filter((r) => !r.called);
+    if (q) rows = rows.filter((r) => `${r.name} ${r.stateName} ${r.state} ${r.district || ''} ${r.cands.map((c) => c.n).join(' ')}`.toLowerCase().includes(q));
+    const key = {
+      state: (a, b) => a.stateName.localeCompare(b.stateName) || (a.district || '').localeCompare(b.district || '', undefined, { numeric: true }) || a.name.localeCompare(b.name),
+      pct: (a, b) => b.pct - a.pct,
+      margin: (a, b) => (a.total ? Math.abs(leaderInfo(a).margin) : 999) - (b.total ? Math.abs(leaderInfo(b).margin) : 999),
+      updated: (a, b) => b.total - a.total,
+    }[state.sort];
+    return rows.sort(key);
+  }
+
+  const rowEls = new Map();
+  function buildRow(r) {
+    const tr = el('tr', { 'data-id': r.id, tabindex: '-1' });
+    tr.addEventListener('click', (e) => { if (e.target.closest('a')) return; go(`/race/${r.id}`); });
+    fillRow(tr, r);
+    return tr;
+  }
+  function fillRow(tr, r) {
+    tr.innerHTML = '';
+    const { a, b, margin } = leaderInfo(r);
+    const nameCell = el('td', null,
+      el('span', { class: 'race-name' }, el('button', { type: 'button', onclick: () => go(`/race/${r.id}`) }, raceLabel(r))),
+      el('span', { class: 'race-sub' },
+        (r.cat === 'house' || r.cat === 'senate' || r.cat === 'governor') ? null : el('span', null, r.type === r.name ? '' : r.type),
+        r.rating ? el('span', { class: 'rating ' + ratingClass(r.rating) }, r.rating) : null,
+        r.called && r.winner ? el('span', { class: 'called-note' }, `Winner: ${r.winner.n}`) : null));
+    const leadCell = el('td', { class: 'leader' });
+    if (r.total > 0 && a) {
+      leadCell.append(
+        el('div', { class: 'cand-line' + (a.w ? ' w' : '') }, el('span', { class: 'nm p-' + a.p }, `${a.n}${PARTY[a.p] ? ' (' + a.p + ')' : ''}`), el('span', { class: 'pc' }, fmtPct(a.pc))),
+        b ? el('div', { class: 'cand-line' + (b.w ? ' w' : '') }, el('span', { class: 'nm p-' + b.p }, `${b.n}${PARTY[b.p] ? ' (' + b.p + ')' : ''}`), el('span', { class: 'pc' }, fmtPct(b.pc))) : null,
+        barFor(r.cands));
+    } else {
+      leadCell.append(el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, r.cands.filter((c) => c.n !== 'Write-in').slice(0, 3).map((c) => `${c.n}${PARTY[c.p] ? ' (' + c.p + ')' : ''}`).join(', ') || 'No candidates listed')), el('div', { class: 'cand-line' }, el('span', { class: 'nm', style: 'color:var(--ink-2)' }, 'No votes reported')));
+    }
+    const marginCell = el('td', { class: 'num margin' }, r.total > 0 && b ? el('span', { class: 'p-' + a.p }, `${a.p} +${(Math.round(margin * 10) / 10).toFixed(1)}`) : '');
+    const pctCell = el('td', { class: 'num pct' }, `${Math.round(r.pct)}%`, el('span', { class: 'pbar', 'aria-hidden': 'true' }, el('i', { style: `width:${Math.min(100, r.pct)}%` })));
+    const callCell = el('td', { class: 'calls' }, ...callTags(r, true));
+    tr.append(nameCell, leadCell, marginCell, pctCell, callCell);
+  }
+  function renderBoard() {
+    const rows = filtered();
+    const tb = $('#race-rows'); tb.innerHTML = ''; rowEls.clear();
+    const frag = document.createDocumentFragment();
+    for (const r of rows) { const tr = buildRow(r); rowEls.set(r.id, tr); frag.append(tr); }
+    tb.append(frag);
+    $('#empty').hidden = rows.length > 0;
+    $('#cat-tabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.cat === state.cat ? 'true' : 'false'));
+  }
+  function patchRows(ids) {
+    let resort = false;
+    for (const id of ids) {
+      const tr = rowEls.get(id); const r = state.races.get(id);
+      if (!tr || !r) { if (r && catOf(r) === state.cat) resort = true; continue; }
+      fillRow(tr, r);
+      tr.classList.add('flash'); setTimeout(() => tr.classList.remove('flash'), 1500);
+      if (state.sort !== 'state' || (state.uncalled && r.called)) resort = true;
+    }
+    if (resort) renderBoard();
+  }
+
+  // ---- detail -----------------------------------------------------------
+  let detailData = null, detailFor = null, regionSort = { key: 'name', dir: 1 };
+  async function renderDetail(refresh) {
+    const box = $('#detail'); const r = state.races.get(state.raceId);
+    $('#board').hidden = true; box.hidden = false;
+    if (!r) { box.innerHTML = ''; box.append(el('button', { class: 'back', type: 'button', onclick: () => go('/board') }, 'Back to board'), el('p', { class: 'empty' }, 'Race not found.')); return; }
+    if (detailFor !== r.id) { detailData = null; detailFor = r.id; regionSort = { key: 'name', dir: 1 }; }
+    const draw = () => {
+      box.innerHTML = '';
+      const d = detailData;
+      const cands = (d ? d.cands : r.cands);
+      const c = state.calls[r.id] || {};
+      const callKeys = Object.keys(c);
+      box.append(el('button', { class: 'back', type: 'button', onclick: () => go('/board') }, 'Back to board'));
+      box.append(el('h1', null, r.name));
+      const meta = el('div', { class: 'meta' },
+        el('span', null, el('b', null, `${Math.round(d ? d.pct : r.pct)}%`), ' reporting'),
+        r.rating ? el('span', null, 'Rating ', el('b', null, r.rating)) : null,
+        d && d.polls_close ? el('span', null, 'Polls close ', el('b', null, fmtShort(d.polls_close))) : null,
+        d && d.updated ? el('span', null, 'civicAPI updated ', el('b', null, fmtTime(d.updated))) : null,
+        d && d.registered ? el('span', null, 'Registered ', el('b', null, fmtN(d.registered))) : null,
+        d && d.disputed ? el('span', null, el('b', null, 'Disputed')) : null);
+      box.append(meta);
+      if (r.winner || callKeys.length) {
+        box.append(el('div', { class: 'call-banner' },
+          el('span', { class: 'lead' }, r.winner ? `${r.winner.n} wins.` : 'Called by'),
+          r.winner && callKeys.length ? el('span', null, 'Called by') : null,
+          ...callTags(r, true)));
+      }
+      const tbl = el('table', { class: 'cands' }, el('tbody'));
+      const tb = tbl.firstChild; const totalV = cands.reduce((s, x) => s + x.v, 0) || 1;
+      for (const x of cands) {
+        tb.append(el('tr', { class: x.w ? 'w' : '' },
+          el('td', { class: 'cn p-' + x.p }, x.n, el('span', { class: 'party' }, x.pf || ''), x.inc ? el('span', { class: 'inc' }, 'Incumbent') : null),
+          el('td', { class: 'cb' }, el('div', { class: 'bar' }, el('i', { class: x.p, style: `width:${(x.v / totalV) * 100}%` }))),
+          el('td', { class: 'cv' }, fmtN(x.v)),
+          el('td', { class: 'cp' }, fmtPct(x.pc))));
+      }
+      box.append(tbl);
+      if (d && d.regions && d.regions.length) {
+        const top2 = cands.slice(0, 2);
+        box.append(el('h2', null, `${d.regions[0].type || 'Region'} results`));
+        const th = (label, key, num) => { const h = el('th', { scope: 'col', class: num ? 'num' : '' }, label + (regionSort.key === key ? (regionSort.dir > 0 ? ' ▲' : ' ▼') : '')); h.addEventListener('click', () => { regionSort = { key, dir: regionSort.key === key ? -regionSort.dir : 1 }; draw(); }); return h; };
+        const rt = el('table', { class: 'regions' }, el('thead', null, el('tr', null, th('Name', 'name'), th('In', 'pct', true), ...top2.map((x) => { const h = th(x.n.split(' ').pop(), 'c' + x.n, true); h.classList.add('p-' + x.p); return h; }), th('Margin', 'margin', true))), el('tbody'));
+        const rb = rt.lastChild;
+        const regs = d.regions.map((g) => { const m = {}; for (const x of g.cands) m[x.n] = x; const a = m[top2[0]?.n] || { v: 0, pc: 0 }, b = m[top2[1]?.n] || { v: 0, pc: 0 }; return { g, a, b, margin: a.pc - b.pc }; });
+        regs.sort((x, y) => { const k = regionSort.key; let v = 0; if (k === 'name') v = x.g.name.localeCompare(y.g.name); else if (k === 'pct') v = x.g.pct - y.g.pct; else if (k === 'margin') v = x.margin - y.margin; else if (k.startsWith('c')) { const n = k.slice(1); v = (n === top2[0].n ? x.a.v - y.a.v : x.b.v - y.b.v); } return v * regionSort.dir; });
+        for (const { g, a, b, margin } of regs) {
+          const lead = g.pct > 0 || a.v || b.v ? (a.v > b.v ? top2[0] : b.v > a.v ? top2[1] : null) : null;
+          rb.append(el('tr', null, el('td', null, g.name), el('td', { class: 'num' }, `${Math.round(g.pct)}%`), el('td', { class: 'num' }, `${fmtN(a.v)} (${fmtPct(a.pc)})`), el('td', { class: 'num' }, `${fmtN(b.v)} (${fmtPct(b.pc)})`), el('td', { class: 'num ' + (lead ? 'lead-' + lead.p : '') }, lead ? `${lead.p} +${Math.abs(Math.round(margin * 10) / 10).toFixed(1)}` : '')));
+        }
+        box.append(rt);
+      } else if (!d) {
+        box.append(el('p', { class: 'empty' }, 'Loading county results.'));
+      }
+      const related = state.feed.filter((i) => i.race_id === r.id);
+      if (related.length) { box.append(el('h2', null, 'In the feed')); const ol = el('ol', { class: 'feed-list' }); related.slice(0, 20).forEach((i) => ol.append(feedItem(i))); box.append(ol); }
+      box.append(el('p', { class: 'civic-link' }, el('a', { href: `https://civicapi.org/results/elections/${r.id}`, target: '_blank', rel: 'noopener' }, 'This race on civicAPI')));
+    };
+    draw();
+    if (!detailData || refresh) {
+      try {
+        const res = await fetch(`/api/race/${r.id}`, { cache: 'no-store' });
+        if (res.ok && state.raceId === r.id) { detailData = await res.json(); draw(); }
+      } catch (e) { /* keep summary view */ }
+    }
+  }
+
+  // ---- feed -------------------------------------------------------------
+  function feedItem(i) {
+    const li = el('li', { class: i.kind + (i._new ? ' new' : '') });
+    if (i.kind === 'social') {
+      li.append(
+        el('div', { class: 'who' }, el('span', { class: 'outlet' }, i.author || i.handle || i.platform), i.handle ? el('span', { class: 'handle' }, '@' + i.handle) : null, el('span', { class: 'kind social' }, i.platform || 'Social'), el('time', { datetime: new Date(i.ts).toISOString() }, fmtShort(i.ts))),
+        el('p', { class: 'txt' }, i.text || ''),
+        i.url ? el('a', { class: 'race-link', href: i.url, target: '_blank', rel: 'noopener' }, 'Open post') : null);
+      return li;
+    }
+    const kindLabel = { call: 'Call', exitpoll: 'Exit poll', news: 'News' }[i.kind] || i.kind;
+    li.append(
+      el('div', { class: 'who' }, el('span', { class: 'outlet' }, i.outlet || 'News'), el('span', { class: 'kind ' + i.kind }, kindLabel), el('time', { datetime: new Date(i.ts).toISOString() }, fmtShort(i.ts))),
+      el('a', { class: 'ttl', href: i.url, target: '_blank', rel: 'noopener' }, i.title),
+      i.race_id ? el('button', { class: 'race-link', type: 'button', onclick: () => go(`/race/${i.race_id}`) }, i.race_name || 'Open race') : null);
+    setTimeout(() => li.classList.remove('new'), 4000);
+    return li;
+  }
+  function feedRows() {
+    let items = state.feedTab === 'social' ? state.social.map((s) => ({ ...s, kind: 'social' })) : state.feedTab === 'all' ? state.feed.concat(state.social.map((s) => ({ ...s, kind: 'social' }))) : state.feed.filter((i) => i.kind === state.feedTab);
+    return items.sort((a, b) => b.ts - a.ts).slice(0, 200);
+  }
+  function renderFeed() {
+    const list = $('#feed-list'); list.innerHTML = '';
+    const items = feedRows();
+    const frag = document.createDocumentFragment();
+    items.forEach((i) => frag.append(feedItem(i)));
+    list.append(frag);
+    $('#feed-empty').hidden = items.length > 0;
+    $('#feed-tabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.feed === state.feedTab ? 'true' : 'false'));
+  }
+  function prependFeed(items) {
+    const seen = new Set(state.feed.map((i) => i.id));
+    const fresh = items.filter((i) => !seen.has(i.id));
+    if (!fresh.length) return;
+    state.feed = fresh.concat(state.feed).slice(0, 400);
+    if (state.view !== 'feed') state.unseenFeed += fresh.length;
+    renderFeed(); renderBadge();
+  }
+  function renderBadge() { const b = $('#feed-badge'); b.hidden = !state.unseenFeed; b.textContent = state.unseenFeed > 99 ? '99+' : String(state.unseenFeed); }
+
+  // ---- main -------------------------------------------------------------
+  function renderMain() {
+    if (state.raceId) { renderDetail(false); }
+    else { $('#detail').hidden = true; $('#board').hidden = false; detailFor = null; renderBoard(); }
+  }
+  function renderAll() { renderBop(); renderUpdated(); renderFeed(); renderMain(); }
+
+  // ---- controls ---------------------------------------------------------
+  $('#cat-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.cat = b.dataset.cat; if (state.raceId) go('/board'); else renderBoard(); });
+  $('#feed-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; state.feedTab = b.dataset.feed; renderFeed(); });
+  $('#q').addEventListener('input', (e) => { state.q = e.target.value; renderBoard(); });
+  $('#uncalled').addEventListener('change', (e) => { state.uncalled = e.target.checked; renderBoard(); });
+  $('#sort').addEventListener('change', (e) => { state.sort = e.target.value; renderBoard(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) loadSnapshot().catch(() => {}); });
+
+  route();
+  loadSnapshot().then(connect).catch(() => { setStale(true); setTimeout(() => loadSnapshot().then(connect), 5000); });
+})();

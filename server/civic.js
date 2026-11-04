@@ -1,0 +1,274 @@
+'use strict';
+// civicAPI ingest: polls every election-day race in the General and Statewide
+// scopes, normalises rows for the wire, diffs them, and reports calls.
+
+const BASE = 'https://civicapi.org/api/v2';
+const DATE = process.env.ELECTION_DATE || '2026-11-03';
+
+const STATES = {
+  AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',
+  FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',
+  LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',
+  MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',
+  ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',
+  TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',
+  DC:'District of Columbia',GU:'Guam',VI:'U.S. Virgin Islands',MP:'Northern Mariana Islands',AS:'American Samoa',PR:'Puerto Rico',
+};
+const TERRITORIES = new Set(['GU', 'VI', 'MP', 'AS', 'PR', 'DC']);
+
+// Seats not on the ballot tonight. Verified 2026-11-03 against civicAPI's
+// national aggregate races (87528 Senate, 87535 Governors): Senate D 34 / R 31,
+// Governors D 6 / R 8. The House is entirely on the ballot.
+const HOLDOVERS = {
+  senate: { D: 34, R: 31, I: 0, total: 100, majority: 51 },
+  house: { D: 0, R: 0, I: 0, total: 435, majority: 218 },
+  governor: { D: 6, R: 8, I: 0, total: 50, majority: 26 },
+};
+
+function partyCode(p) {
+  if (!p) return 'O';
+  if (/^dem/i.test(p)) return 'D';
+  if (/^rep/i.test(p)) return 'R';
+  if (/^ind/i.test(p)) return 'I';
+  return 'O';
+}
+
+function category(r) {
+  const t = r.type || r.election_type || '';
+  if (r.province === 'US') return 'national';
+  if (t === 'US Senate') return 'senate';
+  if (t === 'House of Representatives') return 'house';
+  if (t === 'Delegate') return 'delegate';
+  if (t === 'Governor') return 'governor';
+  if (/referendum|proposition|ballot measure|^statewide$/i.test(t)) return 'ballot';
+  if (t === 'State Senate') return 'state-senate';
+  if (t === 'State House') return 'state-house';
+  return 'statewide';
+}
+
+async function getJSON(url, { tries = 4, timeout = 60000 } = {}) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(timeout),
+        headers: { 'user-agent': 'VoteDash/1.0 (+https://votedash.net)', accept: 'application/json' },
+      });
+      const text = await res.text();
+      if (!res.ok || !text.startsWith('{') && !text.startsWith('[')) {
+        throw new Error(`HTTP ${res.status} ${text.slice(0, 60)}`);
+      }
+      return JSON.parse(text);
+    } catch (e) {
+      lastErr = e;
+      await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
+
+class Civic {
+  constructor(emit) {
+    this.emit = emit; // (event, payload)
+    this.races = new Map(); // id -> row
+    this.sig = new Map(); // id -> signature
+    this.national = {}; // senate/house/governor aggregate rows
+    this.forecasts = { senate: null, house: null, governor: null };
+    this.status = { lastGeneral: null, lastStatewide: null, lastError: null, lastOk: null };
+    this.detailCache = new Map(); // id -> {ts, data}
+    this.firstLoad = true;
+  }
+
+  rating(cat, state, district) {
+    const f = this.forecasts;
+    if (cat === 'senate' && f.senate) return f.senate.states?.[state]?.rating || null;
+    if (cat === 'governor' && f.governor) return f.governor.states?.[state]?.rating || null;
+    if (cat === 'house' && f.house && district) return f.house.states?.[district]?.rating || null;
+    return null;
+  }
+
+  normalise(r) {
+    const cat = category(r);
+    const cands = (r.candidates || [])
+      .map((c) => ({
+        n: c.name,
+        p: partyCode(c.party),
+        pf: c.party || '',
+        v: c.votes || 0,
+        pc: c.percent || 0,
+        w: !!c.winner,
+        inc: !!c.incumbent,
+        c: c.color || null,
+      }))
+      .sort((a, b) => b.v - a.v || (a.n === 'Write-in' ? 1 : 0) - (b.n === 'Write-in' ? 1 : 0));
+    const total = cands.reduce((s, c) => s + c.v, 0);
+    return {
+      id: r.id,
+      cat,
+      type: r.type,
+      state: r.province,
+      stateName: STATES[r.province] || r.province,
+      district: r.district || null,
+      name: r.election_name,
+      scope: r.election_type,
+      pct: r.percent_reporting ?? 0,
+      total,
+      rating: this.rating(cat, r.province, r.district),
+      called: cands.some((c) => c.w),
+      winner: cands.find((c) => c.w) || null,
+      territory: TERRITORIES.has(r.province),
+      cands,
+    };
+  }
+
+  signature(row) {
+    return `${row.pct}|${row.cands.map((c) => `${c.v}:${c.w ? 1 : 0}`).join(',')}`;
+  }
+
+  applyRaces(list, scopeTag) {
+    const changed = [];
+    const calls = [];
+    for (const raw of list) {
+      const row = this.normalise(raw);
+      if (row.cat === 'national') {
+        this.national[row.type] = { ...row, seats: (raw.candidates || []).map((c) => ({ p: partyCode(c.party), seats: c.seats || 0 })) };
+        continue;
+      }
+      const sig = this.signature(row);
+      const prev = this.races.get(row.id);
+      if (prev && this.sig.get(row.id) === sig && prev.rating === row.rating) continue;
+      if (prev) {
+        const prevW = prev.winner ? prev.winner.n : null;
+        const nowW = row.winner ? row.winner.n : null;
+        if (prevW !== nowW) {
+          calls.push({
+            kind: 'call',
+            outlet: 'civicAPI',
+            race_id: row.id,
+            title: nowW
+              ? `${nowW} (${row.winner.p}) wins ${row.name}`
+              : `Call withdrawn in ${row.name}`,
+            url: `https://civicapi.org/results/elections/${row.id}`,
+            ts: Date.now(),
+          });
+        }
+      }
+      this.races.set(row.id, row);
+      this.sig.set(row.id, sig);
+      changed.push(row);
+    }
+    if (changed.length && !this.firstLoad) this.emit('races', { rows: changed, bop: this.bop() });
+    if (calls.length) this.emit('calls', calls);
+    return changed.length;
+  }
+
+  bop() {
+    const out = {};
+    for (const cat of ['senate', 'house', 'governor']) {
+      const h = HOLDOVERS[cat];
+      const won = { D: 0, R: 0, I: 0, O: 0 };
+      let onBallot = 0;
+      for (const r of this.races.values()) {
+        if (r.cat !== cat) continue;
+        if (cat === 'governor' && r.territory) continue;
+        onBallot++;
+        if (r.winner) won[r.winner.p] = (won[r.winner.p] || 0) + 1;
+      }
+      const called = won.D + won.R + won.I + won.O;
+      out[cat] = {
+        hold: { D: h.D, R: h.R, I: h.I },
+        won,
+        D: h.D + won.D,
+        R: h.R + won.R,
+        I: h.I + won.I + won.O,
+        onBallot,
+        remaining: onBallot - called,
+        total: h.total,
+        majority: h.majority,
+      };
+    }
+    return out;
+  }
+
+  async pollScope(scope) {
+    const url = `${BASE}/race/search?startDate=${DATE}&endDate=${DATE}&country=US&election_type=${scope}&limit=5000`;
+    const data = await getJSON(url);
+    if (!data || !Array.isArray(data.races)) throw new Error('bad search payload');
+    return data.races;
+  }
+
+  async pollForecasts() {
+    for (const ch of ['senate', 'house', 'governor']) {
+      try {
+        this.forecasts[ch] = await getJSON(`${BASE}/forecast/${ch}/2026/civicapi`, { tries: 2 });
+      } catch (e) {
+        console.error('forecast', ch, e.message);
+      }
+    }
+    // re-attach ratings
+    for (const r of this.races.values()) r.rating = this.rating(r.cat, r.state, r.district);
+  }
+
+  async detail(id) {
+    const c = this.detailCache.get(id);
+    if (c && Date.now() - c.ts < 15000) return c.data;
+    const raw = await getJSON(`${BASE}/race/${id}`, { tries: 2, timeout: 30000 });
+    const data = {
+      id,
+      name: raw.election_name,
+      type: raw.election_type,
+      state: raw.province,
+      district: raw.district,
+      polls_open: raw.polls_open,
+      polls_close: raw.polls_close,
+      pct: raw.percent_reporting ?? 0,
+      registered: raw.registered_voters,
+      updated: raw.last_updated,
+      disputed: !!raw.is_disputed,
+      cands: (raw.candidates || []).map((c) => ({
+        n: c.name, p: partyCode(c.party), pf: c.party || '', v: c.votes || 0, pc: c.percent || 0, w: !!c.winner, inc: !!c.incumbent,
+      })).sort((a, b) => b.v - a.v),
+      regions: Object.values(raw.region_results || {}).map((g) => ({
+        name: g.name, type: g.type, pct: g.percent_reporting ?? 0,
+        cands: (g.candidates || []).map((c) => ({ n: c.name, p: partyCode(c.party), v: c.votes || 0, pc: c.percent || 0 })),
+      })),
+    };
+    this.detailCache.set(id, { ts: Date.now(), data });
+    return data;
+  }
+
+  async start() {
+    await this.pollForecasts();
+    const loop = async (scope, every, key) => {
+      for (;;) {
+        const t0 = Date.now();
+        try {
+          const list = await this.pollScope(scope);
+          this.applyRaces(list, scope);
+          this.status[key] = new Date().toISOString();
+          this.status.lastOk = this.status[key];
+          this.status.lastError = null;
+        } catch (e) {
+          this.status.lastError = `${scope}: ${e.message}`;
+          console.error('poll', scope, e.message);
+        }
+        const wait = Math.max(3000, every - (Date.now() - t0));
+        await new Promise((r) => setTimeout(r, wait));
+      }
+    };
+    // First load of both scopes before serving diffs.
+    try { this.applyRaces(await this.pollScope('General'), 'General'); this.status.lastGeneral = new Date().toISOString(); } catch (e) { console.error('init General', e.message); }
+    try { this.applyRaces(await this.pollScope('Statewide'), 'Statewide'); this.status.lastStatewide = new Date().toISOString(); } catch (e) { console.error('init Statewide', e.message); }
+    this.firstLoad = false;
+    this.emit('ready', {});
+    loop('General', Number(process.env.POLL_GENERAL_MS || 20000), 'lastGeneral');
+    setTimeout(() => loop('Statewide', Number(process.env.POLL_STATEWIDE_MS || 45000), 'lastStatewide'), 10000);
+    setInterval(() => this.pollForecasts().catch(() => {}), 10 * 60 * 1000);
+  }
+
+  snapshotRows() {
+    return [...this.races.values()];
+  }
+}
+
+module.exports = { Civic, STATES, HOLDOVERS, partyCode };

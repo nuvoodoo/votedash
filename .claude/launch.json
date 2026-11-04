@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "votedash", "runtimeExecutable": "node", "runtimeArgs": ["server/index.js"], "port": 8080, "env": { "PORT": "8080", "SOCIAL_TOKEN": "localtest" } }
+  ]
+}
