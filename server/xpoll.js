@@ -98,30 +98,33 @@ class XPoll {
     } while (cursor && pages < MAX_PAGES);
     b.since = newest;
     if (items.length) this.status.posts += this.social.ingestItems(items);
-    // Decision Desk HQ projections become DDHQ race calls.
-    if (this.news) {
-      const fresh = [];
-      for (const it of items) {
-        if (it.handle.toLowerCase() !== 'decisiondeskhq' || !/\bprojects?\b/i.test(it.text)) continue;
-        const head = it.text.split('\n')[0];
-        const race = this.news.matchRace(head);
-        if (!race) continue;
-        const c = (this.news.calls[race.id] = this.news.calls[race.id] || {});
-        if (c.DDHQ) continue;
-        c.DDHQ = { ts: it.ts, url: it.url, title: head.slice(0, 140) };
-        // Who won: the candidate whose last name appears in the projection text.
-        const headWords = head.toLowerCase().replace(/[^a-z\u00c0-\u024f\s-]/g, " ").split(/\s+/).filter(Boolean);
-        const winner = race.cands.find((x) => {
-          if (x.n === "Write-in") return false;
-          const toks = x.n.toLowerCase().replace(/[^a-z\u00c0-\u024f\s-]/g, " ").split(/\s+/).filter((w) => w.length > 1);
-          const last = toks[toks.length - 1];
-          return !!last && headWords.includes(last);
-        });
-        if (winner) this.civic.applyCall(race.id, winner.n, 'DDHQ');
-        fresh.push({ id: `ddhq:${race.id}`, kind: 'call', outlet: 'DDHQ', title: head.slice(0, 160), url: it.url, ts: it.ts, race_id: race.id, race_name: race.name });
-      }
-      if (fresh.length) this.emitFeed({ items: fresh, calls: this.news.calls });
+    this.ddhq(items);
+  }
+
+  // Decision Desk HQ projections become DDHQ race calls and set the winner when civicAPI has not.
+  // Runs on every new batch and as a rescan of everything held, so parser fixes reach older posts.
+  ddhq(items) {
+    if (!this.news) return;
+    const fresh = [];
+    for (const it of items) {
+      if ((it.handle || '').toLowerCase() !== 'decisiondeskhq' || !/\bprojects?\b/i.test(it.text)) continue;
+      const head = it.text.split('\n')[0];
+      const race = this.news.matchRace(head);
+      if (!race) continue;
+      const headWords = head.toLowerCase().replace(/[^a-z\u00c0-\u024f\s-]/g, ' ').split(/\s+/).filter(Boolean);
+      const winner = race.cands.find((x) => {
+        if (x.n === 'Write-in') return false;
+        const toks = x.n.toLowerCase().replace(/[^a-z\u00c0-\u024f\s-]/g, ' ').split(/\s+/).filter((w) => w.length > 1);
+        const last = toks[toks.length - 1];
+        return !!last && headWords.includes(last);
+      });
+      if (winner && !race.winner) this.civic.applyCall(race.id, winner.n, 'DDHQ');
+      const c = (this.news.calls[race.id] = this.news.calls[race.id] || {});
+      if (c.DDHQ) continue;
+      c.DDHQ = { ts: it.ts, url: it.url, title: head.slice(0, 140) };
+      fresh.push({ id: `ddhq:${race.id}`, kind: 'call', outlet: 'DDHQ', title: head.slice(0, 160), url: it.url, ts: it.ts, race_id: race.id, race_name: race.name });
     }
+    if (fresh.length) this.emitFeed({ items: fresh, calls: this.news.calls });
   }
 
   async loop() {
@@ -136,6 +139,7 @@ class XPoll {
         this.status.errors++; this.status.lastError = e.message;
         if (/429/.test(e.message)) await new Promise((r) => setTimeout(r, 10000));
       }
+      if (this.pos % 6 === 0) this.ddhq([...this.social.items.values()].filter((i) => i.platform === 'X'));
       if (this.pos % 50 === 0) this.get('/oapi/my/info', {}).then((j) => { this.status.credits = j; }).catch(() => {});
       const wait = Math.max(500, SPACING_MS - (Date.now() - t0));
       await new Promise((r) => setTimeout(r, wait));
