@@ -42,13 +42,20 @@ const SOUTHBAY = {
   182255:'PV Peninsula schools', 182292:'PV Peninsula schools',
   182002:'LA County', 182000:'LA County', 182001:'LA County', 182003:'LA County', 182004:'LA County', 182005:'LA County', 182006:'LA County',
   182313:'Water and colleges', 182314:'Water and colleges', 182240:'Water and colleges', 182241:'Water and colleges', 182242:'Water and colleges',
-  86986:'Congress and Assembly', 86994:'Congress and Assembly', 86995:'Congress and Assembly', 150489:'Congress and Assembly',
+  86986:'Congress', 86994:'Congress', 86995:'Congress',
 };
+// LA County legislative districts on the ballot (tools: Wikipedia district articles matched against LA County city names).
+try {
+  for (const d of JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'data', 'la-legislature.json'), 'utf8'))) {
+    SOUTHBAY[d.id] = d.type === 'State Senate' ? 'State Senate, LA County' : 'Assembly, LA County';
+  }
+} catch (e) { /* none */ }
 const SOUTHBAY_TILES = [
   ['El Segundo',0,0],['Hawthorne',1,0],['Lawndale',2,0],['Los Angeles',3,0],
   ['Manhattan Beach',0,1],['Hermosa Beach',1,1],['Redondo Beach',2,1],['Torrance',3,1],
   ['Palos Verdes Estates',0,2],['Rolling Hills',1,2],['Rancho Palos Verdes',2,2],['Carson',3,2],
-  ['PV Peninsula schools',0,3],['LA County',1,3],['Water and colleges',2,3],['Congress and Assembly',3,3],
+  ['PV Peninsula schools',0,3],['LA County',1,3],['Water and colleges',2,3],['Congress',3,3],
+  ['State Senate, LA County',0,4],['Assembly, LA County',1,4],
 ];
 
 // Incumbents running tonight (Senate by state, House by district), from the
