@@ -16,6 +16,8 @@ const PARTY = { D: 'Democrat', R: 'Republican', I: 'independent' };
 const MIN_RACES = 10; // scored races a source needs to be ranked
 // CNN and Pollgebra calls already made when we began reading those sources carry
 // the time we first saw them, not the time of the call; only later calls are timed.
+// Context shown under a call on its race timeline, by race id and source. A noted call is not scored.
+const NOTES = { 87257: { Pollgebra: 'An incorrect voting report led to this call.' } };
 const TIMED_FROM = { CNN: Date.parse('2026-11-04T05:08:00Z'), Pollgebra: Date.parse('2026-11-04T05:08:00Z') };
 
 function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
@@ -183,8 +185,9 @@ class CallTimes {
     const S = (k) => (src[k] = src[k] || { src: k, pts: 0, races: 0, firsts: 0, wrong: 0, behind: [], called: 0 });
     let scored = 0;
     for (const r of races) {
-      // Polymarket stays on the race timelines but is not scored or ranked.
-      const calls = r.calls.filter((c) => c.src !== 'Polymarket');
+      for (const c of r.calls) if (NOTES[r.id] && NOTES[r.id][c.src]) c.note = NOTES[r.id][c.src];
+      // Polymarket and noted calls stay on the race timelines but are not scored.
+      const calls = r.calls.filter((c) => c.src !== 'Polymarket' && !c.note);
       for (const c of calls) S(c.src).called++;
       const ok = calls.filter((c) => c.v === 'accurate');
       for (const c of calls) if (c.v === 'wrong') { const s = S(c.src); s.races++; s.wrong++; c.pts = 0; }

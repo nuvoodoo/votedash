@@ -521,7 +521,8 @@
         el('span', { class: 'ct-when' }, c.pre ? 'before Election Day' : fmtShort(c.ts)),
         el('span', { class: 'ct-delta' }, !right ? (c.src === 'Polymarket' ? 'favored the loser' : 'wrong candidate') : c.pre ? '55%+ going in' : c.ts === first ? 'first' : c.ts < first ? `${fmtDur(first - c.ts)} early` : `+${fmtDur(c.ts - first)}`)));
     }
-    return el('div', { class: 'ct-line' }, track, axis, seq);
+    const notes = calls.filter((c) => c.note).map((c) => el('p', { class: 'ct-note' }, el('b', null, c.src + ': '), c.note));
+    return el('div', { class: 'ct-line' }, track, axis, seq, ...notes);
   }
 
   function raceCard(r) {
