@@ -316,7 +316,7 @@
       } else if (!d) {
         app(box, el('p', { class: 'empty' }, 'Loading county results.'));
       }
-      const related = state.feed.filter((i) => i.race_id === r.id);
+      const related = state.feed.filter((i) => i.race_id === r.id).concat(state.social.filter((i) => i.race_id === r.id).map((i) => ({ ...i, kind: 'social' }))).sort((a, b) => b.ts - a.ts);
       if (related.length) { app(box, el('h2', null, 'In the feed')); const ol = el('ol', { class: 'feed-list' }); related.slice(0, 20).forEach((i) => ol.append(feedItem(i))); app(box, ol); }
       app(box, el('p', { class: 'civic-link' }, el('a', { href: `https://civicapi.org/results/elections/${r.id}`, target: '_blank', rel: 'noopener' }, 'This race on civicAPI')));
     };
@@ -335,8 +335,10 @@
     if (i.kind === 'social') {
       app(li, 
         el('div', { class: 'who' }, el('span', { class: 'outlet' }, i.author || i.handle || i.platform), i.handle ? el('span', { class: 'handle' }, '@' + i.handle) : null, el('span', { class: 'kind social' }, i.platform || 'Social'), el('time', { datetime: new Date(i.ts).toISOString() }, fmtShort(i.ts))),
+        i.tag ? el('div', { class: 'tag' }, i.tag) : null,
         el('p', { class: 'txt' }, i.text || ''),
-        i.url ? el('a', { class: 'race-link', href: i.url, target: '_blank', rel: 'noopener' }, 'Open post') : null);
+        i.image ? el('img', { class: 'post-img', src: i.image, alt: '', loading: 'lazy' }) : null,
+        el('div', { class: 'links' }, i.url ? el('a', { class: 'race-link', href: i.url, target: '_blank', rel: 'noopener' }, 'Open post') : null, i.race_id ? el('button', { class: 'race-link', type: 'button', onclick: () => go(`/race/${i.race_id}`) }, i.race_name || 'Open race') : null));
       return li;
     }
     const kindLabel = { call: 'Call', exitpoll: 'Exit poll', news: 'News' }[i.kind] || i.kind;

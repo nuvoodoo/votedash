@@ -22,6 +22,7 @@
   let topo = null, features = null, centroids = {};
   let container, tip, legend, svgEl, note;
   let ctx = { cat: 'senate', races: new Map(), calls: {}, stateFilter: null, onOpen: () => {}, onState: () => {} };
+  let pctEls = {}; // state -> text element for percent counted
   let shapeByRace = new Map(); // race id -> [elements]
   let shapeByState = new Map(); // state -> [elements]
   let lastMode = null;
@@ -115,7 +116,9 @@
     for (const f of features) {
       const st = FIPS[f.id]; if (SMALL.includes(st)) continue;
       const c = centroids[st]; if (!c) continue;
-      const t = sv('text', { x: c[0], y: c[1] + 4, class: 'lbl' }); t.textContent = st; lg.appendChild(t);
+      const t = sv('text', { x: c[0], y: c[1] + 1, class: 'lbl' }); t.textContent = st; lg.appendChild(t);
+      const pt = sv('text', { x: c[0], y: c[1] + 13, class: 'lbl pct', 'data-pct': st }); lg.appendChild(pt);
+      pctEls[st] = pt;
     }
     svg.appendChild(lg);
     // small-state column
@@ -125,7 +128,9 @@
       const rect = sv('rect', { x: 985, y, width: 30, height: 30, class: 'st sq', 'data-state': st, tabindex: '0', role: 'button' });
       rect.setAttribute('aria-label', st);
       col.appendChild(rect);
-      const t = sv('text', { x: 1022, y: y + 20, class: 'lbl side' }); t.textContent = st; col.appendChild(t);
+      const t = sv('text', { x: 1022, y: y + 14, class: 'lbl side' }); t.textContent = st; col.appendChild(t);
+      const pt = sv('text', { x: 1022, y: y + 27, class: 'lbl side pct', 'data-pct': st }); col.appendChild(pt);
+      pctEls[st] = pt;
       register(rect, null, st);
     });
     svg.appendChild(col);
@@ -144,6 +149,8 @@
       bg.setAttribute('aria-label', `${st} House districts`);
       tile.appendChild(bg);
       const label = sv('text', { x: x0 + 5, y: y0 + 13, class: 'tile-lbl' }); label.textContent = st; tile.appendChild(label);
+      const pt = sv('text', { x: x0 + w - 5, y: y0 + 13, class: 'tile-lbl pct', 'data-pct': st }); tile.appendChild(pt);
+      pctEls[st] = pt;
       const rs = racesFor(st, 'house').sort((a, b) => (a.district || '').localeCompare(b.district || '', undefined, { numeric: true }));
       const n = rs.length;
       if (n) {
@@ -186,6 +193,15 @@
         el.setAttribute('class', (el.classList.contains('sq') ? 'st sq ' : 'st ') + cls + (ctx.stateFilter === st ? ' selected' : ''));
       }
     }
+    for (const st in pctEls) {
+      const rs = racesFor(st, cat === 'house' ? 'house' : cat);
+      let txt = '';
+      if (rs.length) {
+        const avg = rs.reduce((a, r) => a + (r.pct || 0), 0) / rs.length;
+        txt = `${Math.round(avg)}%`;
+      }
+      pctEls[st].textContent = txt;
+    }
     legend.innerHTML = cat === 'house' || headline
       ? '<span><i class="sw lead D"></i>Dem leading</span><span><i class="sw called D"></i>Dem called</span><span><i class="sw lead R"></i>Rep leading</span><span><i class="sw called R"></i>Rep called</span><span><i class="sw lead I"></i>Ind</span><span><i class="sw empty"></i>No results yet</span>'
       : '<span><i class="sw has"></i>Has races tonight</span><span>Click a state to filter the board</span>';
@@ -226,7 +242,7 @@
     const mode = ctx.cat === 'house' ? 'carto' : 'geo';
     const countSig = mode === 'carto' ? [...ctx.races.values()].filter((r) => r.cat === 'house' || r.cat === 'delegate').length : 0;
     if (mode !== lastMode || (mode === 'carto' && countSig !== render.lastCount)) {
-      shapeByRace = new Map(); shapeByState = new Map();
+      shapeByRace = new Map(); shapeByState = new Map(); pctEls = {};
       if (svgEl) svgEl.remove();
       svgEl = mode === 'carto' ? buildCartogram() : buildStateMap();
       container.querySelector('.map-stage').appendChild(svgEl);

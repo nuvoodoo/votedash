@@ -76,6 +76,23 @@ class Social {
     return fresh.length;
   }
 
+  // Already-normalised items from the Bluesky poller.
+  ingestItems(items) {
+    const fresh = [];
+    for (const it of items) {
+      const prev = this.items.get(it.id);
+      if (prev) continue;
+      this.items.set(it.id, it);
+      fresh.push(it);
+    }
+    if (!fresh.length) return 0;
+    const all = [...this.items.values()].sort((a, b) => b.ts - a.ts).slice(0, 600);
+    this.items = new Map(all.map((i) => [i.id, i]));
+    this.status = { last: new Date().toISOString(), count: this.items.size };
+    this.emit('social', { items: fresh.sort((a, b) => b.ts - a.ts) });
+    return fresh.length;
+  }
+
   list() {
     return [...this.items.values()].sort((a, b) => b.ts - a.ts);
   }
