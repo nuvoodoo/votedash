@@ -46,7 +46,7 @@ function category(r) {
   return 'statewide';
 }
 
-async function getJSON(url, { tries = 4, timeout = 60000 } = {}) {
+async function getJSON(url, { tries = 3, timeout = 40000 } = {}) {
   let lastErr;
   for (let i = 0; i < tries; i++) {
     try {
@@ -256,13 +256,12 @@ class Civic {
         await new Promise((r) => setTimeout(r, wait));
       }
     };
-    // First load of both scopes before serving diffs.
-    try { this.applyRaces(await this.pollScope('General'), 'General'); this.status.lastGeneral = new Date().toISOString(); } catch (e) { console.error('init General', e.message); }
-    try { this.applyRaces(await this.pollScope('Statewide'), 'Statewide'); this.status.lastStatewide = new Date().toISOString(); } catch (e) { console.error('init Statewide', e.message); }
+    // First General load before serving diffs; Statewide loads in its own loop.
+    try { this.applyRaces(await this.pollScope('General'), 'General'); this.status.lastGeneral = new Date().toISOString(); this.status.lastOk = this.status.lastGeneral; } catch (e) { console.error('init General', e.message); }
     this.firstLoad = false;
     this.emit('ready', {});
     loop('General', Number(process.env.POLL_GENERAL_MS || 20000), 'lastGeneral');
-    setTimeout(() => loop('Statewide', Number(process.env.POLL_STATEWIDE_MS || 45000), 'lastStatewide'), 10000);
+    loop('Statewide', Number(process.env.POLL_STATEWIDE_MS || 45000), 'lastStatewide');
     setInterval(() => this.pollForecasts().catch(() => {}), 10 * 60 * 1000);
   }
 

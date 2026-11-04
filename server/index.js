@@ -173,5 +173,6 @@ setInterval(() => broadcast('tick', { ts: Date.now(), bop: civic.bop(), status: 
 server.keepAliveTimeout = 65000;
 server.listen(PORT, () => {
   console.log(`VoteDash listening on ${PORT} v${VERSION}`);
-  civic.start().then(() => news.start()).catch((e) => { console.error('fatal start', e); news.start(); });
+  news.start();
+  civic.start().catch((e) => console.error('fatal start', e));
 });
