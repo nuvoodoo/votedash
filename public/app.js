@@ -353,13 +353,13 @@
     const draw = () => {
       box.innerHTML = '';
       const d = detailData;
-      const cands = (d ? d.cands : r.cands);
+      const cands = r.cands; // merged count (CNN, LA County or civicAPI); d is only for counties and civicAPI metadata
       const c = state.calls[r.id] || {};
       const callKeys = Object.keys(c);
       app(box, el('button', { class: 'back', type: 'button', onclick: () => { state.raceId = null; go(boardURL()); } }, 'Back to board'));
       app(box, el('h1', null, r.name));
       const meta = el('div', { class: 'meta' },
-        el('span', null, el('b', null, `${Math.round(d ? d.pct : r.pct)}%`), ' reporting'),
+        el('span', null, el('b', null, `${Math.round(r.pct)}%`), ' reporting'),
         ...voteMeta(cands),
         r.upd ? el('span', null, 'Last update ', el('b', null, fmtTime(r.upd))) : null,
         r.src && r.src !== 'civicAPI' ? el('span', null, 'Counts from ', el('b', null, r.src), r.srcTs ? ` as of ${fmtShort(r.srcTs)}` : '') : null,
