@@ -460,6 +460,7 @@
     items.forEach((i) => app(frag, feedItem(i)));
     app(list, frag);
     $('#feed-empty').hidden = items.length > 0;
+    $('#feed-note').hidden = state.feedTab !== 'social' && state.feedTab !== 'all';
     $('#feed-tabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.feed === state.feedTab ? 'true' : 'false'));
   }
   function prependFeed(items) {

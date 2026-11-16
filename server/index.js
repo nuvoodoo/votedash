@@ -76,7 +76,7 @@ const civic = new Civic((ev, payload) => {
       if (Array.isArray(sn.social) && !social.items.size) social.ingestItems(sn.social);
       console.log(`seeded feed ${news.items.length}, social ${social.items.size}`);
     }
-    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); socialPoll.start(); xPoll.start(); polymarket.start(); pollgebra.start(); lavote.start(); cnn.start(); callTimes.start();
+    snapshotDirty = true; broadcast('reload', { ts: Date.now() }); news.poll().catch(() => {}); polymarket.start(); pollgebra.start(); lavote.start(); cnn.start(); callTimes.start();
   }
 });
 const news = new News(civic, (ev, payload) => { snapshotDirty = true; broadcast(ev, payload); });
