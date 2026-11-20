@@ -188,22 +188,30 @@ const ISRAEL = new Set([...Object.entries(ind.committees).filter(([, v]) => v.in
 const ISRAEL_NAMES = { AIPAC: 'AIPAC and United Democracy Project', C00528554: 'RJC Victory Fund', C00710848: 'DMFI PAC (Democratic Majority for Israel)', C00815753: 'J Street Action Fund', C00441949: 'J Street PAC', C00345132: 'Republican Jewish Coalition PAC', C00127811: 'U.S. Israel PAC', C00247403: 'NORPAC', C00139659: 'JACPAC' };
 const ISRAEL_GROUP = { C00797670: 'AIPAC', C00799031: 'AIPAC' }; // AIPAC PAC + its super PAC, United Democracy Project
 const cnById = new Map(cn.map(c => [c[0], c]));
-const nameOfCn = c => { const [ln, fn = ''] = c[1].split(','); return { last: norm(ln).replace(SUFFIX, '').trim(), f0: norm(fn)[0] || '' }; };
-const sameName = (c, n) => { const a = nameOfCn(c), L = lastOf(n); return (a.last === L || a.last.split(' ').includes(L) || a.last.replace(/ /g, '') === L.replace(/-/g, '')) && (!a.f0 || firstOf(n)[0] === a.f0); };
+const nameOfCn = c => { const [ln, fn = ''] = c[1].split(','); return { last: norm(ln).replace(SUFFIX, '').trim(), given: norm(fn).replace(SUFFIX, '').split(' ').filter(Boolean) }; };
+// last name, plus any given name's initial: FEC lists "MOORE, FELIX BARRY" for Barry Moore
+const lastOk = (a, L) => a.last === L || a.last.split(' ').includes(L) || a.last.replace(/ /g, '') === L.replace(/-/g, '') || a.given.slice(1).includes(L); // "ARENHOLZ, ASHLEY HINSON"
+const sameName = (c, n) => { const a = nameOfCn(c), L = lastOf(n); return lastOk(a, L) && (!a.given.length || a.given.some(g => g[0] === firstOf(n)[0])); };
+// last name alone when it is the only one in the contest ("KRISHNAMOORTHI, S")
+const nameIn = (c, list) => list.find(y => sameName(c, y.n)) || (l => l.length === 1 ? l[0] : null)(list.filter(y => lastOk(nameOfCn(c), lastOf(y.n))));
 const partyOf = c => c[2] === 'DEM' ? 'D' : c[2] === 'REP' ? 'R' : 'O';
 const pName = n => n.replace(/\b([a-z])/g, m => m.toUpperCase());
 const outcome = (pgi, c) => { // true = won that contest, false = lost, null = not decided / not found
   const st = c[4], ch = c[5], d = +c[6] || 0, k = pgi[0];
-  const seatOk = x => x.st === st && x.ch === ch && (ch === 'S' || (x.d || 0) === d || (d <= 1 && (x.d || 0) <= 1));
-  if (k === 'G') { const h = fecToRace.get(c[0]); if (h) return h.cand === h.race.w; const r = raceRows.find(x => x.st === st && x.ch === ch && (ch === 'S' || x.d === d)); return r ? (r.cs.some(x => sameName(c, x.n)) ? sameName(c, r.w.n) : false) : null; }
-  if (k === 'S') { const r = EX.specials.find(x => x.y >= 2025 && seatOk(x) && x.c.some(y => sameName(c, y.n))); return r ? !!r.c.find(y => sameName(c, y.n)).w : null; }
-  const pts = ch === 'S' ? [partyOf(c), 'T2'] : [partyOf(c), 'T2'];
-  const rows = EX.primaries.filter(x => x.y === 2026 && seatOk(x) && (pts.includes(x.pt) || !x.pt));
-  for (const r of rows) { const y = r.c.find(z => sameName(c, z.n)); if (y) return !!y.w; }
-  return null;
+  // the candidate's own seat first, then any seat in the state (a House member running for Senate keeps the House FEC id)
+  const seatOk = x => x.ch === ch && (ch === 'S' || (x.d || 0) === d || (d <= 1 && (x.d || 0) <= 1));
+  const pick = (list, has) => list.find(x => x.st === st && seatOk(x) && has(x)) || list.find(x => x.st === st && has(x));
+  const gen = () => { const h = fecToRace.get(c[0]); if (h) return h.cand === h.race.w; const r = pick(raceRows, x => nameIn(c, x.cs)); return r ? nameIn(c, r.cs) === r.w : null; };
+  if (k === 'G') return gen();
+  if (k === 'S') { const r = pick(EX.specials.filter(x => x.y >= 2025), x => nameIn(c, x.c)); return r ? !!nameIn(c, r.c).w : gen(); }
+  const pts = [partyOf(c), 'T2'];
+  const r = pick(EX.primaries.filter(x => x.y === 2026 && (pts.includes(x.pt) || !x.pt)), x => nameIn(c, x.c));
+  if (r) return !!nameIn(c, r.c).w;
+  // no primary on file: a 2026 general-election nominee won it
+  return pick(raceRows, x => nameIn(c, x.cs)) ? true : null;
 };
 const isr = new Map(); const isrCand = new Map(); let allCmte = 0, allIe = 0, allPrimIe = 0;
-const outMemo = new Map(), funderScores = {}, indAll = new Map();
+const outMemo = new Map(), funderScores = {}, indAll = new Map(), ieByCand = new Map(), sideTot = {};
 for (const c of lines('itpas2.txt')) {
   if (c[19] === 'X') continue;
   const tp = c[5], amt = +c[14], cd = cnById.get(c[16]);
@@ -216,7 +224,14 @@ for (const c of lines('itpas2.txt')) {
   const fs0 = funderScores[c[0]] || (funderScores[c[0]] = { win: 0, lose: 0, open: 0, _r: new Map() });
   fs0[good == null ? 'open' : good ? 'win' : 'lose'] += amt;
   fs0[tp === '24K' || tp === '24Z' ? 'contrib' : 'ie'] = (fs0[tp === '24K' || tp === '24Z' ? 'contrib' : 'ie'] || 0) + amt;
-  if ((tp === '24K' || tp === '24Z') && good != null) { const io = ind.committees[c[0]]; if (io) { const t = indAll.get(io.industry) || { win: 0, lose: 0 }; indAll.set(io.industry, t); t[good ? 'win' : 'lose'] += amt; } }
+  const sc = pgi === 'G' || pgi === 'S' ? 'g' : 'p', kind = tp === '24K' || tp === '24Z' ? 'contrib' : 'ie';
+  // totals by the party a dollar helped: for a candidate, or against the other party's candidate
+  // in a primary, money against a candidate still helps a candidate of the same party
+  const side = sc === 'p' || !against ? pt : pt === 'D' ? 'R' : pt === 'R' ? 'D' : 'O';
+  for (const k of ['a', sc]) { const T = sideTot[k] || (sideTot[k] = {}); const t = T[side] || (T[side] = { win: 0, lose: 0, open: 0 }); t[good == null ? 'open' : good ? 'win' : 'lose'] += amt; }
+  const fsc = fs0[sc] || (fs0[sc] = { win: 0, lose: 0, contrib: 0, ie: 0 }); if (good != null) fsc[good ? 'win' : 'lose'] += amt; fsc[kind] += amt;
+  if (kind === 'contrib' && good != null) { const io = ind.committees[c[0]]; if (io) for (const key of [io.industry, sc + '|' + io.industry]) { const t = indAll.get(key) || { win: 0, lose: 0 }; indAll.set(key, t); t[good ? 'win' : 'lose'] += amt; } }
+  if (kind === 'ie') { const m = ieByCand.get(cd[0]) || new Map(); ieByCand.set(cd[0], m); const x = m.get(c[0]) || { for: 0, against: 0, p: 0, g: 0, pA: 0, pF: 0 }; m.set(c[0], x); x[against ? 'against' : 'for'] += amt; x[sc] += amt; if (sc === 'p') x[against ? 'pA' : 'pF'] += amt; }
   if (good != null) fs0._r.set(cd[0] + '|' + pgi + '|' + (against ? 'A' : 'F'), good);
   if (!ISRAEL.has(c[0])) continue;
   const g = ISRAEL_GROUP[c[0]] || c[0];
@@ -241,11 +256,18 @@ for (const e of EARM) {
   const ck = cd[0] + '|' + pgi; const t = isrCand.get(ck) || { id: cd[0], name: pName(cd[1].split(',').reverse().join(' ').trim().toLowerCase()), p: pt, seat: cd[5] === 'S' ? `${cd[4]} Senate` : `${cd[4]}-${+cd[6] || 'AL'}`, stage: pgi === 'G' ? 'General' : pgi === 'S' ? 'Special' : 'Primary', forAmt: 0, againstAmt: 0, won }; isrCand.set(ck, t);
   t.forAmt += amt; t.bundled = (t.bundled || 0) + amt;
 }
-// biggest spenders and industries over every 2026 contest, each dollar judged by the contest it was spent on
-const spendersAll = Object.entries(funderScores).map(([id, s]) => ({ id, name: (fundById[id] && fundById[id].name) || cmName.get(id) || id, slug: fundById[id] ? fundById[id].slug : null,
-  total: Math.round(s.win + s.lose), contrib: Math.round(s.contrib || 0), ie: Math.round(s.ie || 0), win: Math.round(s.win), lose: Math.round(s.lose) })).sort((a, b) => b.total - a.total);
-const industriesAll = [...indAll.entries()].map(([id, t]) => ({ id, name: indName.get(id) || id, win: Math.round(t.win), lose: Math.round(t.lose) })).filter(x => x.win + x.lose >= 250000).sort((a, b) => (b.win + b.lose) - (a.win + a.lose));
-const losingAll = spendersAll.filter(s => s.lose >= 1e6).sort((a, b) => b.lose - a.lose).slice(0, 15);
+// biggest spenders and industries over every 2026 contest, each dollar judged by the contest it was spent on;
+// scopes: all contests, general elections (with specials), primaries (with runoffs and conventions)
+const mkScope = sc => {
+  const sel = s => sc === 'a' ? s : s[sc] || { win: 0, lose: 0, contrib: 0, ie: 0 };
+  const sp = Object.entries(funderScores).map(([id, s0]) => { const s = sel(s0); return { id, name: (fundById[id] && fundById[id].name) || cmName.get(id) || id, slug: fundById[id] ? fundById[id].slug : null,
+    total: Math.round(s.win + s.lose), contrib: Math.round(s.contrib || 0), ie: Math.round(s.ie || 0), win: Math.round(s.win), lose: Math.round(s.lose) }; }).filter(x => x.total > 0).sort((a, b) => b.total - a.total);
+  const ins = [...indAll.entries()].filter(([k]) => sc === 'a' ? !k.includes('|') : k.startsWith(sc + '|')).map(([k, t]) => { const id = k.replace(/^[gp]\|/, ''); return { id, name: indName.get(id) || id, win: Math.round(t.win), lose: Math.round(t.lose) }; })
+    .filter(x => x.win + x.lose >= 250000).sort((a, b) => (b.win + b.lose) - (a.win + a.lose));
+  const T = sideTot[sc] || {}; const totals = Object.fromEntries(['D', 'R', 'O'].filter(k => T[k]).map(k => [k, { win: Math.round(T[k].win), lose: Math.round(T[k].lose), open: Math.round(T[k].open) }]));
+  return { totals, spenders: sp.slice(0, 25), industries: ins.slice(0, 20), losing: sp.filter(x => x.lose >= 1e6).sort((a, b) => b.lose - a.lose).slice(0, 15) };
+};
+const scopes = { all: mkScope('a'), gen: mkScope('g'), prim: mkScope('p') };
 for (const [k, v] of Object.entries(funderScores)) { const r = [...v._r.values()]; funderScores[k] = { win: Math.round(v.win), lose: Math.round(v.lose), open: Math.round(v.open), races: r.length, won: r.filter(Boolean).length }; }
 const R0 = o =>Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'number' ? Math.round(v) : v]));
 const israelRows = [...isr.entries()].map(([g, s]) => R0({ name: ISRAEL_NAMES[g] || (fundById[g] && fundById[g].name) || cmName.get(g) || g, label: true, slug: (fundById[g === 'AIPAC' ? 'C00799031' : g] || {}).slug || null, ...s, ids: undefined }))
@@ -280,12 +302,20 @@ const primFor = (st, ch, d, n) => { for (const r of demPrim) { if (r.st !== st |
 const genFor = (st, ch, d, n) => { const r = raceRows.find(x => x.st === st && x.ch === ch && (ch === 'S' || x.d === (d || 0))); if (!r) return null; const c = r.cs.find(z => nameEq(z.n, n)); return c ? { r, c } : null; };
 const isInc = (st, ch, d, n) => current.some(p => p.state === st && p.chamber === ch && (ch === 'S' || (p.district || 0) === (d || 0)) && nameEq(p.name, n));
 const twoParty = (r, c) => { const o = r.cs.filter(x => x !== c && x.p === 'R').reduce((s, x) => s + x.v, 0); return c.v + o ? c.v / (c.v + o) : null; };
+const wb = new Map(lines('weball26.txt').map(w => [w[0], { raised: +w[5] || 0, indiv: +w[17] || 0, pac: +w[25] || 0 }]));
+const fecIdFor = (st, ch, d, n) => { const pool = cn.filter(c => c[4] === st && c[2] !== 'REP'); const at = pool.filter(c => c[5] === ch && (ch === 'S' || (+c[6] || 0) === (d || 0)));
+  const best = rows => { const h = rows.filter(c => sameName(c, n)); const l = h.length ? h : (x => x.length ? x : [])(rows.filter(c => lastOk(nameOfCn(c), lastOf(n)))); const ids = l.length && new Set(l.map(c => nameOfCn(c).last)).size === 1 ? l : []; return ids.sort((a, b) => ((wb.get(b[0]) || {}).raised || 0) - ((wb.get(a[0]) || {}).raised || 0))[0]; };
+  const hit = best(at) || best(pool); return hit ? hit[0] : null; };
+const nameIn2 = (n, rows) => rows.find(c => sameName(c, n)) || (l => l.length === 1 ? l[0] : null)(rows.filter(c => lastOk(nameOfCn(c), lastOf(n))));
+const moneyOf = id => { if (!id) return null; const w = wb.get(id) || { raised: null, indiv: null, pac: null }; let f = 0, ag = 0, pf = 0, pa = 0; for (const x of (ieByCand.get(id) || new Map()).values()) { f += x.for; ag += x.against; pf += x.pF; pa += x.pA; } return { raised: w.raised == null ? null : Math.round(w.raised), indiv: w.indiv == null ? null : Math.round(w.indiv), pac: w.pac == null ? null : Math.round(w.pac), ieFor: Math.round(f), ieAgainst: Math.round(ag), primFor: Math.round(pf), primAgainst: Math.round(pa) }; };
+const opp = (list, c, k) => [...list].filter(x => x !== c && !/^write-?in/i.test(x.n)).sort((a, b) => b.v - a.v).slice(0, k).map(x => ({ n: x.n, p: x.p, pct: x.rpc ?? x.pc, w: !!x.w }));
 const progList = [...progs.values()].map(o => {
-  const pr = primFor(o.st, o.ch, o.d, o.name), ge = genFor(o.st, o.ch, o.d, o.name);
+  const pr = primFor(o.st, o.ch, o.d, o.name), ge = genFor(o.st, o.ch, o.d, o.name), fid = fecIdFor(o.st, o.ch, o.d, o.name);
   const pp = personFor({ cat: o.ch === 'S' ? 'senate' : 'house', state: o.st }, { n: o.name });
   return { ...o, slug: slugOf(pp), inc: isInc(o.st, o.ch, o.d, o.name),
-    prim: pr ? { won: !!pr.c.w, pct: pr.c.rpc ?? pr.c.pc, field: pr.r.c.filter(z => z.pc >= 0.05).length, t2: pr.r.pt === 'T2' } : null,
-    gen: ge ? { won: ge.c === ge.r.w, pct: ge.c.pc, party: ge.c.p, rating: snap.races.find(x => x.id === ge.r.id).rating, tp: ge.c.p === 'D' ? twoParty(ge.r, ge.c) : null } : null };
+    fec: fid, money: moneyOf(fid),
+    prim: pr ? { won: !!pr.c.w, pct: pr.c.rpc ?? pr.c.pc, field: pr.r.c.filter(z => z.pc >= 0.05).length, t2: pr.r.pt === 'T2', opp: opp(pr.r.c, pr.c, 3) } : null,
+    gen: ge ? { won: ge.c === ge.r.w, pct: ge.c.pc, party: ge.c.p, opp: opp(ge.r.cs, ge.c, 2).map(x => ({ ...x, pct: x.pct })), rating: snap.races.find(x => x.id === ge.r.id).rating, tp: ge.c.p === 'D' ? twoParty(ge.r, ge.c) : null } : null };
 }).filter(o => o.prim || o.gen);
 const progNames = new Set(progList.map(o => o.seat + '|' + norm(o.name)));
 const isProg = (seat, n) => progNames.has(seat + '|' + norm(n)) || progList.some(o => o.seat === seat && nameEq(o.name, n));
@@ -294,7 +324,7 @@ const primRows = [];
 for (const r of demPrim) {
   const seat = seatKey(r.st, r.ch, r.d), field = r.c.filter(z => z.pc >= 0.10 && (r.pt === 'D' || z.p === 'D'));
   if (field.length < 2) continue;
-  for (const c of field) primRows.push({ prog: isProg(seat, c.n), inc: isInc(r.st, r.ch, r.d, c.n), won: !!c.w });
+  for (const c of field) { const id = fecIdFor(r.st, r.ch, r.d, c.n); primRows.push({ prog: isProg(seat, c.n), inc: isInc(r.st, r.ch, r.d, c.n), won: !!c.w, m: moneyOf(id) }); }
 }
 const rate = l => ({ n: l.length, won: l.filter(x => x.won).length });
 const primary = { prog: rate(primRows.filter(x => x.prog)), other: rate(primRows.filter(x => !x.prog)),
@@ -312,7 +342,20 @@ for (const o of progList) { const i = ISS.find(x => x.found && x.seat === o.seat
 const withIss = progList.filter(o => o.issues);
 const issueCounts = Object.entries(withIss.reduce((m, o) => { for (const k of o.issues) m[k] = (m[k] || 0) + 1; return m; }, {})).map(([id, n]) => ({ id, n, top: withIss.filter(o => (o.top || []).includes(id)).length,
   won: withIss.filter(o => o.issues.includes(id) && ((o.gen && o.gen.won) || (!o.gen && o.prim && o.prim.won))).length })).sort((a, b) => b.n - a.n);
-const progressive = { groups: byGroup, primary, general, candidates: progList.sort((a, b) => a.seat.localeCompare(b.seat)),
+// money in contested Democratic primaries: progressive vs other candidates
+const med = a => { const v = a.filter(x => x != null).sort((x, y) => x - y); return v.length ? v[Math.floor(v.length / 2)] : null; };
+const mStats = l => { const m = l.map(x => x.m).filter(Boolean), mr = m.filter(x => x.raised != null); const R = mr.reduce((s, x) => s + x.raised, 0);
+  return { n: m.length, medRaised: med(mr.map(x => x.raised)), pacShare: R ? mr.reduce((s, x) => s + x.pac, 0) / R : null, ieFor: m.reduce((s, x) => s + x.primFor, 0), ieAgainst: m.reduce((s, x) => s + x.primAgainst, 0), targeted: m.filter(x => x.primAgainst > 0).length }; };
+const finance = { progChal: mStats(primRows.filter(x => x.prog && !x.inc)), otherChal: mStats(primRows.filter(x => !x.prog && !x.inc)),
+  progInc: mStats(primRows.filter(x => x.prog && x.inc)), otherInc: mStats(primRows.filter(x => !x.prog && x.inc)) };
+// outside spending on endorsed progressive candidates, by spender
+const endorsedIds = new Set(progList.filter(o => o.fec && o.groups.some(g => !['CPCM', 'LINE'].includes(g))).map(o => o.fec));
+const bySp = new Map();
+for (const id of endorsedIds) for (const [cm, x] of (ieByCand.get(id) || new Map())) { const t = bySp.get(cm) || { for: 0, against: 0, pA: 0, pF: 0, cands: new Set() }; bySp.set(cm, t); t.for += x.for; t.against += x.against; t.pA += x.pA; t.pF += x.pF; t.cands.add(id); }
+const spRow = ([cm, t]) => ({ id: cm, name: (fundById[cm] && fundById[cm].name) || cmName.get(cm) || cm, slug: fundById[cm] ? fundById[cm].slug : null, for: Math.round(t.for), against: Math.round(t.against), primFor: Math.round(t.pF), primAgainst: Math.round(t.pA), cands: t.cands.size });
+finance.against = [...bySp].filter(([, t]) => t.against > 0).map(spRow).sort((a, b) => b.against - a.against).slice(0, 12);
+finance.for = [...bySp].filter(([, t]) => t.for > 0).map(spRow).sort((a, b) => b.for - a.for).slice(0, 12);
+const progressive = { finance, groups: byGroup, primary, general, candidates: progList.sort((a, b) => a.seat.localeCompare(b.seat)),
   platforms: PF.platforms || [], issues: { sites: withIss.length, counts: issueCounts } };
 
 const out = { built: new Date().toISOString(), electionDate: '2026-11-03',
@@ -320,7 +363,7 @@ const out = { built: new Date().toISOString(), electionDate: '2026-11-03',
   counts: { flips: flips.length, defeated: defeated.length, primaryLosers: primaryLosers.filter(x => x.sameSeat).length, newcomers },
   flips, defeated, primaryLosers, close, caucuses, ballot, ballotMoney,
   votes: { summary: voteSummary, splits, keyLaws },
-  money: { totals, spenders: spendersAll.slice(0, 25), industries: industriesAll.slice(0, 20), costly, outspent, losingSpenders: losingAll },
+  money: { totals, scopes, spenders: scopes.all.spenders, industries: scopes.all.industries, costly, outspent, losingSpenders: scopes.all.losing },
   israel, progressive, funderScores,
 };
 fs.writeFileSync(path.join(OUT, 'postmortem.json'), JSON.stringify(out));

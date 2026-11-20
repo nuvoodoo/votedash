@@ -1406,28 +1406,42 @@ function postMortem() {
   const M = X.money;
   const fl2 = f => f.slug ? `<a href="/f/${f.slug}">${esc(nice(f.name))}</a>` : esc(nice(f.name));
   const winBar = (w, l, max) => `<span class="hb split" style="width:${((w + l) / max * 100).toFixed(1)}%" role="img" aria-label="${pct(w / (w + l))} backed winners"><i class="fW" style="flex:${w}"></i><i class="fL" style="flex:${l}"></i></span>`;
-  const spMax = Math.max(...M.spenders.map(s => s.total)), inMax = Math.max(...M.industries.map(s => s.win + s.lose));
+  const SCOPES = [['all', 'All races', 'primaries and general elections together'], ['gen', 'General elections', 'general and special elections'], ['prim', 'Primaries', 'primaries, runoffs and conventions']];
+  const scopePanel = ([k, , what], i) => { const sc = (M.scopes || {})[k]; if (!sc) return ''; const spMax = Math.max(1, ...sc.spenders.map(s => s.total)), inMax = Math.max(1, ...sc.industries.map(s => s.win + s.lose));
+    return `<div data-scope-panel="${k}"${i ? ' hidden' : ''}>
+  ${(() => { const T = sc.totals || {}; const rows = [['D', k === 'prim' ? 'Democratic primaries' : 'Democratic side'], ['R', k === 'prim' ? 'Republican primaries' : 'Republican side'], ['O', k === 'prim' ? 'Other primaries' : 'Independents and others']].filter(([p]) => T[p]);
+    const all = rows.reduce((o, [p]) => ({ win: o.win + T[p].win, lose: o.lose + T[p].lose }), { win: 0, lose: 0 });
+    const tr = (l, t, b) => `<tr><td>${b ? `<b>${l}</b>` : l}</td><td class="n">${money(t.win + t.lose)}</td><td class="n">${money(t.win)}</td><td class="n">${money(t.lose)}</td><td class="n">${pct(t.win / (t.win + t.lose))}</td></tr>`;
+    return `<h3>Totals</h3>
+  <p class="sub">PAC contributions and outside spending in ${what}, by whether the money backed the winner.${k === 'prim' ? '' : ' A party\'s side counts money spent for its candidates and against their opponents' + (k === 'all' ? ', plus all money in its primaries.' : '.')}</p>
+  <div class="tbl"><table><thead><tr><th></th><th class="n">Spent</th><th class="n">Backed winners</th><th class="n">Backed losers</th><th class="n">On winners</th></tr></thead><tbody>
+  ${rows.map(([p, l]) => tr(l, T[p])).join('')}${tr('All', all, true)}</tbody></table></div>`; })()}
+  <h3>Biggest spenders</h3>
+  <p class="sub">PAC contributions and independent expenditures for or against 2026 House and Senate candidates in ${what}. Each dollar is scored by the result of the contest it was spent on.</p>
+  <ul class="hbars pm-sp">${sc.spenders.map(s => `<li>${fl2(s)}${winBar(s.win, s.lose, spMax)}<b>${money(s.total)} <small>${pct(s.win / s.total)} on winners</small></b></li>`).join('')}</ul>
+  <h3>Industries</h3>
+  <p class="sub">PAC contributions to candidates in ${what}, by the industry behind each PAC.</p>
+  <ul class="hbars pm-sp">${sc.industries.map(s => `<li><a href="/industry/${s.id}">${esc(s.name)}</a>${winBar(s.win, s.lose, inMax)}<b>${money(s.win + s.lose)} <small>${pct(s.win / (s.win + s.lose))} on winners</small></b></li>`).join('')}</ul>
+  <h3>Biggest losing bets</h3>
+  <p class="sub">Spenders with the most money behind losing candidates in ${what}.</p>
+  <div class="tbl"><table><thead><tr><th>Spender</th><th class="n">Behind losers</th><th class="n">Behind winners</th></tr></thead><tbody>
+  ${sc.losing.map(s => `<tr><td>${fl2(s)}</td><td class="n">${money(s.lose)}</td><td class="n">${money(s.win)}</td></tr>`).join('')}
+  </tbody></table></div></div>`; };
+  const scopeBlock = `<div class="seg sm pm-scope" role="group" aria-label="Which elections" data-scope-tabs>${SCOPES.map(([k, l], i) => `<button type="button" aria-pressed="${i ? 'false' : 'true'}" data-scope="${k}">${l}</button>`).join('')}</div>${SCOPES.map(scopePanel).join('')}`;
   const rRow = r => `<tr><td>${esc(r.seat)}</td><td>${pc(r.winnerParty)} ${pl(r.winner, r.winnerSlug)}</td><td class="n">${money(r.winSide)}</td><td>${pc(r.loserParty)} ${pl(r.loser, r.loserSlug)}</td><td class="n">${money(r.loseSide)}</td><td class="n">${money(r.total)}</td></tr>`;
   const rHead = '<thead><tr><th>Race</th><th>Winner</th><th class="n">Behind winner</th><th>Runner-up</th><th class="n">Behind runner-up</th><th class="n">Total</th></tr></thead>';
   add('money', 'Money', `<h2>Money</h2>
   <p class="sub">Candidate fundraising plus outside spending in 2026 House and Senate general-election races: ${money(M.totals.all)} in all, ${money(M.totals.losing)} of it behind candidates who lost. "Behind" a candidate counts their own fundraising, outside spending for them and outside spending against their opponent.</p>
   <ul class="poll-key pm-key"><li><span class="k fW" aria-hidden="true"></span>Backed the winner</li><li><span class="k fL" aria-hidden="true"></span>Backed the loser</li></ul>
-  <h3>Biggest spenders</h3>
-  <p class="sub">PAC contributions and independent expenditures for or against 2026 House and Senate candidates, primaries and general elections together. Each dollar is scored by the result of the contest it was spent on.</p>
-  <ul class="hbars pm-sp">${M.spenders.map(s => `<li>${fl2(s)}${winBar(s.win, s.lose, spMax)}<b>${money(s.total)} <small>${pct(s.win / s.total)} on winners</small></b></li>`).join('')}</ul>
-  <h3>Industries</h3>
-  <p class="sub">PAC contributions to 2026 House and Senate candidates, primaries included, by the industry behind each PAC.</p>
-  <ul class="hbars pm-sp">${M.industries.map(s => `<li><a href="/industry/${s.id}">${esc(s.name)}</a>${winBar(s.win, s.lose, inMax)}<b>${money(s.win + s.lose)} <small>${pct(s.win / (s.win + s.lose))} on winners</small></b></li>`).join('')}</ul>
-  <h3>Costliest races</h3>
+  ${scopeBlock}
+  <h3>General-election races</h3>
+  <p class="sub">Candidate fundraising plus outside spending, race by race.</p>
+  <h4>Costliest races</h4>
   <div class="tbl"><table>${rHead}<tbody>${M.costly.map(rRow).join('')}</tbody></table></div>
-  <h3>Outspent the winner and lost</h3>
+  <h4>Outspent the winner and lost</h4>
   <p class="sub">Races where more money stood behind the runner-up than the winner.</p>
   <div class="tbl"><table>${rHead}<tbody>${M.outspent.map(rRow).join('')}</tbody></table></div>
-  <h3>Biggest losing bets</h3>
-  <p class="sub">Spenders with the most money behind losing candidates.</p>
-  <div class="tbl"><table><thead><tr><th>Spender</th><th class="n">Behind losers</th><th class="n">Behind winners</th></tr></thead><tbody>
-  ${M.losingSpenders.map(s => `<tr><td>${fl2(s)}</td><td class="n">${money(s.lose)}</td><td class="n">${money(s.win)}</td></tr>`).join('')}
-  </tbody></table></div>`);
+`);
 
   const I = X.israel;
   if (I && I.groups.length) {
@@ -1459,6 +1473,7 @@ function postMortem() {
   if (G && G.candidates.length) {
     const pc1 = (a, b) => b ? `${Math.round(a / b * 100)}%` : '';
     const sh = v => v == null ? '' : `${(v * 100).toFixed(1)}%`;
+    const pp = v => v == null ? '' : `${(v * 100).toFixed(1)}%`;
     const P = G.primary, ISS = { m4a: 'Medicare for All', climate: 'Climate and Green New Deal', housing: 'Housing and rent', costs: 'Cost of living', taxrich: 'Taxing the wealthy', labor: 'Unions and wages', gaza: 'Gaza and aid to Israel', ice: 'Ending ICE deportations', corpmoney: 'Money in politics', studentdebt: 'Student debt and free college', abortion: 'Abortion rights', childcare: 'Childcare and paid leave', police: 'Policing and public safety', democracy: 'Democracy and voting rights', aipac: 'Refusing AIPAC money', crypto_ai: 'Crypto, AI and big tech money', jobs: 'Federal jobs guarantee', education: 'Public schools', guns: 'Gun safety', veterans: 'Veterans', immigration_reform: 'Path to citizenship', antitrust: 'Monopolies and price gouging' };
     const endorsed = G.candidates.filter(o => o.groups.some(g => !['CPCM', 'LINE'].includes(g)));
     const res = o => o.gen ? (o.gen.won ? 'Won general' : 'Lost general') : o.prim ? (o.prim.won ? (o.prim.t2 ? 'Advanced' : 'Won primary') : 'Lost primary') : '';
@@ -1474,6 +1489,18 @@ function postMortem() {
   <div class="tbl"><table><thead><tr><th>Rating</th><th class="n">Progressive nominees</th><th class="n">Vote share</th><th class="n">Other Democrats</th><th class="n">Vote share</th></tr></thead><tbody>
   ${G.general.map(r => `<tr><td>${esc(r.rating)}</td><td class="n">${r.prog.won} of ${r.prog.n}</td><td class="n">${sh(r.prog.share)}</td><td class="n">${r.other.won} of ${r.other.n}</td><td class="n">${sh(r.other.share)}</td></tr>`).join('')}
   </tbody></table></div>
+  ${(() => { const F = G.finance; if (!F) return ''; const row = (l, x) => `<tr><td>${l}</td><td class="n">${x.n}</td><td class="n">${x.medRaised != null ? money(x.medRaised) : ''}</td><td class="n">${x.pacShare != null ? sh(x.pacShare) : ''}</td><td class="n">${x.targeted}</td><td class="n">${money(x.ieAgainst)}</td><td class="n">${money(x.ieFor)}</td></tr>`;
+    const spl = (l, k) => l.length ? `<div class="tbl"><table><thead><tr><th>Spender</th><th class="n">${k === 'against' ? 'Against' : 'For'} progressives</th><th class="n">In primaries</th><th class="n">Candidates</th></tr></thead><tbody>${l.map(x => `<tr><td>${fl2(x)}</td><td class="n">${money(x[k])}</td><td class="n">${money(k === 'against' ? x.primAgainst : x.primFor)}</td><td class="n">${x.cands}</td></tr>`).join('')}</tbody></table></div>` : '';
+    return `<h3>Money</h3>
+  <p class="sub">Fundraising and outside spending for candidates in contested Democratic primaries, from FEC filings. Outside spending here counts primary spending only.</p>
+  <div class="tbl"><table><thead><tr><th>Candidates</th><th class="n">Ran</th><th class="n">Median raised</th><th class="n">From PACs</th><th class="n">Targeted by outside money</th><th class="n">Outside spending against</th><th class="n">Outside spending for</th></tr></thead><tbody>
+  ${row('Progressive challengers and open-seat candidates', F.progChal)}${row('Other Democratic challengers and open-seat candidates', F.otherChal)}${row('Progressive incumbents', F.progInc)}${row('Other Democratic incumbents', F.otherInc)}
+  </tbody></table></div>
+  <h4>Biggest outside spenders against endorsed progressives</h4>
+  <p class="sub">Primaries and general elections together; the primary share is broken out.</p>
+  ${spl(F.against, 'against')}
+  <h4>Biggest outside spenders for endorsed progressives</h4>
+  ${spl(F.for, 'for')}`; })()}
   <h3>By endorsing group</h3>
   <div class="tbl"><table><thead><tr><th>Group</th><th class="n">Candidates</th><th class="n">Won primary</th><th class="n">Lost primary</th><th class="n">Won general</th><th class="n">Lost general</th></tr></thead><tbody>
   ${G.groups.map(g => `<tr><td>${esc(g.label)}</td><td class="n">${g.n}</td><td class="n">${g.id === 'LINE' ? '' : g.primWon}</td><td class="n">${g.id === 'LINE' ? '' : g.primLost}</td><td class="n">${g.genWon}</td><td class="n">${g.genLost}</td></tr>`).join('')}
@@ -1484,9 +1511,13 @@ function postMortem() {
   ${G.platforms.length ? `<h3>The groups' platforms</h3>${G.platforms.map(p => `<details class="pm-more"><summary><b>${esc(p.group)}</b></summary><ul>${p.planks.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${p.source ? `<p class="sub"><a href="${esc(p.source)}" target="_blank" rel="noopener">Source</a></p>` : ''}</details>`).join('')}` : ''}
   ${lines.length ? `<h3>Socialist and left party lines</h3><p class="sub">Best general-election results for candidates outside the two major parties on the left.</p>
   <div class="tbl"><table><thead><tr><th>Candidate</th><th>Party line</th><th>Race</th><th class="n">Vote</th></tr></thead><tbody>${lines.map(o => `<tr><td>${esc(o.name)}</td><td>${esc(o.line)}</td><td>${esc(o.seat)}</td><td class="n">${o.gen.pct.toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>` : ''}
-  <details class="pm-more"><summary><b>All endorsed candidates</b> <span class="cnt">${endorsed.length}</span></summary>
-  <div class="tbl"><table><thead><tr><th>Candidate</th><th>Race</th><th>Endorsed by</th><th>Result</th></tr></thead><tbody>
-  ${endorsed.map(o => `<tr><td>${pl(o.name, o.slug)}</td><td>${esc(o.seat)}</td><td>${o.groups.map(g => GL[g] || g).join(', ')}</td><td>${res(o)}</td></tr>`).join('')}
+  <details class="pm-more" open><summary><b>All endorsed candidates</b> <span class="cnt">${endorsed.length}</span></summary>
+  <p class="sub">Each candidate's primary and general-election opponents, with vote shares, and the candidate's fundraising.</p>
+  <div class="tbl"><table class="pm-cands"><thead><tr><th>Candidate</th><th>Race</th><th>Endorsed by</th><th>Primary</th><th>General</th><th class="n">Raised</th></tr></thead><tbody>
+  ${endorsed.map(o => `<tr><td>${pc(o.gen ? o.gen.party : 'D')} ${pl(o.name, o.slug)}${o.inc ? ' <small class="kd">Incumbent</small>' : ''}</td><td>${esc(o.seat)}</td><td>${o.groups.map(g => GL[g] || g).join(', ')}</td>
+    <td>${o.prim ? `<b>${o.prim.won ? (o.prim.t2 ? 'Advanced' : 'Won') : 'Lost'}</b> ${pp(o.prim.pct)}${o.prim.opp && o.prim.opp.length ? `<br><small>vs ${o.prim.opp.map(x => `${esc(x.n)}${o.prim.t2 && x.p ? ` (${esc(x.p)})` : ''} ${pp(x.pct)}`).join(', ')}</small>` : ''}` : ''}</td>
+    <td>${o.gen ? `<b>${o.gen.won ? 'Won' : 'Lost'}</b> ${o.gen.pct != null ? o.gen.pct.toFixed(1) + '%' : ''}${o.gen.opp && o.gen.opp.length ? `<br><small>vs ${o.gen.opp.map(x => `${esc(x.n)}${x.p ? ` (${esc(x.p)})` : ''} ${x.pct != null ? x.pct.toFixed(1) + '%' : ''}`).join(', ')}</small>` : ''}` : ''}</td>
+    <td class="n">${o.money && o.money.raised != null ? money(o.money.raised) : ''}</td></tr>`).join('')}
   </tbody></table></div></details>`);
   }
 

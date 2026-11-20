@@ -117,3 +117,12 @@ document.addEventListener('click', function (e) {
   var a = e.target.closest && e.target.closest('a[href]'); if (!a || a.target) return;
   if (a.host && a.host !== location.host && /^https?:/.test(a.protocol)) { a.target = '_blank'; a.rel = 'noopener'; }
 }, true);
+
+// segmented scope switch (post-mortem money: all races / general / primaries)
+document.querySelectorAll('[data-scope-tabs]').forEach(function (g) {
+  g.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-scope]'); if (!b) return;
+    g.querySelectorAll('[data-scope]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    g.parentNode.querySelectorAll('[data-scope-panel]').forEach(function (p) { p.hidden = p.getAttribute('data-scope-panel') !== b.getAttribute('data-scope'); });
+  });
+});

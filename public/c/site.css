@@ -647,3 +647,5 @@ svg.tline{width:100%;min-width:620px;height:auto;display:block}
 .pm-more{margin:14px 0;border-top:1px solid var(--rule);padding-top:10px}
 .pm-more summary{cursor:pointer;font-size:17px}
 .pmort td small{color:var(--muted)}
+.pm-scope{margin:8px 0 4px}
+.pm-cands td:nth-child(4),.pm-cands td:nth-child(5){min-width:200px}
