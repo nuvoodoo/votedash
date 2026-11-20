@@ -148,6 +148,7 @@ function member(p, q) {
 
   add('overview', 'Overview', overview(p, cy));
   add('coming-up', 'Coming up', comingFor(p));
+  add('markets', 'Prediction markets', (MKT.get().members[p.id] || []).length ? `<h2>Prediction markets</h2><p class="sub">Market-implied chances, updated every 10 minutes.</p>${pmRows(MKT.get().members[p.id])}` : '');
   add('votes', 'Votes', votesSec(p));
   add('money', 'Money', moneySec(p, yearOf(q)));
   add('elections', 'Elections', electionsSec(p));
@@ -626,6 +627,7 @@ function bill(k) {
   ${track(k, b)}
   <p>${b.lawNumber ? `<b>${esc(b.lawNumber)}.</b> ` : b.law ? '<b>Became law.</b> ' : ''}Introduced ${date(b.introduced)}${b.cosponsors ? ` with ${b.cosponsors} cosponsors` : ''}. ${b.latest ? `Latest action ${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</p>
   ${schedNote(k)}
+  ${pmSection('Prediction markets', MKT.get().bills[k])}
   ${sp ? `<h2>Sponsor</h2><div class="cards one">${personLink(sp)}</div>` : ''}
   ${cms.length ? `<h2>Committees</h2><ul class="plain">${cms.map(c => { const id = (c.systemCode || '').toUpperCase().replace(/00$/, ''); const has = D.meta.committees[id]; return `<li>${has ? `<a href="/committee/${id.toLowerCase()}">${esc(c.name)}</a>` : esc(c.name)}${(c.activities || []).length ? `<br><small>${esc(c.activities.map(a => `${a.name} ${date((a.date || '').slice(0, 10))}`).join(', '))}</small>` : ''}</li>`; }).join('')}</ul>` : ''}
   ${rcs.length ? `<h2>Roll call votes</h2><ol class="rolls">${rcs.map(rollRow).join('')}</ol>` : ''}
@@ -857,6 +859,7 @@ function tracker(q) {
   <div class="filters">${BV.filterBar('/tracker', q)}</div>
   <div class="flow-wrap">${F.svg}</div>
   ${F.side.length ? `<p class="flow-side">${F.side.map(([s, v]) => `<a href="/tracker/${s.id}${F.qs}"><b>${v.toLocaleString('en-US')}</b> ${esc(s.name.toLowerCase())}</a>`).join('')}</p>` : ''}
+  ${pmProcess()}
   <ol class="process">${STAGE_HELP.map(([h, t], i) => `<li><div class="pr-n">${(() => { const id = ['introduced', 'committee', 'reported', 'passed-one', 'passed-both', null, 'to-president', 'law'][i]; return id && F.steps.some(x => x.id === id) ? `<a href="/tracker/${id}${F.qs}"><b>${(F.at[id] || 0).toLocaleString('en-US')}</b><span>here now</span></a>` : ''; })()}</div><div><h2>${esc(h)}</h2><p>${esc(t)}</p></div></li>`).join('')}</ol>
   <h2>Votes along the way</h2><p>Many roll calls are procedural: they decide whether and how a bill is debated rather than whether it passes. <a href="/votes?kind=procedural">Procedural votes</a>, <a href="/votes?kind=passage">passage votes</a>, <a href="/votes?kind=nomination">nominations</a> and <a href="/votes?kind=leadership">leadership votes</a>. <a href="/issues">Browse bills by issue</a>.</p></div>`;
   return layout({ title: 'Bill tracker', desc: 'How a bill becomes law, step by step, and where every bill in the 119th Congress stands.', path: '/tracker', body, active: '/tracker' });
@@ -975,6 +978,20 @@ const QHELP = [
 ];
 const qHelp = q => { const h = QHELP.find(([re]) => re.test(q || '')); return h ? h[1] : ''; };
 
+// ---------------- prediction markets ----------------
+const MKT = require('./markets');
+const pmPct = v => v < 0.01 ? '<1%' : v > 0.99 ? '>99%' : `${Math.round(v * 100)}%`;
+function pmRows(rows, link) {
+  return `<ul class="pm">${rows.map(r => `<li><span class="pm-l">${link ? link(r) : esc(r.label)}</span><span class="pm-bar" aria-hidden="true"><i style="width:${Math.max(1, r.prob * 100).toFixed(1)}%"></i></span><b>${pmPct(r.prob)}</b></li>`).join('')}</ul>`;
+}
+function pmSection(title, rows, link) { return rows && rows.length ? `<section class="pm-sec"><h2>${esc(title)}</h2><p class="sub">Market-implied chances, updated every 10 minutes.</p>${pmRows(rows, link)}</section>` : ''; }
+const raceLink = r => { const p = r.person && D.byId.get(r.person); return p ? `<a href="${href(p)}">${esc(p.name)}</a>` : esc(r.label); };
+function pmProcess() {
+  const M = MKT.get(); if (!M.process.length) return '';
+  const by = new Map(); for (const r of M.process) { if (!by.has(r.topic)) by.set(r.topic, []); by.get(r.topic).push(r); }
+  return `<section class="pm-sec"><h2>Prediction markets</h2><p class="sub">Market-implied chances on what Congress does next, updated every 10 minutes.</p><div class="pm-grid">${[...by].map(([t, rows]) => `<div><h3>${esc(t)}</h3>${pmRows(rows.sort((a, b) => (a.ends || '').localeCompare(b.ends || '') || b.prob - a.prob).slice(0, 5))}</div>`).join('')}</div></section>`;
+}
+
 // ---------------- money for a group of members (caucus, committee) ----------------
 // Same filters and drill-downs as a member's money section, summed over the group.
 function groupMoney(ms, q, base, what) {
@@ -1086,7 +1103,7 @@ function leadership() {
     ${e.result.length ? `<p class="tally">${e.result.map(r => `${r.won ? '<b>' : ''}${esc(r.name)}${r.votes != null ? ` ${r.votes}` : ''}${r.won ? '</b>' : ''}`).join(', ')}</p>` : ''}</li>`;
   const body = `<div class="wrap"><h1>Congressional leadership</h1><p class="lede">Who runs the House and Senate and each party's caucus, and how they were chosen. Party leaders are picked in closed caucus and conference votes; the Speaker is then elected on the House floor by name.</p>
   <div class="cols"><div class="col-main">${sec('House')}${sec('Senate')}</div>
-  <aside class="col-side">${by(120).length ? `<h2>Leadership elections for the 120th Congress</h2><ul class="els">${by(120).map(elRow).join('')}</ul>` : ''}
+  <aside class="col-side">${Object.entries(MKT.get().leaders).map(([race, rows]) => pmSection(`Prediction markets: ${MKT.RACE[race].toLowerCase()}`, rows.slice(0, 6), raceLink)).join('')}${by(120).length ? `<h2>Leadership elections for the 120th Congress</h2><ul class="els">${by(120).map(elRow).join('')}</ul>` : ''}
   ${by(119).length ? `<h2>119th Congress</h2><ul class="els">${by(119).map(elRow).join('')}</ul>` : ''}</aside></div></div>`;
   return layout({ title: 'Congressional leadership', desc: 'The Speaker, party leaders and whips of the House and Senate, and every leadership election, including caucus nominations and the Speaker vote.', path: '/leadership', body, active: '/leadership' });
 }

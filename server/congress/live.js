@@ -5,6 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const D = require('./data');
+const MK = require('./markets');
 
 const KEY = process.env.DATA_GOV_KEY || readEnvKey();
 const CACHE = process.env.LIVE_CACHE || path.join(os.tmpdir(), 'votedash-live.json');
@@ -47,6 +48,7 @@ function mondayOf(d) {
   return `${et.getFullYear()}${String(et.getMonth() + 1).padStart(2, '0')}${String(et.getDate()).padStart(2, '0')}`;
 }
 
+async function markets() { await MK.refresh(); }
 async function houseFloor() {
   const weeks = [mondayOf(new Date()), mondayOf(new Date(Date.now() + 7 * 864e5))];
   const out = [];
@@ -164,11 +166,12 @@ function merge(add) {
   L.fresh = D.rollcalls.filter(r => r.fresh);
 }
 
-function save() { try { fs.writeFileSync(CACHE, JSON.stringify({ meetings: L.meetings, house: L.house, senate: L.senate, fresh: L.fresh, updated: L.updated })); } catch (e) { console.error('live save', e.message); } }
+function save() { try { fs.writeFileSync(CACHE, JSON.stringify({ meetings: L.meetings, house: L.house, senate: L.senate, fresh: L.fresh, markets: MK.get(), updated: L.updated })); } catch (e) { console.error('live save', e.message); } }
 function restore() {
   try {
     const j = JSON.parse(fs.readFileSync(CACHE, 'utf8'));
     Object.assign(L, { meetings: j.meetings || {}, house: j.house || [], senate: j.senate || [], updated: j.updated || null });
+    MK.set(j.markets);
     const builtMax = { H: 0, S: 0 }; for (const r of D.rollcalls) if (!r.fresh) builtMax[r.chamber] = Math.max(builtMax[r.chamber], r.roll);
     const f = (j.fresh || []).filter(r => r.roll > builtMax[r.chamber] && r.codes.length === D.order[r.chamber].length);
     if (f.length) merge(f);
@@ -179,7 +182,7 @@ let running = false;
 async function refresh() {
   if (running) return; running = true;
   try {
-    for (const f of [houseFloor, senateFloor, freshVotes, meetings]) { try { await f(); } catch (e) { console.error('live', f.name, e); } }
+    for (const f of [houseFloor, senateFloor, freshVotes, markets, meetings]) { try { await f(); } catch (e) { console.error('live', f.name, e); } }
     L.updated = new Date().toISOString();
     save();
   } catch (e) { console.error('live refresh', e); }
