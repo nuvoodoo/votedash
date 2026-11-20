@@ -523,3 +523,15 @@ button { cursor: pointer; }
 .archive-bar a:hover { text-decoration: underline; }
 .archive-bar a:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 .live .dot, .live:not(.stale) .dot { animation: none; }
+
+/* fixed tag colors that keep contrast in light and dark themes */
+.call-tag.civic, .feed-list .kind.call { background: #F2B544; color: #1A1A1A; }
+.call-tag.pg { background: #4B2E83; color: #FFFFFF; }
+.call-tag.ddhq { background: #1F4E9A; color: #FFFFFF; }
+.ct-mark.call.civic { background: #F2B544; color: #1A1A1A; }
+.ct-mark.call.pg { background: #4B2E83; color: #FFFFFF; }
+.ct-mark.call.ddhq { background: #1F4E9A; color: #FFFFFF; }
+/* light theme: darker text tones for independents, timing figures and the second-place rank */
+:root:not([data-theme="dark"]) { --steel: #5A626C; }
+:root:not([data-theme="dark"]) .p-I, :root:not([data-theme="dark"]) .regions .lead-I { color: #3F6B26; }
+:root:not([data-theme="dark"]) .ct-boardwrap > .ct-board > .ct-row:nth-child(2) .ct-rank { color: #8A5A00; }
