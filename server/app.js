@@ -14,7 +14,7 @@ const PUB = path.join(__dirname, '../public');
 const ARCHIVE = path.join(__dirname, '../archive');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.xml': 'application/xml', '.txt': 'text/plain; charset=utf-8', '.woff2': 'font/woff2', '.geojson': 'application/json' };
 
-function send(req, res, status, body, type = 'text/html; charset=utf-8', cache = 'public, max-age=300') {
+function send(req, res, status, body, type = 'text/html; charset=utf-8', cache = 'public, max-age=60') {
   const h = { 'Content-Type': type, 'Cache-Control': cache, 'X-Content-Type-Options': 'nosniff' };
   if (body.length > 1024 && /gzip/.test(req.headers['accept-encoding'] || '') && !/image\/(webp|png|jpeg)/.test(type)) { body = zlib.gzipSync(body); h['Content-Encoding'] = 'gzip'; h.Vary = 'Accept-Encoding'; }
   res.writeHead(status, h); res.end(req.method === 'HEAD' ? undefined : body);

@@ -60,7 +60,8 @@ function seatChart(ch, fill, { highlight, label, linked = true } = {}) {
   const r = ch === 'S' ? 10.5 : 7.4;
   const dots = list.map((p, i) => {
     const c = fill(p); const hl = highlight && highlight === p.id;
-    const dot = `<circle cx="${pts[i].x.toFixed(1)}" cy="${pts[i].y.toFixed(1)}" r="${hl ? r + 3 : r}" class="${c}${hl ? ' hl' : ''}" data-id="${p.id}" data-p="${p.party}" data-n="${esc(title(p) + ' ' + p.name)}" data-s="${esc(PARTY[p.party] + ', ' + seatLabel(p))}"${hasPortrait(p) ? ' data-i="1"' : ''}${caucusAttr(p)}></circle>`;
+    const sq = r * 2 + 1.4, cx = pts[i].x, cy = pts[i].y;
+    const dot = `<rect class="sq" data-p="${p.party}" x="${(cx - sq / 2).toFixed(1)}" y="${(cy - sq / 2).toFixed(1)}" width="${sq.toFixed(1)}" height="${sq.toFixed(1)}" rx="1.5"/><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${hl ? r + 2 : r - 1.6}" class="${c}${hl ? ' hl' : ''}" data-id="${p.id}" data-p="${p.party}" data-n="${esc(title(p) + ' ' + p.name)}" data-s="${esc(PARTY[p.party] + ', ' + seatLabel(p))}"${hasPortrait(p) ? ' data-i="1"' : ''}${caucusAttr(p)}></circle>`;
     return linked ? `<a href="${href(p)}" tabindex="-1">${dot}</a>` : dot;
   }).join('');
   return `<svg class="seats s${ch}" viewBox="0 0 600 304" role="img" aria-label="${esc(label || (ch === 'S' ? 'Senate' : 'House') + ' seat chart')}">${dots}</svg>`;

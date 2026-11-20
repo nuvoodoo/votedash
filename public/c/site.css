@@ -446,7 +446,7 @@ table.pacs td{vertical-align:top}
 .tx time{color:var(--muted)}
 
 /* seat outlines by party, tooltip */
-:root{--ring-D:#6F97DD;--ring-R:#E8847A;--ring-I:#A9B86E}
+:root{--ring-D:#9CB8EC;--ring-R:#F2A096;--ring-I:#C6D18F}
 @media (prefers-color-scheme:dark){:root{--ring-D:#3E5F9A;--ring-R:#9A4A43;--ring-I:#6E7A42}}
 svg.seats circle{stroke-width:2.6}
 svg.sS circle{stroke-width:3.2}
@@ -470,3 +470,9 @@ svg.seats circle.tip-on,svg.seats a:hover circle{stroke:var(--bronze);stroke-wid
 .cau.cmainstreet,.cau.cbluedog,.cau.cproblemsolvers{color:#17232C;border-color:transparent}
 .years{margin:6px 0 14px;flex-wrap:wrap}
 .years a{min-height:36px}
+
+/* square party tiles behind each seat */
+svg.seats rect.sq{pointer-events:none}
+svg.seats rect.sq[data-p=D]{fill:var(--ring-D)}svg.seats rect.sq[data-p=R]{fill:var(--ring-R)}svg.seats rect.sq[data-p=I],svg.seats rect.sq[data-p=L]{fill:var(--ring-I)}
+svg.seats circle,svg.sS circle{stroke:none;stroke-width:0}
+svg.seats circle.tip-on,svg.seats a:hover circle,svg.seats circle.hl{stroke:var(--bronze);stroke-width:2.2}
