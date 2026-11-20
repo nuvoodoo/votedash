@@ -630,3 +630,18 @@ svg.tline{width:100%;min-width:620px;height:auto;display:block}
 .poll-src a{color:inherit}
 .poll-trend td:first-child{white-space:nowrap}
 @media (max-width:520px){.poll-trend{font-size:13px}.poll-trend th{white-space:normal;vertical-align:bottom}.poll-trend th,.poll-trend td{padding-left:3px;padding-right:3px}}
+
+/* 2026 post-mortem */
+.pmort h3{margin:26px 0 4px}
+.pmort .poll{margin:6px 0 14px}
+.fW,.hb .fW{background:var(--yea)}.fL,.hb .fL{background:var(--nay)}
+.poll-key .k.fW,.poll-key .k.fL{width:10px;height:10px;border-radius:2px}
+.pm-key{margin:4px 0 8px}
+.pm-sp li{grid-template-columns:minmax(0,280px) 1fr auto}
+@media (max-width:560px){.pm-sp li{grid-template-columns:1fr auto}}
+.pm-sp b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.pm-sp b small{font-weight:500;color:var(--muted);margin-left:4px}
+.pm-lost{font-size:15px;margin:6px 0}
+.pm-more{margin:14px 0;border-top:1px solid var(--rule);padding-top:10px}
+.pm-more summary{cursor:pointer;font-size:17px}
+.pmort td small{color:var(--muted)}

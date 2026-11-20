@@ -1,0 +1,1612 @@
+[
+{
+"st": "AL",
+"title": "Amendment 1",
+"issue": "gov",
+"label": "Elect a lieutenant governor when the office is vacant",
+"passed": true,
+"yes": 65.0,
+"yesVotes": 987299,
+"noVotes": 522130
+},
+{
+"st": "AL",
+"title": "Amendment 2",
+"issue": "edu",
+"label": "Process to merge county school districts",
+"passed": true,
+"yes": 51.0,
+"yesVotes": 759506,
+"noVotes": 732160
+},
+{
+"st": "AL",
+"title": "Amendment 3",
+"issue": "culture",
+"label": "Daily Pledge of Allegiance and student-led prayer in schools",
+"passed": true,
+"yes": 63.0,
+"yesVotes": 974645,
+"noVotes": 582918
+},
+{
+"st": "AL",
+"title": "Amendment 4",
+"issue": "culture",
+"label": "Weekly national anthem in public schools",
+"passed": true,
+"yes": 59.0,
+"yesVotes": 909259,
+"noVotes": 642958
+},
+{
+"st": "AL",
+"title": "Amendment 1",
+"issue": "crime",
+"label": "Deny bail for more violent crimes",
+"passed": true,
+"yes": 82.0,
+"yesVotes": 691002,
+"noVotes": 155985
+},
+{
+"st": "AL",
+"title": "Amendment 2",
+"issue": "gov",
+"label": "Bar pay cuts for district attorneys mid-term",
+"passed": true,
+"yes": 58.0,
+"yesVotes": 474839,
+"noVotes": 347379
+},
+{
+"st": "AK",
+"title": "Ballot Measure 2",
+"issue": "elections",
+"label": "Repeal ranked-choice voting and top-four primaries",
+"passed": false,
+"yes": 46.0,
+"yesVotes": 126919,
+"noVotes": 147831
+},
+{
+"st": "AK",
+"title": "Ballot Measure 3",
+"issue": "voting",
+"label": "Only U.S. citizens may vote",
+"passed": true,
+"yes": 68.0,
+"yesVotes": 187871,
+"noVotes": 87429
+},
+{
+"st": "AK",
+"title": "Ballot Measure 1",
+"issue": "elections",
+"label": "New campaign contribution limits",
+"passed": true,
+"yes": 72.0,
+"yesVotes": 117962,
+"noVotes": 45418
+},
+{
+"st": "AZ",
+"title": "Proposition 141",
+"issue": "tax",
+"label": "Ban taxes on vehicle miles traveled",
+"passed": true,
+"yes": 51.0,
+"yesVotes": 1245550,
+"noVotes": 1197059
+},
+{
+"st": "AZ",
+"title": "Proposition 142",
+"issue": "rights",
+"label": "Ban DEI preferences in public institutions",
+"passed": false,
+"yes": 40.0,
+"yesVotes": 983216,
+"noVotes": 1470755
+},
+{
+"st": "AZ",
+"title": "Proposition 144",
+"issue": "voting",
+"label": "Citizenship proof and voter ID requirements",
+"passed": false,
+"yes": 47.0,
+"yesVotes": 1162297,
+"noVotes": 1327018
+},
+{
+"st": "AZ",
+"title": "Proposition 316",
+"issue": "tax",
+"label": "Voter approval for local grocery taxes",
+"passed": true,
+"yes": 62.0,
+"yesVotes": 1533417,
+"noVotes": 936582
+},
+{
+"st": "AZ",
+"title": "Proposition 317",
+"issue": "immigration",
+"label": "Declare drug cartels terrorist organizations",
+"passed": true,
+"yes": 57.0,
+"yesVotes": 1404174,
+"noVotes": 1073964
+},
+{
+"st": "AZ",
+"title": "Proposition 318",
+"issue": "gender",
+"label": "Restrooms and locker rooms by biological sex",
+"passed": true,
+"yes": 59.0,
+"yesVotes": 1459944,
+"noVotes": 1025836
+},
+{
+"st": "AZ",
+"title": "Proposition 319",
+"issue": "crime",
+"label": "Voter approval for traffic cameras",
+"passed": true,
+"yes": 62.0,
+"yesVotes": 1543597,
+"noVotes": 928371
+},
+{
+"st": "AZ",
+"title": "Proposition 320",
+"issue": "edu",
+"label": "60% of school budgets to classroom instruction",
+"passed": false,
+"yes": 48.0,
+"yesVotes": 1169808,
+"noVotes": 1262089
+},
+{
+"st": "AR",
+"title": "Issue 1",
+"issue": "voting",
+"label": "Only U.S. citizens may vote",
+"passed": true,
+"yes": 69.0,
+"yesVotes": 597481,
+"noVotes": 267343
+},
+{
+"st": "AR",
+"title": "Issue 2",
+"issue": "guns",
+"label": "Gun rights as a fundamental, individual right",
+"passed": true,
+"yes": 71.0,
+"yesVotes": 614054,
+"noVotes": 253197
+},
+{
+"st": "AR",
+"title": "Issue 3",
+"issue": "gov",
+"label": "Economic development districts and public loans",
+"passed": false,
+"yes": 49.0,
+"yesVotes": 419504,
+"noVotes": 431330
+},
+{
+"st": "AR",
+"title": "Issue 4",
+"issue": "env",
+"label": "$500 million water infrastructure bonds",
+"passed": true,
+"yes": 56.0,
+"yesVotes": 476111,
+"noVotes": 368136
+},
+{
+"st": "CA",
+"title": "Proposition 1",
+"issue": "housing",
+"label": "$11.25 billion housing bonds",
+"passed": true,
+"yes": 61.0,
+"yesVotes": 7835924,
+"noVotes": 4983548
+},
+{
+"st": "CA",
+"title": "Proposition 2",
+"issue": "tax",
+"label": "Larger rainy-day fund",
+"passed": true,
+"yes": 61.0,
+"yesVotes": 7845416,
+"noVotes": 4962539
+},
+{
+"st": "CA",
+"title": "Proposition 3",
+"issue": "tax",
+"label": "Renew income tax surcharge for schools",
+"passed": true,
+"yes": 61.0,
+"yesVotes": 7857406,
+"noVotes": 5068647
+},
+{
+"st": "CA",
+"title": "Proposition 37",
+"issue": "housing",
+"label": "$25 billion second-mortgage program for buyers",
+"passed": true,
+"yes": 62.0,
+"yesVotes": 7967490,
+"noVotes": 4803705
+},
+{
+"st": "CA",
+"title": "Proposition 38",
+"issue": "health",
+"label": "$8.4 billion immunology research bonds",
+"passed": true,
+"yes": 54.0,
+"yesVotes": 6887248,
+"noVotes": 5891023
+},
+{
+"st": "CA",
+"title": "Proposition 39",
+"issue": "voting",
+"label": "Voter ID and citizenship checks",
+"passed": false,
+"yes": 39.0,
+"yesVotes": 5133959,
+"noVotes": 7869219
+},
+{
+"st": "CA",
+"title": "Proposition 4",
+"issue": "elections",
+"label": "Public financing for candidates",
+"passed": false,
+"yes": 50.0,
+"yesVotes": 6323313,
+"noVotes": 6370063
+},
+{
+"st": "CA",
+"title": "Proposition 40",
+"issue": "tax",
+"label": "One-time 5% tax on billionaires for health care",
+"passed": false,
+"yes": 48.0,
+"yesVotes": 6232026,
+"noVotes": 6790150
+},
+{
+"st": "CA",
+"title": "Proposition 41",
+"issue": "tax",
+"label": "Audits and spending-limit rules for new taxes",
+"passed": false,
+"yes": 45.0,
+"yesVotes": 5725607,
+"noVotes": 7056902
+},
+{
+"st": "CA",
+"title": "Proposition 42",
+"issue": "tax",
+"label": "Ban taxes on retirement savings and assets",
+"passed": true,
+"yes": 51.0,
+"yesVotes": 6610004,
+"noVotes": 6297440
+},
+{
+"st": "CA",
+"title": "Proposition 43",
+"issue": "direct",
+"label": "Two-thirds vote for local special-tax initiatives",
+"passed": false,
+"yes": 42.0,
+"yesVotes": 5374482,
+"noVotes": 7320329
+},
+{
+"st": "CA",
+"title": "Proposition 44",
+"issue": "health",
+"label": "90% spending rule for community health centers",
+"passed": false,
+"yes": 19.0,
+"yesVotes": 2486629,
+"noVotes": 10394707
+},
+{
+"st": "CA",
+"title": "Proposition 45",
+"issue": "housing",
+"label": "Faster reviews for housing and infrastructure",
+"passed": false,
+"yes": 44.0,
+"yesVotes": 5499092,
+"noVotes": 7132908
+},
+{
+"st": "CA",
+"title": "Proposition 5",
+"issue": "gov",
+"label": "End replacement elections in recalls",
+"passed": true,
+"yes": 52.0,
+"yesVotes": 6451502,
+"noVotes": 5978789
+},
+{
+"st": "CO",
+"title": "Amendment 81",
+"issue": "immigration",
+"label": "Report charged violent offenders to Homeland Security",
+"passed": false,
+"yes": 45.0,
+"yesVotes": 1189572,
+"noVotes": 1473720
+},
+{
+"st": "CO",
+"title": "Amendment 82",
+"issue": "env",
+"label": "Right to buy natural gas",
+"passed": false,
+"yes": 46.0,
+"yesVotes": 1219828,
+"noVotes": 1416531
+},
+{
+"st": "CO",
+"title": "Amendment 83",
+"issue": "guns",
+"label": "Right to hunt and fish",
+"passed": false,
+"yes": 45.0,
+"yesVotes": 1191671,
+"noVotes": 1448259
+},
+{
+"st": "CO",
+"title": "Amendment 84",
+"issue": "voting",
+"label": "ID with every mail ballot",
+"passed": false,
+"yes": 37.0,
+"yesVotes": 976240,
+"noVotes": 1689981
+},
+{
+"st": "CO",
+"title": "Amendment 85",
+"issue": "direct",
+"label": "Plain-language ballot questions",
+"passed": false,
+"yes": 51.0,
+"yesVotes": 1353205,
+"noVotes": 1292407
+},
+{
+"st": "CO",
+"title": "Amendment 86",
+"issue": "elections",
+"label": "Commission and court approval of congressional maps",
+"passed": false,
+"yes": 47.0,
+"yesVotes": 1214969,
+"noVotes": 1376879
+},
+{
+"st": "CO",
+"title": "Amendment 87",
+"issue": "tax",
+"label": "Graduated state income tax",
+"passed": true,
+"yes": 52.0,
+"yesVotes": 1372797,
+"noVotes": 1281499
+},
+{
+"st": "CO",
+"title": "Proposition 132",
+"issue": "crime",
+"label": "Tougher fentanyl penalties",
+"passed": true,
+"yes": 53.0,
+"yesVotes": 1391310,
+"noVotes": 1251813
+},
+{
+"st": "CO",
+"title": "Proposition 133",
+"issue": "crime",
+"label": "Life without parole for child sex trafficking",
+"passed": true,
+"yes": 62.0,
+"yesVotes": 1641772,
+"noVotes": 1000693
+},
+{
+"st": "CO",
+"title": "Proposition 134",
+"issue": "gender",
+"label": "School sports teams by biological sex",
+"passed": true,
+"yes": 52.0,
+"yesVotes": 1379283,
+"noVotes": 1265159
+},
+{
+"st": "CO",
+"title": "Proposition 135",
+"issue": "gender",
+"label": "Ban gender surgeries for minors",
+"passed": true,
+"yes": 52.0,
+"yesVotes": 1373942,
+"noVotes": 1273599
+},
+{
+"st": "CO",
+"title": "Proposition 136",
+"issue": "tax",
+"label": "Cap income tax rates at 4.4%",
+"passed": false,
+"yes": 47.0,
+"yesVotes": 1230911,
+"noVotes": 1379194
+},
+{
+"st": "CO",
+"title": "Proposition 137",
+"issue": "env",
+"label": "Keep sporting goods tax for conservation",
+"passed": true,
+"yes": 52.0,
+"yesVotes": 1366062,
+"noVotes": 1261003
+},
+{
+"st": "CO",
+"title": "Proposition NN",
+"issue": "tax",
+"label": "Raise TABOR cap for K-12 schools",
+"passed": true,
+"yes": 57.0,
+"yesVotes": 1514362,
+"noVotes": 1139213
+},
+{
+"st": "FL",
+"title": "Amendment 1",
+"issue": "tax",
+"label": "Larger rainy-day fund",
+"passed": false,
+"yes": 41.0,
+"yesVotes": 3174295,
+"noVotes": 4586161
+},
+{
+"st": "FL",
+"title": "Amendment 2",
+"issue": "tax",
+"label": "Property tax exemption for farm equipment",
+"passed": false,
+"yes": 58.0,
+"yesVotes": 4547646,
+"noVotes": 3264960
+},
+{
+"st": "FL",
+"title": "Amendment 3",
+"issue": "tax",
+"label": "Larger homestead exemption, lower assessment caps",
+"passed": true,
+"yes": 62.0,
+"yesVotes": 4922977,
+"noVotes": 3020085
+},
+{
+"st": "GA",
+"title": "Amendment 1",
+"issue": "tax",
+"label": "Expand conservation-use land tax break",
+"passed": true,
+"yes": 54.0,
+"yesVotes": 2163710,
+"noVotes": 1854431
+},
+{
+"st": "GA",
+"title": "Amendment 2",
+"issue": "gov",
+"label": "Nonpartisan probate judge elections",
+"passed": true,
+"yes": 68.0,
+"yesVotes": 2752870,
+"noVotes": 1274295
+},
+{
+"st": "GA",
+"title": "Amendment 3",
+"issue": "gov",
+"label": "Dedicated 911 fund",
+"passed": true,
+"yes": 78.0,
+"yesVotes": 3135313,
+"noVotes": 898236
+},
+{
+"st": "HI",
+"title": "Question 1",
+"issue": "gov",
+"label": "More time to confirm judges",
+"passed": true,
+"yes": 63.0,
+"yesVotes": 227129,
+"noVotes": 133249
+},
+{
+"st": "HI",
+"title": "Question 2",
+"issue": "housing",
+"label": "County housing infrastructure bonds",
+"passed": true,
+"yes": 67.0,
+"yesVotes": 242255,
+"noVotes": 117758
+},
+{
+"st": "ID",
+"title": "HJR 4",
+"issue": "drugs",
+"label": "Only the legislature may legalize marijuana",
+"passed": false,
+"yes": 34.0,
+"yesVotes": 240832,
+"noVotes": 472957
+},
+{
+"st": "ID",
+"title": "HJR 6",
+"issue": "culture",
+"label": "English as official state language",
+"passed": true,
+"yes": 63.0,
+"yesVotes": 449061,
+"noVotes": 262276
+},
+{
+"st": "ID",
+"title": "Proposition 1",
+"issue": "abortion",
+"label": "Right to reproductive freedom (statute)",
+"passed": false,
+"yes": 44.0,
+"yesVotes": 320210,
+"noVotes": 406097
+},
+{
+"st": "IN",
+"title": "Public Question 1",
+"issue": "crime",
+"label": "Deny bail to dangerous defendants",
+"passed": true,
+"yes": 58.0,
+"yesVotes": 1063295,
+"noVotes": 758966
+},
+{
+"st": "IN",
+"title": "Public Question 2",
+"issue": "gov",
+"label": "Residency rule for city court judges",
+"passed": true,
+"yes": 63.0,
+"yesVotes": 1144687,
+"noVotes": 684054
+},
+{
+"st": "IA",
+"title": "Amendment 1",
+"issue": "tax",
+"label": "Two-thirds vote to raise income taxes",
+"passed": true,
+"yes": 56.0,
+"yesVotes": 688127,
+"noVotes": 535617
+},
+{
+"st": "KS",
+"title": "Citizenship Voting Requirement Amendment",
+"issue": "voting",
+"label": "Only U.S. citizens may vote",
+"passed": true,
+"yes": 64.0,
+"yesVotes": 683779,
+"noVotes": 391416
+},
+{
+"st": "KS",
+"title": "Elections for Supreme Court Justices Amendment",
+"issue": "gov",
+"label": "Elect Supreme Court justices",
+"passed": false,
+"yes": 39.0,
+"yesVotes": 240603,
+"noVotes": 382118
+},
+{
+"st": "KY",
+"title": "Constitutional Amendment 1",
+"issue": "gov",
+"label": "No pardons near a governor election",
+"passed": true,
+"yes": 71.0,
+"yesVotes": 900017,
+"noVotes": 373403
+},
+{
+"st": "LA",
+"title": "Amendment 1",
+"issue": "tax",
+"label": "Transferable homestead exemption for veterans' spouses",
+"passed": true,
+"yes": 74.0,
+"yesVotes": 1071821,
+"noVotes": 371398
+},
+{
+"st": "LA",
+"title": "Amendment 10",
+"issue": "tax",
+"label": "Tax break for rehabilitated blighted property",
+"passed": false,
+"yes": 47.0,
+"yesVotes": 659484,
+"noVotes": 749477
+},
+{
+"st": "LA",
+"title": "Amendment 2",
+"issue": "tax",
+"label": "Higher property tax millage",
+"passed": false,
+"yes": 42.0,
+"yesVotes": 596656,
+"noVotes": 824812
+},
+{
+"st": "LA",
+"title": "Amendment 3",
+"issue": "crime",
+"label": "No bail after conviction for crimes against minors",
+"passed": true,
+"yes": 68.0,
+"yesVotes": 972731,
+"noVotes": 461882
+},
+{
+"st": "LA",
+"title": "Amendment 4",
+"issue": "gov",
+"label": "Lifetime two-term limit for governor",
+"passed": true,
+"yes": 56.0,
+"yesVotes": 801623,
+"noVotes": 631679
+},
+{
+"st": "LA",
+"title": "Amendment 5",
+"issue": "gov",
+"label": "Pension debt payment rule",
+"passed": false,
+"yes": 38.0,
+"yesVotes": 526852,
+"noVotes": 875000
+},
+{
+"st": "LA",
+"title": "Amendment 6",
+"issue": "tax",
+"label": "Senior homestead exemption up to $30,000",
+"passed": true,
+"yes": 64.0,
+"yesVotes": 900864,
+"noVotes": 516528
+},
+{
+"st": "LA",
+"title": "Amendment 7",
+"issue": "env",
+"label": "Public funds for contaminated water lines",
+"passed": true,
+"yes": 65.0,
+"yesVotes": 924795,
+"noVotes": 492522
+},
+{
+"st": "LA",
+"title": "Amendment 8",
+"issue": "immigration",
+"label": "Bar property seizure by foreign adversaries",
+"passed": true,
+"yes": 62.0,
+"yesVotes": 877475,
+"noVotes": 535187
+},
+{
+"st": "LA",
+"title": "Amendment 9",
+"issue": "tax",
+"label": "Higher income limit for senior property tax freeze",
+"passed": true,
+"yes": 58.0,
+"yesVotes": 824244,
+"noVotes": 592172
+},
+{
+"st": "LA",
+"title": "Amendment 1",
+"issue": "gov",
+"label": "More unclassified civil service jobs",
+"passed": false,
+"yes": 22.0,
+"yesVotes": 173487,
+"noVotes": 630337
+},
+{
+"st": "LA",
+"title": "Amendment 2",
+"issue": "edu",
+"label": "St. George school system",
+"passed": false,
+"yes": 36.0,
+"yesVotes": 287614,
+"noVotes": 511787
+},
+{
+"st": "LA",
+"title": "Amendment 3",
+"issue": "edu",
+"label": "Move education funds to teacher pensions",
+"passed": false,
+"yes": 42.0,
+"yesVotes": 340362,
+"noVotes": 470837
+},
+{
+"st": "LA",
+"title": "Amendment 4",
+"issue": "tax",
+"label": "Local business inventory tax exemption",
+"passed": false,
+"yes": 34.0,
+"yesVotes": 272515,
+"noVotes": 530799
+},
+{
+"st": "LA",
+"title": "Amendment 5",
+"issue": "gov",
+"label": "Judicial retirement age to 75",
+"passed": false,
+"yes": 23.0,
+"yesVotes": 188765,
+"noVotes": 618097
+},
+{
+"st": "MD",
+"title": "Question 1",
+"issue": "labor",
+"label": "Fund state employee arbitration awards",
+"passed": true,
+"yes": 76.0,
+"yesVotes": 1584338,
+"noVotes": 497018
+},
+{
+"st": "MD",
+"title": "Question 2",
+"issue": "gov",
+"label": "Temporary judicial disability commission members",
+"passed": true,
+"yes": 68.0,
+"yesVotes": 1428019,
+"noVotes": 661346
+},
+{
+"st": "MD",
+"title": "Question 3",
+"issue": "elections",
+"label": "Exempt congressional maps from district rules",
+"passed": true,
+"yes": 62.0,
+"yesVotes": 1329997,
+"noVotes": 818704
+},
+{
+"st": "MA",
+"title": "Question 1",
+"issue": "gov",
+"label": "Open the legislature's and governor's records",
+"passed": true,
+"yes": 86.0,
+"yesVotes": 2204690,
+"noVotes": 361223
+},
+{
+"st": "MA",
+"title": "Question 2",
+"issue": "labor",
+"label": "Collective bargaining for public defenders",
+"passed": true,
+"yes": 64.0,
+"yesVotes": 1621264,
+"noVotes": 912004
+},
+{
+"st": "MA",
+"title": "Question 3",
+"issue": "elections",
+"label": "Replace party primaries with one open primary",
+"passed": false,
+"yes": 39.0,
+"yesVotes": 1001466,
+"noVotes": 1568861
+},
+{
+"st": "MA",
+"title": "Question 4",
+"issue": "voting",
+"label": "Same-day voter registration",
+"passed": true,
+"yes": 56.0,
+"yesVotes": 1448697,
+"noVotes": 1121515
+},
+{
+"st": "MA",
+"title": "Question 5",
+"issue": "tax",
+"label": "Change state revenue limit",
+"passed": false,
+"yes": 48.0,
+"yesVotes": 1211076,
+"noVotes": 1328039
+},
+{
+"st": "MA",
+"title": "Question 6",
+"issue": "env",
+"label": "Nature conservation fund",
+"passed": true,
+"yes": 61.0,
+"yesVotes": 1550437,
+"noVotes": 998261
+},
+{
+"st": "MA",
+"title": "Question 7",
+"issue": "housing",
+"label": "Allow homes on 5,000-square-foot lots",
+"passed": false,
+"yes": 49.0,
+"yesVotes": 1258029,
+"noVotes": 1290724
+},
+{
+"st": "MA",
+"title": "Question 8",
+"issue": "drugs",
+"label": "Repeal legal recreational marijuana",
+"passed": false,
+"yes": 24.0,
+"yesVotes": 633790,
+"noVotes": 1967235
+},
+{
+"st": "MA",
+"title": "Question 9",
+"issue": "guns",
+"label": "Uphold 2024 gun law",
+"passed": true,
+"yes": 67.0,
+"yesVotes": 1758939,
+"noVotes": 853079
+},
+{
+"st": "MI",
+"title": "Proposal 1",
+"issue": "gov",
+"label": "Hold a constitutional convention",
+"passed": false,
+"yes": 26.0,
+"yesVotes": 1119008,
+"noVotes": 3144066
+},
+{
+"st": "MI",
+"title": "Proposal 2",
+"issue": "elections",
+"label": "Ban campaign money from utilities and contractors",
+"passed": true,
+"yes": 81.0,
+"yesVotes": 3531044,
+"noVotes": 812419
+},
+{
+"st": "MN",
+"title": "Alter Investment and Distribution Policies for Permanent School Fund Amendment",
+"issue": "edu",
+"label": "Permanent School Fund investment rules",
+"passed": true,
+"yes": 76.0,
+"yesVotes": 2069087,
+"noVotes": 666712
+},
+{
+"st": "MO",
+"title": "Amendment 3",
+"issue": "abortion",
+"label": "Ban abortion and minors' gender procedures",
+"passed": false,
+"yes": 45.0,
+"yesVotes": 944084,
+"noVotes": 1174335
+},
+{
+"st": "MO",
+"title": "Amendment 6",
+"issue": "direct",
+"label": "80% legislative vote to change voter initiatives",
+"passed": true,
+"yes": 60.0,
+"yesVotes": 1253095,
+"noVotes": 838200
+},
+{
+"st": "MO",
+"title": "Amendment 7",
+"issue": "tax",
+"label": "Endowment to eliminate state taxes",
+"passed": false,
+"yes": 39.0,
+"yesVotes": 818054,
+"noVotes": 1253729
+},
+{
+"st": "MO",
+"title": "Amendment 8",
+"issue": "crime",
+"label": "Elected county sheriffs",
+"passed": true,
+"yes": 51.0,
+"yesVotes": 1056289,
+"noVotes": 1013747
+},
+{
+"st": "MO",
+"title": "Proposition A",
+"issue": "elections",
+"label": "Uphold new congressional map",
+"passed": false,
+"yes": 38.0,
+"yesVotes": 788369,
+"noVotes": 1275558
+},
+{
+"st": "MO",
+"title": "Amendment 1",
+"issue": "env",
+"label": "Renew parks and soil sales tax",
+"passed": true,
+"yes": 82.0,
+"yesVotes": 1141865,
+"noVotes": 245778
+},
+{
+"st": "MO",
+"title": "Amendment 2",
+"issue": "gov",
+"label": "Elected Jackson County assessor",
+"passed": true,
+"yes": 77.0,
+"yesVotes": 1042413,
+"noVotes": 312713
+},
+{
+"st": "MO",
+"title": "Amendment 4",
+"issue": "direct",
+"label": "District-by-district majorities for amendments",
+"passed": false,
+"yes": 20.0,
+"yesVotes": 275040,
+"noVotes": 1122748
+},
+{
+"st": "MO",
+"title": "Amendment 5",
+"issue": "tax",
+"label": "Phase out the income tax",
+"passed": false,
+"yes": 17.0,
+"yesVotes": 233965,
+"noVotes": 1165085
+},
+{
+"st": "MT",
+"title": "CI-132",
+"issue": "gov",
+"label": "Nonpartisan judicial elections",
+"passed": true,
+"yes": 68.0,
+"yesVotes": 328015,
+"noVotes": 152820
+},
+{
+"st": "MT",
+"title": "CI-133",
+"issue": "direct",
+"label": "Initiative power in the Declaration of Rights",
+"passed": true,
+"yes": 65.0,
+"yesVotes": 308472,
+"noVotes": 163127
+},
+{
+"st": "MT",
+"title": "I-194",
+"issue": "elections",
+"label": "Ban corporate political spending",
+"passed": true,
+"yes": 66.0,
+"yesVotes": 307039,
+"noVotes": 161247
+},
+{
+"st": "NE",
+"title": "Constitutional Amendment 1",
+"issue": "gov",
+"label": "Three terms for legislators",
+"passed": false,
+"yes": 19.0,
+"yesVotes": 136921,
+"noVotes": 598513
+},
+{
+"st": "NE",
+"title": "Initiative Measure 440",
+"issue": "gambling",
+"label": "Sports betting",
+"passed": false,
+"yes": 45.0,
+"yesVotes": 340042,
+"noVotes": 413433
+},
+{
+"st": "NE",
+"title": "Initiative Measure 441",
+"issue": "gambling",
+"label": "Online sports betting",
+"passed": false,
+"yes": 46.0,
+"yesVotes": 343203,
+"noVotes": 410215
+},
+{
+"st": "NE",
+"title": "Initiative Measure 442",
+"issue": "gender",
+"label": "Girls' sports limited to girls",
+"passed": true,
+"yes": 68.0,
+"yesVotes": 504620,
+"noVotes": 241149
+},
+{
+"st": "NV",
+"title": "Question 6",
+"issue": "abortion",
+"label": "Right to abortion before viability",
+"passed": true,
+"yes": 64.0,
+"yesVotes": 678152,
+"noVotes": 388571
+},
+{
+"st": "NV",
+"title": "Question 7",
+"issue": "voting",
+"label": "Photo ID to vote",
+"passed": true,
+"yes": 62.0,
+"yesVotes": 667463,
+"noVotes": 406720
+},
+{
+"st": "NH",
+"title": "Eliminate Office of Register of Probate Amendment",
+"issue": "gov",
+"label": "Eliminate register of probate",
+"passed": false,
+"yes": 65.0,
+"yesVotes": 366633,
+"noVotes": 199425
+},
+{
+"st": "NM",
+"title": "Bond Question 1",
+"issue": "gov",
+"label": "$30 million senior center bonds",
+"passed": true,
+"yes": 70.0,
+"yesVotes": 453903,
+"noVotes": 197981
+},
+{
+"st": "NM",
+"title": "Bond Question 2",
+"issue": "edu",
+"label": "$20 million library and school bonds",
+"passed": true,
+"yes": 66.0,
+"yesVotes": 427655,
+"noVotes": 220414
+},
+{
+"st": "NM",
+"title": "Bond Question 3",
+"issue": "edu",
+"label": "$230 million higher education bonds",
+"passed": true,
+"yes": 64.0,
+"yesVotes": 416062,
+"noVotes": 231046
+},
+{
+"st": "NM",
+"title": "Constitutional Amendment 1",
+"issue": "gov",
+"label": "End the governor's pocket veto",
+"passed": true,
+"yes": 75.0,
+"yesVotes": 497904,
+"noVotes": 165277
+},
+{
+"st": "NM",
+"title": "Constitutional Amendment 2",
+"issue": "edu",
+"label": "School elections with partisan elections",
+"passed": true,
+"yes": 65.0,
+"yesVotes": 426862,
+"noVotes": 231687
+},
+{
+"st": "NM",
+"title": "Constitutional Amendment 3",
+"issue": "edu",
+"label": "Board of Regents changes",
+"passed": true,
+"yes": 70.0,
+"yesVotes": 445110,
+"noVotes": 191138
+},
+{
+"st": "NM",
+"title": "Constitutional Amendment 4",
+"issue": "gov",
+"label": "Pay legislators the state median income",
+"passed": true,
+"yes": 63.0,
+"yesVotes": 418548,
+"noVotes": 240995
+},
+{
+"st": "NC",
+"title": "Property Tax Levy Limit Amendment",
+"issue": "tax",
+"label": "Limit property tax increases",
+"passed": true,
+"yes": 60.0,
+"yesVotes": 2503657,
+"noVotes": 1640176
+},
+{
+"st": "NC",
+"title": "Reduce Income Tax Rate Cap from 7% to 3.5% Amendment",
+"issue": "tax",
+"label": "Cap income tax at 3.5%",
+"passed": true,
+"yes": 62.0,
+"yesVotes": 2571372,
+"noVotes": 1580808
+},
+{
+"st": "NC",
+"title": "Require Voter Identification Amendment",
+"issue": "voting",
+"label": "Photo ID for all voters",
+"passed": true,
+"yes": 60.0,
+"yesVotes": 2474593,
+"noVotes": 1676587
+},
+{
+"st": "ND",
+"title": "Constitutional Measure 1",
+"issue": "direct",
+"label": "60% vote for constitutional amendments",
+"passed": false,
+"yes": 44.0,
+"yesVotes": 101798,
+"noVotes": 132169
+},
+{
+"st": "ND",
+"title": "Constitutional Measure 2",
+"issue": "edu",
+"label": "Free school breakfast and lunch",
+"passed": false,
+"yes": 49.0,
+"yesVotes": 116477,
+"noVotes": 119309
+},
+{
+"st": "ND",
+"title": "Constitutional Measure 1",
+"issue": "direct",
+"label": "Single-subject rule for amendments",
+"passed": true,
+"yes": 66.0,
+"yesVotes": 77141,
+"noVotes": 38995
+},
+{
+"st": "OH",
+"title": "Issue 3",
+"issue": "voting",
+"label": "Photo ID to vote",
+"passed": true,
+"yes": 65.0,
+"yesVotes": 2934245,
+"noVotes": 1556864
+},
+{
+"st": "OK",
+"title": "State Question 845",
+"issue": "gov",
+"label": "Judicial nominating commission changes",
+"passed": false,
+"yes": 27.0,
+"yesVotes": 294462,
+"noVotes": 777246
+},
+{
+"st": "OK",
+"title": "State Question 847",
+"issue": "tax",
+"label": "Lower property value growth limit",
+"passed": false,
+"yes": 46.0,
+"yesVotes": 493467,
+"noVotes": 585734
+},
+{
+"st": "OK",
+"title": "State Question 844",
+"issue": "tax",
+"label": "Reimburse local governments for tax breaks",
+"passed": false,
+"yes": 26.0,
+"yesVotes": 138814,
+"noVotes": 389886
+},
+{
+"st": "OK",
+"title": "State Question 846",
+"issue": "voting",
+"label": "Proof of identity to vote",
+"passed": true,
+"yes": 55.0,
+"yesVotes": 292599,
+"noVotes": 243159
+},
+{
+"st": "OK",
+"title": "State Question 832",
+"issue": "labor",
+"label": "$15 minimum wage",
+"passed": false,
+"yes": 45.0,
+"yesVotes": 281386,
+"noVotes": 349102
+},
+{
+"st": "OR",
+"title": "Referendum 120",
+"issue": "tax",
+"label": "Repeal gas, payroll and vehicle fee increases",
+"passed": false,
+"yes": 17.0,
+"yesVotes": 207066,
+"noVotes": 1012663
+},
+{
+"st": "RI",
+"title": "Question 1",
+"issue": "edu",
+"label": "$275 million higher education bonds",
+"passed": true,
+"yes": 60.0,
+"yesVotes": 209110,
+"noVotes": 139303
+},
+{
+"st": "RI",
+"title": "Question 2",
+"issue": "housing",
+"label": "$120 million affordable housing bonds",
+"passed": true,
+"yes": 61.0,
+"yesVotes": 213183,
+"noVotes": 134355
+},
+{
+"st": "RI",
+"title": "Question 3",
+"issue": "gov",
+"label": "$100 million economic development bonds",
+"passed": false,
+"yes": 48.0,
+"yesVotes": 162914,
+"noVotes": 178645
+},
+{
+"st": "RI",
+"title": "Question 5",
+"issue": "env",
+"label": "$55 million environment and water bonds",
+"passed": true,
+"yes": 67.0,
+"yesVotes": 232619,
+"noVotes": 114027
+},
+{
+"st": "SD",
+"title": "Constitutional Amendment I",
+"issue": "health",
+"label": "End Medicaid expansion if federal share falls",
+"passed": false,
+"yes": 44.0,
+"yesVotes": 131202,
+"noVotes": 165420
+},
+{
+"st": "SD",
+"title": "Constitutional Amendment J",
+"issue": "voting",
+"label": "Noncitizens may not vote",
+"passed": true,
+"yes": 62.0,
+"yesVotes": 183765,
+"noVotes": 114928
+},
+{
+"st": "SD",
+"title": "Constitutional Amendment K",
+"issue": "gov",
+"label": "Unclaimed property trust fund",
+"passed": true,
+"yes": 61.0,
+"yesVotes": 178578,
+"noVotes": 114481
+},
+{
+"st": "SD",
+"title": "Constitutional Amendment L",
+"issue": "direct",
+"label": "60% vote for constitutional amendments",
+"passed": false,
+"yes": 42.0,
+"yesVotes": 126175,
+"noVotes": 171362
+},
+{
+"st": "TN",
+"title": "Amendment 1",
+"issue": "crime",
+"label": "No bail for specified crimes",
+"passed": true,
+"yes": 67.0,
+"yesVotes": 1330845,
+"noVotes": 651321
+},
+{
+"st": "TN",
+"title": "Amendment 2",
+"issue": "tax",
+"label": "Ban state property taxes",
+"passed": true,
+"yes": 67.0,
+"yesVotes": 1334067,
+"noVotes": 664715
+},
+{
+"st": "TN",
+"title": "Amendment 3",
+"issue": "crime",
+"label": "Expanded crime victims' rights",
+"passed": true,
+"yes": 76.0,
+"yesVotes": 1526306,
+"noVotes": 480508
+},
+{
+"st": "UT",
+"title": "Constitutional Amendment A",
+"issue": "direct",
+"label": "60-day publication of amendments",
+"passed": true,
+"yes": 61.0,
+"yesVotes": 617693,
+"noVotes": 395037
+},
+{
+"st": "UT",
+"title": "Constitutional Amendment B",
+"issue": "direct",
+"label": "60% vote for tax initiatives",
+"passed": false,
+"yes": 39.0,
+"yesVotes": 393945,
+"noVotes": 627987
+},
+{
+"st": "VT",
+"title": "Proposal 3",
+"issue": "labor",
+"label": "Right to organize a union",
+"passed": true,
+"yes": 74.0,
+"yesVotes": 215707,
+"noVotes": 76044
+},
+{
+"st": "VT",
+"title": "Proposal 4",
+"issue": "rights",
+"label": "Equal rights amendment",
+"passed": true,
+"yes": 79.0,
+"yesVotes": 230396,
+"noVotes": 62737
+},
+{
+"st": "VA",
+"title": "Question 1",
+"issue": "abortion",
+"label": "Right to reproductive freedom (constitution)",
+"passed": true,
+"yes": 63.0,
+"yesVotes": 2260108,
+"noVotes": 1334931
+},
+{
+"st": "VA",
+"title": "Question 2",
+"issue": "rights",
+"label": "Repeal same-sex marriage ban",
+"passed": true,
+"yes": 58.0,
+"yesVotes": 2100100,
+"noVotes": 1527939
+},
+{
+"st": "VA",
+"title": "Question 3",
+"issue": "voting",
+"label": "Restore felons' voting rights on release",
+"passed": true,
+"yes": 57.0,
+"yesVotes": 2061741,
+"noVotes": 1558951
+},
+{
+"st": "WA",
+"title": "Initiative 1",
+"issue": "edu",
+"label": "Parents' rights over school materials",
+"passed": false,
+"yes": 48.0,
+"yesVotes": 1478123,
+"noVotes": 1626774
+},
+{
+"st": "WA",
+"title": "Initiative 638",
+"issue": "gender",
+"label": "Girls' sports limited to girls",
+"passed": true,
+"yes": 56.0,
+"yesVotes": 1774564,
+"noVotes": 1397005
+},
+{
+"st": "WA",
+"title": "Initiative 645",
+"issue": "tax",
+"label": "Repeal millionaires' income tax",
+"passed": false,
+"yes": 42.0,
+"yesVotes": 1340827,
+"noVotes": 1850642
+},
+{
+"st": "WV",
+"title": "Citizenship Voting Requirement Amendment",
+"issue": "voting",
+"label": "Only U.S. citizens may vote",
+"passed": true,
+"yes": 80.0,
+"yesVotes": 342330,
+"noVotes": 88064
+},
+{
+"st": "WI",
+"title": "Question 1",
+"issue": "tax",
+"label": "No partial veto to raise taxes",
+"passed": true,
+"yes": 51.0,
+"yesVotes": 1308835,
+"noVotes": 1270123
+},
+{
+"st": "WI",
+"title": "Question 2",
+"issue": "rights",
+"label": "No closing places of worship in emergencies",
+"passed": false,
+"yes": 48.0,
+"yesVotes": 1244742,
+"noVotes": 1344295
+},
+{
+"st": "WI",
+"title": "Question 3",
+"issue": "rights",
+"label": "Ban race and sex preferences",
+"passed": true,
+"yes": 56.0,
+"yesVotes": 1452551,
+"noVotes": 1119646
+},
+{
+"st": "WY",
+"title": "Initiative 1",
+"issue": "tax",
+"label": "Halve homeowners' assessed value",
+"passed": false,
+"yes": 43.0,
+"yesVotes": 80047,
+"noVotes": 105209
+}
+]
