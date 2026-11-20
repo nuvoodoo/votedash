@@ -7,6 +7,15 @@
    "https://en.wikipedia.org/wiki/National_Association_of_Home_Builders"
   ]
  },
+ "C00000935": {
+  "about": "The Democratic Congressional Campaign Committee is the official campaign arm of Democrats in the U.S. House. It raises money, recruits and supports candidates, contributes to Democratic House campaigns, and runs independent-expenditure ads against Republicans in competitive districts.",
+  "site": "https://dccc.org",
+  "wikipedia": "https://en.wikipedia.org/wiki/Democratic_Congressional_Campaign_Committee",
+  "sources": [
+   "https://en.wikipedia.org/wiki/Democratic_Congressional_Campaign_Committee",
+   "https://www.fec.gov/data/committee/C00000935/"
+  ]
+ },
  "C00001016": {
   "about": "The Carpenters Legislative Improvement Committee is the political action committee of the United Brotherhood of Carpenters and Joiners of America, one of North America's largest building trades unions with more than half a million members. It supports federal candidates who back working people, infrastructure investment and fair trade, mainly through direct contributions to members of Congress.",
   "site": "https://www.carpenters.org/",
@@ -163,6 +172,15 @@
    "https://www.fec.gov/data/committee/C00027342/"
   ]
  },
+ "C00027466": {
+  "about": "The National Republican Senatorial Committee is the official campaign arm of Republicans in the U.S. Senate. It raises money, recruits Senate candidates, contributes to Republican campaigns, and runs coordinated and independent ads against Democratic senators and candidates in battleground states.",
+  "site": "https://www.nrsc.org",
+  "wikipedia": "https://en.wikipedia.org/wiki/National_Republican_Senatorial_Committee",
+  "sources": [
+   "https://en.wikipedia.org/wiki/National_Republican_Senatorial_Committee",
+   "https://www.fec.gov/data/committee/C00027466/"
+  ]
+ },
  "C00028860": {
   "about": "AFT Committee on Political Education is the federal political action committee of the American Federation of Teachers, the AFL-CIO union that is the second-largest teachers union in the United States. It gives directly to congressional candidates.",
   "site": "https://www.aft.org/",
@@ -225,6 +243,15 @@
    "https://www.nada.org"
   ]
  },
+ "C00042366": {
+  "about": "The Democratic Senatorial Campaign Committee is the official campaign arm of Democrats in the U.S. Senate. It raises money, recruits Senate candidates, contributes to Democratic campaigns, and runs coordinated and independent ads against Republican senators and candidates in battleground states.",
+  "site": "https://www.dscc.org",
+  "wikipedia": "https://en.wikipedia.org/wiki/Democratic_Senatorial_Campaign_Committee",
+  "sources": [
+   "https://en.wikipedia.org/wiki/Democratic_Senatorial_Campaign_Committee",
+   "https://www.fec.gov/data/committee/C00042366/"
+  ]
+ },
  "C00053553": {
   "about": "The NRA Political Victory Fund is the political action committee of the National Rifle Association, founded in 1976. It grades candidates from A+ to F on gun rights, endorses candidates, contributes directly to their campaigns, and runs independent ads and voter mobilization. Its support goes overwhelmingly to Republicans, including House GOP leaders and Republican Senate challengers, and it spends against Democratic senators in battleground states.",
   "site": "https://www.nrapvf.org",
@@ -241,6 +268,15 @@
   "sources": [
    "https://investors.ups.com/corporategovernance/political-engagement-policy",
    "https://www.fec.gov/data/committee/C00064766/"
+  ]
+ },
+ "C00075820": {
+  "about": "The National Republican Congressional Committee is the official campaign arm of Republicans in the U.S. House. It raises money, recruits candidates, contributes to Republican House campaigns, and runs independent-expenditure ads against Democratic members and candidates in competitive districts.",
+  "site": "https://www.nrcc.org",
+  "wikipedia": "https://en.wikipedia.org/wiki/National_Republican_Congressional_Committee",
+  "sources": [
+   "https://en.wikipedia.org/wiki/National_Republican_Congressional_Committee",
+   "https://www.fec.gov/data/committee/C00075820/"
   ]
  },
  "C00077321": {
@@ -308,6 +344,14 @@
   "sources": [
    "https://en.wikipedia.org/wiki/American_Crystal_Sugar_Company",
    "https://www.crystalsugar.com"
+  ]
+ },
+ "C00127811": {
+  "about": "U.S. Israel PAC (USI PAC) is a pro-Israel political action committee based in Hollywood, Florida, registered with the FEC since 1980. It is funded by individual donors and makes direct contributions to congressional candidates of both parties who support the U.S.-Israel relationship.",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00127811/",
+   "https://projects.propublica.org/itemizer/committee/C00127811/2024",
+   "https://jewishvirtuallibrary.org/pro-israel-lobby-overview"
   ]
  },
  "C00130773": {
@@ -649,6 +693,25 @@
    "https://www.texastribune.org/2026/05/15/texas-us-senate-gop-primary-donors-john-cornyn-ken-paxton/"
   ]
  },
+ "C00550970": {
+  "about": "Equality PAC is the political arm of the Congressional Equality Caucus, the House caucus of LGBTQ members and allies, and is co-chaired by Reps. Ritchie Torres and Mark Takano. It works to elect LGBTQ candidates and allies who back the Equality Act, giving directly to Democratic campaigns and spending independently to boost LGBTQ candidates such as Scott Wiener, Julie Johnson and Emily Randall.",
+  "site": "https://lgbtequalitypac.org",
+  "wikipedia": "https://en.wikipedia.org/wiki/Congressional_Equality_Caucus",
+  "sources": [
+   "https://lgbtequalitypac.org/about/",
+   "https://en.wikipedia.org/wiki/Congressional_Equality_Caucus"
+  ]
+ },
+ "C00552851": {
+  "about": "The Freedom Caucus Fund is the campaign arm of the House Freedom Caucus, the bloc of hard-line conservative House Republicans; it operated as the House Freedom Fund until 2026. Retired donor Michael Rydin is by far its largest contributor in the 2026 cycle. It endorses and gives directly to conservative House candidates, including in Republican primaries, and runs ad campaigns backing caucus members such as Scott Perry, Lauren Boebert, Eli Crane and Nick Begich while attacking their Democratic opponents.",
+  "site": "https://www.freedomcaucusfund.com",
+  "wikipedia": "https://en.wikipedia.org/wiki/Freedom_Caucus",
+  "sources": [
+   "https://www.freedomcaucusfund.com/",
+   "https://foxnews.com/politics/house-conservatives-unleash-multimillion-dollar-midterm-blitz-against-dem-socialist-insurgency",
+   "https://www.fec.gov/data/committee/C00552851/"
+  ]
+ },
  "C00568444": {
   "about": "Center Forward Committee is the super PAC of Center Forward, a centrist advocacy nonprofit that grew out of the Blue Dog Research Forum and is chaired by former Alabama Democratic Rep. Bud Cramer. Its money comes largely from Center Forward and the Blue Dog Coalition's PAC. It spends on mail and digital ads backing moderate Democrats such as Angie Craig, Haley Stevens and Josh Gottheimer, including in primaries, and attacking Republicans in swing House districts.",
   "wikipedia": "https://en.wikipedia.org/wiki/Center_Forward",
@@ -656,6 +719,14 @@
    "https://en.wikipedia.org/wiki/Center_Forward",
    "https://theintercept.com/2018/11/29/no-labels-nancy-pelosi-speaker-house-no-labels/",
    "https://projects.propublica.org/itemizer/committee/C00568444/pac-donations/C00305318"
+  ]
+ },
+ "C00571588": {
+  "about": "Restoration of America PAC (formerly Restoration PAC) is a conservative super PAC founded in 2015 and led by Doug Truax, founder and CEO of the Restoration of America organization. Uline chief executive Richard Uihlein is by far its largest donor. It runs television and digital ads against Democrats, including Kamala Harris and Joe Biden in presidential races and Senate and House Democrats such as Tammy Baldwin and Jared Golden, and also funds other conservative groups and Republican Senate candidates.",
+  "sources": [
+   "https://www.factcheck.org/2026/08/restoration-of-america-pac/",
+   "https://www.fec.gov/data/committee/C00571588/",
+   "https://projects.propublica.org/itemizer/committee/C00571588/2024/independent-expenditures"
   ]
  },
  "C00571703": {
@@ -746,6 +817,13 @@
    "https://www.fec.gov/data/committee/C00633248/"
   ]
  },
+ "C00634261": {
+  "about": "Defend US PAC is a Republican super PAC based in Arlington, Virginia, active since 2017. Its money comes mostly from nonprofit groups, including American Prosperity Caucus, America Works Fund, American Exceptionalism Institute, Prosperity Alliance and American Advancement. It relies mainly on direct mail against Democratic Senate and House candidates, such as James Talarico in Texas and Catherine Cortez Masto in Nevada, and has backed Republicans including Markwayne Mullin and Ken Paxton.",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00634261/",
+   "https://projects.propublica.org/itemizer/committee/C00634261/2022/independent-expenditures"
+  ]
+ },
  "C00657866": {
   "about": "Protect Freedom PAC is a libertarian-leaning Republican super PAC created in 2017 by political advisers to Sen. Rand Paul of Kentucky. Nearly all of its money comes from billionaire investor Jeff Yass. It backs Paul-aligned conservatives such as Thomas Massie, Mike Lee and Ron Johnson, often in Republican primaries, through media buys, get-out-the-vote work and transfers to allied super PACs, and attacks rival Republicans as well as Democrats.",
   "site": "https://www.protectfreedompac.com/",
@@ -761,6 +839,21 @@
    "https://digital-release.thehill.com/?p=388683",
    "https://projects.propublica.org/itemizer/committee/C00662221/2024/independent-expenditures",
    "https://www.fec.gov/data/committee/C00662221/"
+  ]
+ },
+ "C00666388": {
+  "about": "Duty and Country is a Democratic super PAC affiliated with Senate Majority PAC, the main outside group working to elect Democratic senators. Most of its money has come from the Democratic group Majority Forward, and entertainment executive Haim Saban gave in 2026. It focuses on Ohio Senate races: in the 2024 Republican primary it ran TV ads highlighting Bernie Moreno's conservative positions and Trump's endorsement to boost him as Sherrod Brown's opponent, and in 2026 it runs TV and digital ads against Republican Jon Husted to help Brown.",
+  "sources": [
+   "https://www.nbcnews.com/news/amp/rcna143390",
+   "https://www.fec.gov/data/committee/C00666388/"
+  ]
+ },
+ "C00668905": {
+  "about": "American Patriots PAC is a Republican super PAC funded mainly by Citadel founder Ken Griffin and Elliott Investment Management's Paul Singer. It intervenes in Republican primaries, as when it ran ads backing John McGuire's 2024 challenge to House Freedom Caucus chair Bob Good in Virginia, and it buys TV and media ads against Democrats such as Eugene Vindman in competitive races.",
+  "site": "https://www.americanpatriotpac.org",
+  "sources": [
+   "https://politicalwire.com/2024/05/02/billionaires-fund-bid-against-lawmaker-who-ousted-mccarthy/",
+   "https://www.fec.gov/data/committee/C00668905/"
   ]
  },
  "C00685719": {
@@ -823,6 +916,14 @@
    "https://www.fec.gov/data/committee/C00724203/"
   ]
  },
+ "C00733352": {
+  "about": "Americans 4 Security PAC is a Wisconsin-based Republican super PAC funded mainly by its affiliated nonprofit, Americans 4 Security Inc., with Conservative Americans PAC and Palantir CEO Alex Karp among its other large donors. It backs Republicans tied to defense spending, such as Appropriations chair Tom Cole and Rep. Ken Calvert, and Wisconsin House candidate Michael Alfonso. In 2026 it spent millions on ads attacking Rep. Young Kim in her California primary against Calvert.",
+  "sources": [
+   "https://punchbowl.news/article/defense/calvert-kim/",
+   "https://punchbowl.news/article/defense/defense-pac-spending/",
+   "https://www.fec.gov/data/committee/C00733352/"
+  ]
+ },
  "C00739771": {
   "about": "Unite to Win is a Washington-based super PAC active in 2026 Democratic Senate primaries, with its money routed through a single donor committee, Democracy Matters. It spent heavily on ads backing Rep. Haley Stevens in Michigan's Democratic Senate primary against Abdul El-Sayed, and ran ads opposing Lt. Gov. Peggy Flanagan in Minnesota's Democratic Senate primary.",
   "sources": [
@@ -854,6 +955,20 @@
    "https://www.fec.gov/data/committee/C00748475/"
   ]
  },
+ "C00749085": {
+  "about": "The American Policy Fund is an Austin, Texas-based Republican super PAC that backed businessman Joe O'Dea in Colorado's 2022 U.S. Senate race. Its largest donor was banking heir Timothy Mellon, followed by the Senate Leadership Fund and hedge fund founder Paul Singer. It ran ads supporting O'Dea and attacking Democratic Sen. Michael Bennet.",
+  "sources": [
+   "https://www.yahoo.com/news/top-senate-republican-super-pac-083100015.html",
+   "https://www.fec.gov/data/committee/C00749085/"
+  ]
+ },
+ "C00750182": {
+  "about": "The Opportunity Matters Fund is a Republican super PAC aligned with South Carolina Sen. Tim Scott, built around his \"opportunity agenda\" of school choice, opportunity zones and economic mobility. Oracle co-founder Larry Ellison supplied most of its money, with Ben Navarro and Club for Growth Action among its other large donors. It spent on Senate races to help Republicans such as Ted Budd, Ron Johnson and Scott himself, and against Georgia Democrat Raphael Warnock.",
+  "sources": [
+   "https://www.influencewatch.org/political-party/the-opportunity-matters-fund/",
+   "https://www.fec.gov/data/committee/C00750182/"
+  ]
+ },
  "C00752691": {
   "about": "One for All Committee is a Dallas-based Democratic super PAC that focuses on persuading moderate women to vote for Democratic candidates. Its major donors include Karla Jurvetson, Reid Hoffman, the George Soros-funded Democracy PAC, the Sixteen Thirty Fund and the American Federation of Teachers. It spends mainly on digital advertising in presidential and Senate races, backing Democrats such as Kamala Harris, Tammy Baldwin, Elissa Slotkin and Mary Peltola.",
   "sources": [
@@ -875,6 +990,14 @@
   "sources": [
    "https://www.factcheck.org/?p=213509",
    "https://www.fec.gov/data/committee/C00760124/"
+  ]
+ },
+ "C00763193": {
+  "about": "Georgia Honor is a super PAC that Senate Majority PAC, the main outside group of Senate Democrats, set up for Georgia Senate runoffs; Senate Majority PAC is its sole funder and treasurer Rebecca Lambe oversees both. In the 2020-21 special-election runoff it ran ads against Republican Sen. Kelly Loeffler and for Raphael Warnock. It returned for the December 2022 runoff, spending on TV ads backing Warnock and attacking Republican Herschel Walker.",
+  "sources": [
+   "https://noticias.foxnews.com/politics/chuck-schumer-linked-offshoot-group-pumps-millions-georgia-senate-runoff",
+   "https://ballotpedia.org/Georgia_Honor",
+   "https://www.fec.gov/data/committee/C00763193/"
   ]
  },
  "C00769232": {
@@ -908,6 +1031,14 @@
    "https://welcome.team/",
    "https://en.wikipedia.org/wiki/WelcomePAC",
    "https://www.fec.gov/data/committee/C00786830/"
+  ]
+ },
+ "C00789339": {
+  "about": "34N22 is a Republican super PAC created in 2021 to back Herschel Walker's 2022 Senate campaign in Georgia; the name pairs Walker's University of Georgia jersey number with the election year. Home Depot co-founder Bernie Marcus and shipping-supplies magnate Richard Uihlein were among its largest donors. It ran digital, TV and billboard ads casting Democratic Sen. Raphael Warnock as a rubber stamp for President Biden.",
+  "sources": [
+   "https://www.goodmorningamerica.com/news/story/34n22-nnh-super-pacs-cryptic-names-raise-transparency-81543344",
+   "https://www.foxnews.com/politics/herschel-walker-pac-georgia-raphael-warnock",
+   "https://www.fec.gov/data/committee/C00789339/"
   ]
  },
  "C00790923": {
@@ -1156,6 +1287,23 @@
    "https://projects.propublica.org/itemizer/committee/C00849729/2024/independent-expenditures"
   ]
  },
+ "C00853861": {
+  "about": "The Great Lakes Conservative Fund (GLCF) is a Michigan super PAC dedicated to electing Republican Mike Rogers to the U.S. Senate, led by Republican strategist Andy Surabian. Texas oil executive Tim Dunn of CrownQuest Operating is its largest donor, followed by Ken Griffin and Stephen Schwarzman. It spent heavily on ads for Rogers in 2024 against Democrat Elissa Slotkin and returned in 2026 against Democrat Abdul El-Sayed.",
+  "sources": [
+   "https://thelivingstonpost.com/ardent-christian-nationalist-funds-pro-rogers-super-pac/",
+   "https://digital-release.thehill.com/?p=5393334",
+   "https://www.fec.gov/data/committee/C00853861/"
+  ]
+ },
+ "C00854299": {
+  "about": "Bold America is a Democratic super PAC launched in 2023 by three former Congressional Hispanic Caucus members: New Mexico Gov. Michelle Lujan Grisham and former Reps. Lucille Roybal-Allard and Filemon Vela. It aims to increase Latino representation in Congress by protecting Hispanic Caucus incumbents and turning out Latino voters, with major 2026 money from United Democracy Project, Proximo Action, United Futures PAC and Democrats 2026. It runs TV ads in Democratic primaries and general elections, including a multimillion-dollar push for caucus chair Adriano Espaillat in his New York primary that mostly attacked challenger Darializa Avila Chevalier.",
+  "site": "https://bold-america.com",
+  "sources": [
+   "https://ca.news.yahoo.com/three-former-hispanic-caucus-members-144615491.html",
+   "https://www.dropsitenews.com/p/pro-israel-donors-aipac-adriano-espaillat-avila-chevalier",
+   "https://www.fec.gov/data/committee/C00854299/"
+  ]
+ },
  "C00855064": {
   "about": "Conservative Values for Utah is a super PAC formed in October 2023 to back Republican John Curtis for the U.S. Senate seat being vacated by Mitt Romney, endorsing him before he entered the race. Its largest donor is clean-energy conservative Jay Faison, and Walmart heir Robert Walton also gave. It was the top outside spender in the 2024 Utah Senate race, running ads for Curtis and against his primary rival Trent Staggs.",
   "sources": [
@@ -1208,6 +1356,23 @@
    "https://www.fec.gov/data/committee/C00870592/"
   ]
  },
+ "C00871368": {
+  "about": "Project 218 is a Democratic super PAC formed in 2024 and run by staff of American Bridge 21st Century, the Democratic opposition-research and advertising group. It is funded by wealthy Democratic donors and allied groups, including Democracy Matters, Amy Rao and Russell Siegelman. It runs television ads supporting Democratic House candidates in competitive districts, such as Josh Riley, Susan Wild and Marie Gluesenkamp Perez, and also funds other Democratic groups.",
+  "wikipedia": "https://en.wikipedia.org/wiki/American_Bridge_21st_Century",
+  "sources": [
+   "https://www.influencewatch.org/political-party/project-218-pac/",
+   "https://www.fec.gov/data/committee/C00871368/",
+   "https://projects.propublica.org/itemizer/committee/C00871368/2024/independent-expenditures"
+  ]
+ },
+ "C00872085": {
+  "about": "South Carolina Patriots PAC is a super PAC formed in 2024 that was funded entirely by a group called America Fund. It spent in the 2024 Republican primary for South Carolina's 1st District, running TV, digital and canvassing campaigns against Representative Nancy Mace and supporting her challenger Catherine Templeton.",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00872085/",
+   "https://projects.propublica.org/itemizer/committee/C00872085/2024/independent-expenditures",
+   "https://projects.propublica.org/itemizer/committee/C00872085/2024/pac-donations"
+  ]
+ },
  "C00875278": {
   "about": "Last Frontier PAC is a Republican super PAC, registered in 2024, that backs Sen. Dan Sullivan in Alaska. In the 2026 U.S. Senate race it has spent its money on ads opposing Democrat Mary Peltola.",
   "sources": [
@@ -1232,12 +1397,27 @@
    "https://www.scrippsnews.com/politics/elon-musks-super-pac-starts-spending-to-help-gop-in-midterms-including-texas-ken-paxton"
   ]
  },
+ "C00886614": {
+  "about": "Your Community PAC is a Democratic-aligned super PAC registered in Wilmington, Delaware. Its money comes mainly from large progressive nonprofit and political groups, led by the Sixteen Thirty Fund, the North Fund, American Opportunity Action, the Center for Voter Information, United Futures and the Green Advocacy Project. In 2024 it backed Kamala Harris with billboards, mail and canvassing, and in 2026 it has run television ads against Republican House members including Max Miller of Ohio and Brad Finstad of Minnesota.",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00886614/",
+   "https://projects.propublica.org/itemizer/committee/C00886614/2024/independent-expenditures"
+  ]
+ },
  "C00894709": {
   "about": "Pine Tree Results PAC is a Republican super PAC formed in early 2025 to support Sen. Susan Collins of Maine in her 2026 reelection. Its largest donor is Stronger America Inc., a Virginia-based nonprofit led by Republican operative Paul Cooksey, and other major backers include Blackstone CEO Stephen Schwarzman, New Balance chairman Jim Davis, hedge fund manager Paul Singer and Palantir CEO Alex Karp. It runs TV and online ads attacking Collins's Democratic opponents, first Graham Platner and then nominee Troy Jackson.",
   "sources": [
    "https://www.thenation.com/article/politics/graham-platner-super-pac-dark-money-susan-collins-maine-senate-race/",
    "https://www.commondreams.org/news/collins-pac-billionaire-platner-ad",
    "https://www.politifact.com/personalities/pine-tree-results-pac/"
+  ]
+ },
+ "C00896365": {
+  "about": "Keep America Great PAC is a Republican super PAC formed in 2025 to help Rep. Andy Barr win Kentucky's open U.S. Senate seat, and its filings list Barr's campaign committee as a connected organization. Its largest donors include Foris DAX, the company behind Crypto.com, and the American Jobs and Growth Fund. It spent millions on TV ads in the 2026 Republican primary, much of it attacking rival Nate Morris and his company's immigration record.",
+  "sources": [
+   "https://www.semafor.com/article/03/10/2026/republican-spending-rises-in-kentucky-senate-race",
+   "https://washingtonsun.com/2026-election/weird-super-pac-pitch-kentucky-senate-daniel-cameron-andy-barr?redirected=notus_org",
+   "https://www.fec.gov/data/committee/C00896365/"
   ]
  },
  "C00898130": {
@@ -1261,6 +1441,22 @@
    "https://www.fec.gov/data/committee/C00902320/"
   ]
  },
+ "C00904730": {
+  "about": "Land I Love PAC is a Republican super PAC registered in Mountain Brook, Alabama, in 2025, funded almost entirely by the Congressional Leadership Fund, the House Republican leadership's super PAC. It backed Jimmy Patronis in Florida's 2025 special House election and in 2026 ran media against Democrat Rebecca Bennett in New Jersey's 7th District race against Rep. Tom Kean Jr.",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00904730/",
+   "https://x.com/allymutnick/status/2110794696540688493",
+   "https://newjerseymonitor.com/2026/10/16/rebecca-bennett-tom-kean-fundraising/"
+  ]
+ },
+ "C00906263": {
+  "about": "The Louisiana Freedom Fund is a super PAC formed in 2025 to support Republican Senator Bill Cassidy's 2026 renomination bid. Its filings list Cassidy Leadership Fund as a joint fundraising representative, and its main funders are Louisiana Legacy Policy Solutions, Louisiana Legacy PAC and Conservative Values for Louisiana. It spent heavily on television ads attacking Cassidy's primary challenger, Representative Julia Letlow, casting her as a liberal who voted with Joe Biden.",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00906263/",
+   "https://lailluminator.com/2026/02/06/letlow-cassidy/",
+   "https://louisianaradionetwork.com/2026/02/03/45276/"
+  ]
+ },
  "C00906701": {
   "about": "America First Agriculture Action is a super PAC registered in 2025 that shares a treasurer, Charles Gantt, with President Trump's super PAC MAGA Inc. Its largest donors are cannabis companies, including Trulieve, Curaleaf, Verano and Ascend Wellness. It spends on direct mail and digital ads promoting vulnerable House Republicans such as Bryan Steil, Nick Begich, Rob Bresnahan, Juan Ciscomani and Ryan Mackenzie, and has also run ads praising Trump's move to reschedule marijuana.",
   "sources": [
@@ -1276,6 +1472,27 @@
    "https://www.dropsitenews.com/p/blue-dogs-midterms-spending-democrats",
    "https://readsludge.com/2025/06/11/corporate-funded-blue-dog-dems-plan-new-super-pac-and-dark-money-group/",
    "https://www.fec.gov/data/committee/C00908707/?cycle=2026"
+  ]
+ },
+ "C00908723": {
+  "about": "MAGA KY is a super PAC formed by Donald Trump's campaign advisers in 2025 to defeat Rep. Thomas Massie in Kentucky's Republican primary. Its money came mainly from hedge fund manager Paul Singer, directly and through America 21 PAC, with further support from Miriam Adelson, investor John Paulson and MAGA Inc. It ran TV ads attacking Massie for nearly a year and promoted Trump-endorsed challenger Ed Gallrein, who beat Massie in the May 2026 primary.",
+  "sources": [
+   "https://www.wvxu.org/2026-07-17/a-record-shattering-37m-was-spent-on-kentuckys-massie-gallrein-race-heres-who-funded-it",
+   "https://www.fec.gov/data/committee/C00908723/"
+  ]
+ },
+ "C00911610": {
+  "about": "Digital Freedom Fund is a pro-cryptocurrency super PAC launched in 2025 by Cameron and Tyler Winklevoss, the founders of the Gemini exchange, who seeded it with about $21 million in bitcoin; Gemini Trust Company is also a major donor. It works to elect Republicans and defeat Democrats who oppose the crypto industry's agenda, chiefly through direct mail and text messages, such as backing Jon Husted and opposing Sherrod Brown in Ohio's Senate race.",
+  "sources": [
+   "https://decrypt.co/336114/winklevoss-wins-donate-21-million-bitcoin-pro-trump-anti-democrat-crypto-pac",
+   "https://www.fec.gov/data/committee/C00911610/"
+  ]
+ },
+ "C00912865": {
+  "about": "Ohio Flyer PAC is a Republican super PAC devoted to electing Jon Husted to the U.S. Senate from Ohio; its FEC filings list Husted's committee Team Husted as an affiliated organization, and Team Husted has transferred money to it. Its largest donors include Preserving the Republic's Promise, the Ohio group A Public Voice, Beemok founder Ben Navarro, Brian Colleran of Foundations Health Solutions, and Chevron. It spends on TV, streaming and digital ads and direct mail attacking Democrat Sherrod Brown.",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00912865/",
+   "https://gvwire.com/2026/09/21/trump-linked-pop-up-pacs-blitz-ohio-with-ads-against-brown-in-costly-senate-race/"
   ]
  },
  "C00916692": {
@@ -1305,6 +1522,15 @@
    "https://www.fec.gov/data/committee/C00923417/"
   ]
  },
+ "C00932707": {
+  "about": "Conservative Texans PAC is a super PAC formed in early 2026 to spend in Texas' Republican U.S. Senate primary on behalf of Sen. John Cornyn. All of its money came from another super PAC, Conservative Americans PAC, whose largest funder is the American Prosperity Alliance. It ran TV ads attacking Rep. Wesley Hunt as a disloyal Republican.",
+  "sources": [
+   "https://www.newsfromthestates.com/article/dark-money-fuels-attack-ads-final-stretch-texas-us-senate-primaries",
+   "https://preview-prod.w.houstonchronicle.com/politics/article/wesley-hunt-ads-paxton-cornyn-21336113.php",
+   "https://www.fec.gov/data/committee/C00932707/",
+   "https://www.fec.gov/data/committee/C00855924/"
+  ]
+ },
  "C00932723": {
   "about": "American Priorities is a pro-Palestine super PAC formed in February 2026 to counter the influence of AIPAC and other pro-Israel groups in Democratic primaries. Its donors include tech executives such as Omer Hasan and Outschool founder Amir Nathoo, Texas businessman Hussein Mahrouq and Justice Democrats. It runs TV and digital ads for progressive challengers, including Adam Hamawy in New Jersey, Darializa Avila Chevalier in New York, Chris Rabb in Pennsylvania and Abdul El-Sayed in Michigan, often against incumbents backed by pro-Israel groups.",
   "wikipedia": "https://en.wikipedia.org/wiki/American_Priorities",
@@ -1326,6 +1552,15 @@
   "sources": [
    "https://www.commondreams.org/news/peggy-flanagan-wins-primary",
    "https://patch.com/minnesota/saintpaul/amp/34241705/peggy-flanagan-accuses-pro-angie-craig-pac-of-using-ai-deepfake-in-tv-ad"
+  ]
+ },
+ "C00936591": {
+  "about": "Stand for New York PAC is a super PAC formed in 2026 and funded almost entirely by former New York City mayor Michael Bloomberg. It backed Micah Lasher, a former Bloomberg aide endorsed by retiring Representative Jerry Nadler, in the Democratic primary for New York's 12th District in Manhattan, paying for TV, mail and digital advertising.",
+  "wikipedia": "https://en.wikipedia.org/wiki/Michael_Bloomberg",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00936591/",
+   "https://www.amny.com/news/ny-12-congress-lasher-bloomberg-endorsement/",
+   "https://politicalwire.com/2026/03/12/bloomberg-to-back-protege-in-crowded-nyc-house-race/"
   ]
  },
  "C00936724": {
@@ -1371,10 +1606,24 @@
    "https://sunflowerstatejournal.com/new-super-pac-launches-campaign-against-marshall/"
   ]
  },
+ "C00953398": {
+  "about": "The Georgia Way is a super PAC affiliated with Senate Majority PAC, the main outside group of Senate Democrats, and shares its treasurer, Rebecca Lambe. Registered in June 2026, it is funded through transfers from its affiliated committee. It runs ads in Georgia's 2026 Senate race supporting Democratic Sen. Jon Ossoff and attacking Republican nominee Mike Collins.",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00953398/",
+   "https://noticias.foxnews.com/politics/chuck-schumer-linked-offshoot-group-pumps-millions-georgia-senate-runoff"
+  ]
+ },
  "C00956292": {
   "about": "Nebraska Values PAC is a super PAC backing independent Dan Osborn in Nebraska's 2026 U.S. Senate race. It spends mainly on television advertising attacking Republican Sen. Pete Ricketts, including a 60-second spot criticizing Ricketts over a pardon he supported as governor.",
   "sources": [
    "https://dnyuz.com/?p=284913"
+  ]
+ },
+ "C00957522": {
+  "about": "North Star is a Democratic super PAC registered in July 2026 to oppose Republican Sen. Dan Sullivan in Alaska's Senate race against Democrat Mary Peltola. It is funded almost entirely by Senate Majority PAC, the main super PAC working to elect Democratic senators. It is the largest outside spender on Peltola's side, buying TV and digital ads that tie Sullivan to commercial trawling interests blamed for falling salmon runs and to cuts in Medicaid and health subsidies.",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00957522/",
+   "https://www.adn.com/politics/2026/10/01/pacs-pour-tens-of-millions-into-alaskas-congressional-races-with-senate-race-dominating-spending/"
   ]
  },
  "C00960211": {
@@ -1390,6 +1639,26 @@
    "https://www.fec.gov/data/committee/C00960435/",
    "https://legis1.com/news/no-going-back-pac-tops-159m-outside-spending",
    "https://politicalwire.com/2026/09/09/trumps-super-pac-is-tied-to-mystery-group/"
+  ]
+ },
+ "C00960443": {
+  "about": "Safety & Affordability PAC is a Trump-aligned Republican super PAC formed in September 2026 and funded almost entirely by MAGA Inc., the main pro-Trump super PAC. It shares its treasurer with No Going Back PAC, a sister group focused on Senate races, while this PAC concentrates on House races. It buys TV and connected-TV ads attacking Democratic House candidates in battleground districts and backing Republicans such as Mike Lawler and Juan Ciscomani.",
+  "sources": [
+   "https://www.factcheck.org/2026/10/safety-affordability-pac-inc/",
+   "https://www.fec.gov/data/committee/C00960443/"
+  ]
+ },
+ "C00961276": {
+  "about": "Lower Costs Now is a Democratic super PAC formed in September 2026 and affiliated with FF PAC, the group formerly known as Future Forward USA PAC. Nearly all of its money came as transfers from Senate Majority PAC and FF PAC. It runs TV and online ads in Senate races, backing Democrats such as Jon Ossoff, James Talarico and Josh Turek and attacking Republicans including Mike Collins, Jon Husted and Roger Marshall, with Iowa its biggest target.",
+  "sources": [
+   "https://www.factcheck.org/2026/10/lower-costs-now/",
+   "https://www.fec.gov/data/committee/C00961276/"
+  ]
+ },
+ "C00961342": {
+  "about": "The Maine Standard is a Republican super PAC formed in September 2026 to oppose Democrat Troy Jackson in Maine's U.S. Senate race. It is funded by the Senate Leadership Fund, the leading super PAC working to elect Republicans to the Senate, and spends its money on media buys attacking Jackson.",
+  "sources": [
+   "https://www.fec.gov/data/committee/C00961342/"
   ]
  },
  "C90011156": {
