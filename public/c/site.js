@@ -126,3 +126,13 @@ document.querySelectorAll('[data-scope-tabs]').forEach(function (g) {
     g.parentNode.querySelectorAll('[data-scope-panel]').forEach(function (p) { p.hidden = p.getAttribute('data-scope-panel') !== b.getAttribute('data-scope'); });
   });
 });
+
+// old one-page post-mortem anchors go to their tab
+(function () {
+  if (location.pathname !== '/2026-post-mortem' || !location.hash) return;
+  var t = { '#results': 'seats', '#flips': 'seats', '#candidates': 'candidates', '#caucuses': 'caucuses', '#ballot': 'ballot', '#votes': 'votes', '#money': 'money', '#israel': 'israel', '#progressives': 'progressives' }[location.hash];
+  if (t) location.replace('/2026-post-mortem/' + t);
+})();
+
+// keep the current post-mortem tab in view on narrow screens
+(function () { var a = document.querySelector('.pm-tabs [aria-current=page]'); if (a && a.parentNode.scrollWidth > a.parentNode.clientWidth) a.parentNode.scrollLeft = a.offsetLeft - 16; })();

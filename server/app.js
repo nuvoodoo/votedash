@@ -60,7 +60,7 @@ const server = http.createServer((req, res) => {
     if (p === '/compare') return html(req, res, P.compare(url.searchParams));
     if (p === '/members') return html(req, res, P.members(url.searchParams));
     if (p === '/incoming') return html(req, res, P.incoming());
-    if (p === '/2026-post-mortem') { const b = P.postMortem(); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
+    if (p === '/2026-post-mortem' || p.startsWith('/2026-post-mortem/')) { const b = P.postMortem(p.slice('/2026-post-mortem/'.length).replace(/\/$/, '')); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if (p === '/votes') return html(req, res, P.votes(url.searchParams));
     if (p === '/money') return html(req, res, P.moneyP(url.searchParams));
     if (p === '/about') return html(req, res, P.about());
