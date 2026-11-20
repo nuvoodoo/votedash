@@ -1415,6 +1415,32 @@ function postMortem() {
   ${M.losingSpenders.map(s => `<tr><td>${fl2(s)}</td><td class="n">${money(s.lose)}</td><td class="n">${money(s.win)}</td></tr>`).join('')}
   </tbody></table></div>`);
 
+  const I = X.israel;
+  if (I && I.groups.length) {
+    const S = I.sum, dec = S.win + S.lose, iMax = Math.max(...I.groups.map(g => g.win + g.lose));
+    const share = (a, b) => !b ? '' : a / b < 0.001 ? '<0.1%' : `${(a / b * 100).toFixed(1)}%`;
+    const gl = g => g.slug ? `<a href="/f/${g.slug}">${esc(g.name)}</a>` : esc(g.name);
+    const cell = v => `<td class="n">${v ? money(v) : ''}</td>`;
+    const res = t => t.won == null ? '' : t.stage === 'Primary' && /^(CA|WA)-/.test(t.seat) ? (t.won ? 'Advanced' : 'Eliminated') : t.won ? 'Won' : 'Lost';
+    const hit = t => t.won == null ? '' : (t.forAmt >= t.againstAmt) === t.won ? 'Yes' : 'No';
+    add('israel', 'Pro-Israel PACs', `<h2>Pro-Israel PACs</h2>
+  <p class="sub">AIPAC, its super PAC United Democracy Project and ${I.groups.length - 1} other pro-Israel PACs spent ${money(S.total)} on 2026 House and Senate candidates. ${share(S.primary, S.total)} of it went into primaries, and ${share(S.forD + S.againstD, S.total)} into Democratic races.</p>
+  <dl class="facts"><div><dt>Spent</dt><dd>${money(S.total)}</dd><dd class="s">${money(S.contrib)} given, ${money(S.ie)} in outside spending</dd></div><div><dt>Share of all PAC and super PAC money</dt><dd>${share(S.total, I.all)}</dd><dd class="s">of ${money(I.all)} in House and Senate races</dd></div><div><dt>Share of primary outside spending</dt><dd>${share(S.primIe, I.allPrimIe)}</dd><dd class="s">of ${money(I.allPrimIe)}</dd></div><div><dt>On winners</dt><dd>${share(S.win, dec)}</dd><dd class="s">${money(S.lose)} on losers</dd></div></dl>
+  <h3>By party</h3>
+  <p class="sub">Money spent for and against candidates of each party, primaries and general elections together.</p>
+  <div class="tbl"><table><thead><tr><th>Group</th><th class="n">For Democrats</th><th class="n">Against Democrats</th><th class="n">For Republicans</th><th class="n">Against Republicans</th><th class="n">Total</th><th class="n">Share of all</th></tr></thead><tbody>
+  ${I.groups.map(g => `<tr><td>${gl(g)}</td>${cell(g.forD)}${cell(g.againstD)}${cell(g.forR)}${cell(g.againstR)}<td class="n">${money(g.total)}</td><td class="n">${share(g.total, I.all)}</td></tr>`).join('')}
+  <tr><td><b>All pro-Israel PACs</b></td>${cell(S.forD)}${cell(S.againstD)}${cell(S.forR)}${cell(S.againstR)}<td class="n"><b>${money(S.total)}</b></td><td class="n"><b>${share(S.total, I.all)}</b></td></tr></tbody></table></div>
+  <h3>Wins and losses</h3>
+  <p class="sub">A dollar counts as a win when the candidate it backed won, or the candidate it opposed lost, in the contest it was spent on.</p>
+  <ul class="poll-key pm-key"><li><span class="k fW" aria-hidden="true"></span>Backed the winner</li><li><span class="k fL" aria-hidden="true"></span>Backed the loser</li></ul>
+  <ul class="hbars pm-sp">${I.groups.filter(g => g.win + g.lose).map(g => `<li>${gl(g)}${winBar(g.win, g.lose, iMax)}<b>${money(g.win + g.lose)} <small>${share(g.win, g.win + g.lose)} on winners</small></b></li>`).join('')}</ul>
+  <h3>Biggest targets</h3>
+  <div class="tbl"><table><thead><tr><th>Candidate</th><th>Race</th><th class="n">Spent for</th><th class="n">Spent against</th><th>Result</th><th>Got its way</th></tr></thead><tbody>
+  ${I.targets.map(t => `<tr><td>${pc(t.p)} ${pl(t.name, t.slug)}</td><td>${esc(t.seat)}<br><small>${t.stage}</small></td>${cell(t.forAmt)}${cell(t.againstAmt)}<td>${res(t)}</td><td>${hit(t)}</td></tr>`).join('')}
+  </tbody></table></div>`);
+  }
+
   const body = `<div class="wrap"><h1>The 2026 midterms</h1><p class="lede">${lede}</p></div>
 <nav class="subnav" aria-label="On this page"><div class="wrap">${nav.map(([id, l]) => `<a href="#${id}">${l}</a>`).join('')}</div></nav>
 <div class="wrap pmort">${sec.join('')}</div>`;

@@ -181,12 +181,58 @@ const outspent = raceSpend.filter(r => r.loseSide > r.winSide && r.loseSide >= 1
 const losingSpenders = spenders.filter(s => s.lose >= 1e6).sort((a, b) => b.lose - a.lose).slice(0, 15);
 const totals = { all: raceSpend.reduce((s, r) => s + r.total, 0), losing: raceSpend.reduce((s, r) => s + r.loseSide, 0) };
 
+// ---------- pro-Israel PACs: every 2026 House/Senate dollar, primaries included ----------
+const EX = J(STATIC, 'elections-extra.json');
+const ISRAEL = new Set([...Object.entries(ind.committees).filter(([, v]) => v.industry === 'pro-israel').map(([k]) => k),
+  'C00490649', 'C00687657', 'C00712844', 'C00720128', 'C00755991', 'C00761965', 'C00922781']);
+const ISRAEL_NAMES = { AIPAC: 'AIPAC and United Democracy Project', C00528554: 'RJC Victory Fund', C00710848: 'DMFI PAC (Democratic Majority for Israel)', C00815753: 'J Street Action Fund', C00441949: 'J Street PAC', C00345132: 'Republican Jewish Coalition PAC', C00127811: 'U.S. Israel PAC', C00247403: 'NORPAC', C00139659: 'JACPAC' };
+const ISRAEL_GROUP = { C00797670: 'AIPAC', C00799031: 'AIPAC' }; // AIPAC PAC + its super PAC, United Democracy Project
+const cnById = new Map(cn.map(c => [c[0], c]));
+const nameOfCn = c => { const [ln, fn = ''] = c[1].split(','); return { last: norm(ln).replace(SUFFIX, '').trim(), f0: norm(fn)[0] || '' }; };
+const sameName = (c, n) => { const a = nameOfCn(c), L = lastOf(n); return (a.last === L || a.last.split(' ').includes(L) || a.last.replace(/ /g, '') === L.replace(/-/g, '')) && (!a.f0 || firstOf(n)[0] === a.f0); };
+const partyOf = c => c[2] === 'DEM' ? 'D' : c[2] === 'REP' ? 'R' : 'O';
+const pName = n => n.replace(/\b([a-z])/g, m => m.toUpperCase());
+const outcome = (pgi, c) => { // true = won that contest, false = lost, null = not decided / not found
+  const st = c[4], ch = c[5], d = +c[6] || 0, k = pgi[0];
+  const seatOk = x => x.st === st && x.ch === ch && (ch === 'S' || (x.d || 0) === d || (d <= 1 && (x.d || 0) <= 1));
+  if (k === 'G') { const h = fecToRace.get(c[0]); if (h) return h.cand === h.race.w; const r = raceRows.find(x => x.st === st && x.ch === ch && (ch === 'S' || x.d === d)); return r ? (r.cs.some(x => sameName(c, x.n)) ? sameName(c, r.w.n) : false) : null; }
+  if (k === 'S') { const r = EX.specials.find(x => x.y >= 2025 && seatOk(x) && x.c.some(y => sameName(c, y.n))); return r ? !!r.c.find(y => sameName(c, y.n)).w : null; }
+  const pts = ch === 'S' ? [partyOf(c), 'T2'] : [partyOf(c), 'T2'];
+  const rows = EX.primaries.filter(x => x.y === 2026 && seatOk(x) && (pts.includes(x.pt) || !x.pt));
+  for (const r of rows) { const y = r.c.find(z => sameName(c, z.n)); if (y) return !!y.w; }
+  return null;
+};
+const isr = new Map(); const isrCand = new Map(); let allCmte = 0, allIe = 0, allPrimIe = 0;
+for (const c of lines('itpas2.txt')) {
+  if (c[19] === 'X') continue;
+  const tp = c[5], amt = +c[14], cd = cnById.get(c[16]);
+  if (!amt || !cd || !['24K', '24Z', '24E', '24A'].includes(tp) || !/2026$/.test(c[3] || '')) continue;
+  allCmte += amt; if (tp === '24E' || tp === '24A') { allIe += amt; if (c[3][0] !== 'G') allPrimIe += amt; }
+  if (!ISRAEL.has(c[0])) continue;
+  const pgi = (c[3] || 'P')[0], against = tp === '24A', pt = partyOf(cd);
+  const won = outcome(pgi, cd), good = won == null ? null : against ? !won : won;
+  const g = ISRAEL_GROUP[c[0]] || c[0];
+  const s = isr.get(g) || { ids: new Set(), total: 0, contrib: 0, ie: 0, primary: 0, primIe: 0, forD: 0, forR: 0, againstD: 0, againstR: 0, other: 0, win: 0, lose: 0, open: 0 }; isr.set(g, s);
+  s.ids.add(c[0]); s.total += amt; s[tp === '24K' || tp === '24Z' ? 'contrib' : 'ie'] += amt; if (pgi !== 'G') { s.primary += amt; if (tp === '24E' || tp === '24A') s.primIe += amt; }
+  if (pt === 'O') s.other += amt; else s[(against ? 'against' : 'for') + pt] += amt;
+  s[good == null ? 'open' : good ? 'win' : 'lose'] += amt;
+  const ck = c[16] + '|' + pgi; const t = isrCand.get(ck) || { id: c[16], name: pName(cd[1].split(',').reverse().join(' ').trim().toLowerCase()), p: pt, seat: cd[5] === 'S' ? `${cd[4]} Senate` : `${cd[4]}-${+cd[6] || 'AL'}`, stage: pgi === 'G' ? 'General' : pgi === 'S' ? 'Special' : 'Primary', forAmt: 0, againstAmt: 0, won }; isrCand.set(ck, t);
+  t[against ? 'againstAmt' : 'forAmt'] += amt;
+}
+const R0 = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'number' ? Math.round(v) : v]));
+const israelRows = [...isr.entries()].map(([g, s]) => R0({ name: ISRAEL_NAMES[g] || (fundById[g] && fundById[g].name) || cmName.get(g) || g, label: true, slug: (fundById[g === 'AIPAC' ? 'C00799031' : g] || {}).slug || null, ...s, ids: undefined }))
+  .filter(s => s.total >= 50000).sort((a, b) => b.total - a.total);
+const israelSum = R0(israelRows.reduce((o, s) => { for (const k of ['total', 'contrib', 'ie', 'primary', 'primIe', 'forD', 'forR', 'againstD', 'againstR', 'win', 'lose', 'open']) o[k] = (o[k] || 0) + s[k]; return o; }, {}));
+const israel = { sum: israelSum, all: Math.round(allCmte), allIe: Math.round(allIe), allPrimIe: Math.round(allPrimIe), groups: israelRows,
+  targets: [...isrCand.values()].map(t => { const pp = people.find(p => (p.ids && p.ids.fec || p.fec || []).includes(t.id)); return R0({ ...t, name: pp ? pp.name : t.name.replace(/(Jr|Sr|Ii|Iii|Iv)\.?/g, '').replace(/\s[A-Z]\.?(?=\s|$)/g, '').replace(/\s+/g, ' ').trim(), slug: slugOf(pp) }); }).filter(t => t.forAmt + t.againstAmt >= 250000).sort((a, b) => (b.forAmt + b.againstAmt) - (a.forAmt + a.againstAmt)).slice(0, 20) };
+
 const out = { built: new Date().toISOString(), electionDate: '2026-11-03',
   seats: { H: { before: hBefore, after: hAfter }, S: { before: sBefore, after: sAfter } },
   counts: { flips: flips.length, defeated: defeated.length, primaryLosers: primaryLosers.filter(x => x.sameSeat).length, newcomers },
   flips, defeated, primaryLosers, close, caucuses, ballot, ballotMoney,
   votes: { summary: voteSummary, splits, keyLaws },
   money: { totals, spenders: spenders.slice(0, 25), industries: industries.slice(0, 20), costly, outspent, losingSpenders },
+  israel,
 };
 fs.writeFileSync(path.join(OUT, 'postmortem.json'), JSON.stringify(out));
 console.log('postmortem', JSON.stringify({ seats: out.seats, counts: out.counts, fecMatched: fecToRace.size, races: raceRows.length, splits: splits.length, keyLaws: keyLaws.length, spenders: spenders.length, totals }));
