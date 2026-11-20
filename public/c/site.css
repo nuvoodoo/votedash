@@ -625,7 +625,7 @@ svg.tline{width:100%;min-width:620px;height:auto;display:block}
 .poll-key b{font-variant-numeric:tabular-nums}
 .poll-party{margin-top:10px}
 .poll-trend{margin-top:12px}
-#polling h3{margin:22px 0 2px}
+#polling h3,#elections h3{margin:22px 0 2px}
 .poll-src{font-size:13px;color:var(--muted);margin:8px 0 0}
 .poll-src a{color:inherit}
 .poll-trend td:first-child{white-space:nowrap}

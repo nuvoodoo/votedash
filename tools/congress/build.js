@@ -290,12 +290,14 @@ const history = {};
 const pushH = (id, rec) => (history[id] ||= []).push(rec);
 const sen = csv('senate-1976-2024.tab', '\t');
 const house = exists('house-1976-2024.tab') && fs.statSync(path.join(RAW, 'house-1976-2024.tab')).size > 10000 ? csv('house-1976-2024.tab', fs.readFileSync(path.join(RAW, 'house-1976-2024.tab'), 'utf8').slice(0, 300).includes('\t') ? '\t' : ',') : [];
+// members-elect have no terms yet, so only exact-name matches reach their earlier races
+const medslPeople = [...members, ...elect.map(e => { const nm = e.name.replace(/,?\s+(Jr\.?|Sr\.?|II|III|IV)$/i, ''); return { id: e.id, name: e.name, first: nm.split(' ')[0], last: nm.split(' ').slice(-1)[0], terms: [], state: e.state, chamber: e.chamber }; })];
 function addMedsl(rows, chamber) {
   const races = {};
   for (const r of rows) {
     if ((r.stage || '').toLowerCase() !== 'gen' || (r.mode && r.mode.toLowerCase() !== 'total')) continue;
     if ((r.runoff || '').toUpperCase() === 'TRUE') continue;
-    if (!r.candidate || /^(other|writein|scattering|blank|void|over ?votes|under ?votes)$/i.test(r.candidate)) continue;
+    if (!r.candidate || /^(other|writein|write-in|scattering|blank|void|over ?votes|under ?votes|all others|blanks)$/i.test(r.candidate) || /^none of these/i.test(r.candidate) || /\b(blank votes?|void votes?|scattering|scattered|over ?votes|under ?votes)\b/i.test(r.candidate)) continue;
     const k = `${r.year}|${r.state_po}|${chamber === 'H' ? +r.district + ((r.special || '').toUpperCase() === 'TRUE' ? 's' : '') : (r.special || '').toLowerCase()}`;
     (races[k] ||= []).push(r);
   }
@@ -303,14 +305,21 @@ function addMedsl(rows, chamber) {
     const [year, st, d] = k.split('|');
     // combine fusion lines for the same candidate
     const by = {};
-    for (const c of cands) { if (!c.candidate || c.writein === 'TRUE' && false) continue; const n = c.candidate; (by[n] ||= { name: n, votes: 0, party: c.party_simplified || c.party_detailed || c.party }).votes += +c.candidatevotes; const ps = c.party_simplified || c.party; if (ps === 'DEMOCRAT' || ps === 'REPUBLICAN') by[n].party = ps; }
+    for (const c of cands) { if (!c.candidate || c.writein === 'TRUE' && false) continue; const n = /^[^,]+, [^,]+$/.test(c.candidate) ? c.candidate.split(', ')[1] + ' ' + c.candidate.split(', ')[0] : c.candidate; (by[n] ||= { name: n, votes: 0, party: c.party_simplified || c.party_detailed || c.party }).votes += +c.candidatevotes; const ps = c.party_simplified || c.party; if (ps === 'DEMOCRAT' || ps === 'REPUBLICAN') by[n].party = ps; }
     const total = +cands[0].totalvotes || Object.values(by).reduce((s, c) => s + c.votes, 0);
     const list = Object.values(by).sort((a, b) => b.votes - a.votes);
-    for (const m of members) {
+    for (const m of medslPeople) {
       if (m.state !== st) continue;
-      const served = m.terms.some(t => (t.type === 'sen') === (chamber === 'S') && t.state === st && (chamber === 'S' || +t.district === +d || (+d === 0 && t.district === 0)));
-      if (!served && !(m.chamber === chamber)) continue;
-      const me = list.find(c => lastOf(c.name) === lastOf(m.last) && norm(c.name).split(' ')[0][0] === norm(m.first)[0]) || list.find(c => lastOf(c.name) === lastOf(m.last) && norm(c.name).includes(norm(m.first))) || list.find(c => samePerson(c.name, m.name));
+      const served = m.terms.some(t => (t.type === 'sen') === (chamber === 'S') && t.state === st && (chamber === 'S' || +t.district === parseInt(d) || (parseInt(d) === 0 && t.district === 0)));
+      if (!served && !(m.chamber === chamber) && m.terms.length) continue;
+      // a full-name match counts for Senate races anywhere in the state; an initial-only match, and any
+      // House race, also needs the member to have held that seat (Linda vs Loretta Sanchez, two Danny Davises)
+      const strong = list.find(c => samePerson(c.name, m.name));
+      const weak = list.find(c => lastOf(c.name) === lastOf(m.last) && norm(c.name).split(' ')[0][0] === norm(m.first)[0]) || list.find(c => lastOf(c.name) === lastOf(m.last) && norm(c.name).includes(norm(m.first)));
+      // a race for a seat never held (an early loss) needs the exact first and last name, at 25 or older
+      const exact = list.find(c => lastOf(c.name) === lastOf(m.last) && norm(c.name).split(' ')[0] === norm(m.first).split(' ')[0]);
+      const ofAge = !m.birthday || +year - +m.birthday.slice(0, 4) >= 25;
+      const me = served ? strong || weak : chamber === 'H' ? (ofAge ? exact : null) : (ofAge ? strong : null);
       if (!me) continue;
       const opp = list.find(c => c !== me);
       pushH(m.id, { year: +year, chamber, state: st, district: chamber === 'H' ? +d : null, special: chamber === 'S' && d === 'true', pct: total ? me.votes / total : null, votes: me.votes, won: list[0] === me, opponent: opp ? { name: titleCase(opp.name), party: (opp.party || '')[0], pct: total ? opp.votes / total : null } : null, uncontested: !opp });
@@ -334,6 +343,39 @@ for (const r of fedRaces) {
     pushH(o.id, { year: 2026, chamber, state: r.state, district: dist, pct: total ? me.v / total : me.pc / 100, votes: me.v, won: !!me.w, opponent: opp ? { name: opp.n, party: opp.p, pct: total ? opp.v / total : opp.pc / 100 } : null, uncontested: !opp, raceId: r.id });
   }
 }
+// ---------- primaries, special elections, territory delegates ----------
+// tools/congress/static/elections-extra.json, built by tools/congress/primaries/ (FEC 2012-2022, civicAPI 2024-2026)
+const EX = JSON.parse(fs.readFileSync(path.join(__dirname, 'static/elections-extra.json'), 'utf8'));
+const people0 = [...members, ...elect];
+const fecOf = o => new Set([...((o.ids && o.ids.fec) || []), ...(o.fec || [])]);
+const primaries = {};
+for (const r of EX.primaries) {
+  const owners = r.src === 'fec'
+    ? people0.map(o => [o, r.c.find(c => c.f && fecOf(o).has(c.f))]).filter(([, c]) => c)
+    : people0.filter(o => o.state === r.st).map(o => [o, r.c.find(c => samePerson(c.n, o.name))]).filter(([, c]) => c);
+  for (const [o, me] of owners) {
+    const opp = r.c.find(c => c !== me);
+    (primaries[o.id] ||= []).push({ year: r.y, chamber: r.ch, state: r.st, district: r.d, special: !!r.sp, party: r.pt, pct: me.pc ?? null, votes: me.v ?? null, uncontested: !!me.u || r.c.length === 1, runoffPct: me.rpc ?? null, won: !!me.w, field: r.c.length, opponent: opp ? { name: opp.n, party: opp.p, pct: (me.rpc != null ? opp.rpc : opp.pc) ?? null } : null });
+  }
+}
+for (const l of Object.values(primaries)) l.sort((a, b) => b.year - a.year || (a.special - b.special));
+for (const r of EX.specials) {
+  for (const o of people0.filter(o => o.state === r.st)) {
+    const me = r.c.find(c => samePerson(c.n, o.name)); if (!me) continue;
+    const ro = r.runoff && me.rv != null;
+    const opp = ro ? r.c.find(c => c !== me && c.rv != null) : r.c.find(c => c !== me);
+    pushH(o.id, { year: r.y, chamber: r.ch, state: r.st, district: r.d, special: true, runoff: ro, pct: ro ? me.rpc : me.pc, votes: ro ? me.rv : me.v, won: !!me.w, opponent: opp ? { name: opp.n, party: opp.p, pct: ro ? opp.rpc : opp.pc } : null, uncontested: !opp });
+  }
+}
+// FEC general results fill races the MEDSL files lack (territory delegates, CT Senate 2022)
+for (const r of EX.generals) {
+  for (const o of people0.filter(o => o.state === r.st)) {
+    const me = r.c.find(c => fecOf(o).has(c.f)); if (!me) continue;
+    if ((history[o.id] || []).some(h => h.year === r.y && h.chamber === r.ch)) continue;
+    const opp = r.c.find(c => c !== me && !/^(W|N)$/.test(c.p)) || null;
+    pushH(o.id, { year: r.y, chamber: r.ch, state: r.st, district: r.d, special: !!r.sp, pct: me.pc, votes: me.v, won: me.w, opponent: opp ? { name: opp.n, party: (opp.p || '')[0], pct: opp.pc } : null, uncontested: !opp });
+  }
+}
 for (const h of Object.values(history)) h.sort((a, b) => b.year - a.year);
 
 // ---------- write ----------
@@ -348,6 +390,7 @@ for (const p of allPeople) {
   p.money = mm ? { cycles: mm.cycles, pacTotal: Math.round(Object.values(mm.pacs).reduce((s, v) => s + v, 0)), pacCount: Object.keys(mm.pacs).length, topPacs: top(mm.pacs, 25), ieFor: top(mm.ieFor, 10), ieAgainst: top(mm.ieAgainst, 10) } : null;
   p.sharedDonors = sharedDonors[p.id] || [];
   p.elections = history[p.id] || [];
+  p.primaries = primaries[p.id] || [];
 }
 const usedCm = new Set();
 for (const p of allPeople) if (p.money) for (const l of ['topPacs', 'ieFor', 'ieAgainst']) p.money[l].forEach(x => usedCm.add(x.id));

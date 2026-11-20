@@ -147,12 +147,12 @@ function member(p, q) {
   const add = (id, label, html) => { if (!html) return; nav.push([id, label]); sections.push(`<section id="${id}" class="sec">${html}</section>`); };
 
   add('overview', 'Overview', overview(p, cy));
+  add('elections', 'Elections', electionsSec(p));
   add('coming-up', 'Coming up', comingFor(p));
   add('markets', 'Prediction markets', (MKT.get().members[p.id] || []).length ? `<h2>Prediction markets</h2><p class="sub">Market-implied chances, updated every 10 minutes.</p>${pmRows(MKT.get().members[p.id])}` : '');
   add('polling', 'Polling', memberPolling(p));
   add('votes', 'Votes', votesSec(p));
   add('money', 'Money', moneySec(p, yearOf(q)));
-  add('elections', 'Elections', electionsSec(p));
   add('bills', 'Bills', billsSec(p));
   add('speeches', 'Speeches', speechesSec(p));
   add('record', 'Record', recordSec(p));
@@ -338,8 +338,9 @@ function moneySec(p, y) {
 function fundRow(x) { const f = D.funders.get(x.id); return f ? `<li><a href="/f/${f.slug}"><b>${esc(nice(f.name))}</b><small>${esc(f.kind)}</small></a><b class="amt">${money(x.amt)}</b></li>` : ''; }
 
 function electionsSec(p) {
-  const e = p.elections; if (!e || !e.length) return '';
-  const pts = [...e].reverse().filter(x => x.pct != null);
+  const e = p.elections || [], pr = p.primaries || [];
+  if (!e.length && !pr.length) return '';
+  const pts = [...e].reverse().filter(x => x.pct != null && !x.special);
   const minY = Math.min(...pts.map(x => x.year)), maxY = Math.max(...pts.map(x => x.year));
   const W = 640, Hh = 180, pad = 34;
   const X = y => pad + (maxY === minY ? (W - 2 * pad) / 2 : (y - minY) / (maxY - minY) * (W - 2 * pad));
@@ -349,10 +350,18 @@ function electionsSec(p) {
     <polyline points="${pts.map(x => `${X(x.year).toFixed(1)},${Y(Math.max(0.2, x.pct)).toFixed(1)}`).join(' ')}" class="lnp p${p.party}"/>
     ${pts.map((x, i) => `<circle cx="${X(x.year).toFixed(1)}" cy="${Y(Math.max(0.2, x.pct)).toFixed(1)}" r="4.5" class="f${p.party}"/>${i % Math.ceil(pts.length / 9) === 0 || i === pts.length - 1 ? `<text x="${X(x.year).toFixed(1)}" y="${Hh - 6}" class="tk" text-anchor="middle">${x.year}</text>` : ''}`).join('')}
   </svg>` : '';
-  return `<h2>Elections</h2>${chart}
+  const seat = x => (x.chamber === 'S' ? 'Senate' : 'House ' + x.state + '-' + (x.district || 'AL')) + (x.special ? ' special' : '');
+  const PRIM = { D: 'Democratic primary', R: 'Republican primary' };
+  const primLabel = x => (PRIM[x.party] || (x.state === 'AK' ? 'Top-four primary' : 'Top-two primary')) + ', ' + seat(x);
+  const general = e.length ? `<h3>General elections</h3>${chart}
   <div class="tbl"><table><thead><tr><th>Year</th><th>Race</th><th class="n">Share</th><th>Opponent</th><th>Result</th></tr></thead><tbody>
-  ${e.map(x => `<tr><td>${x.year}</td><td>${x.chamber === 'S' ? 'Senate' + (x.special ? ' special' : '') : 'House ' + x.state + '-' + (x.district || 'AL')}</td><td class="n">${x.pct != null ? pct(x.pct, 1) : ''}</td><td>${x.uncontested ? 'Unopposed' : x.opponent ? `${esc(x.opponent.name)} (${esc(x.opponent.party || '')})${x.opponent.pct != null ? ', ' + pct(x.opponent.pct, 1) : ''}` : ''}</td><td>${x.won ? 'Won' : 'Lost'}${x.raceId && x.year === 2026 ? ` <a href="/2026/race/${x.raceId}/">results</a>` : ''}</td></tr>`).join('')}
-  </tbody></table></div>`;
+  ${e.map(x => `<tr><td>${x.year}</td><td>${seat(x)}</td><td class="n">${x.pct != null ? pct(x.pct, 1) : ''}</td><td>${x.uncontested ? 'Unopposed' : x.opponent ? `${esc(x.opponent.name)} (${esc(x.opponent.party || '')})${x.opponent.pct != null ? ', ' + pct(x.opponent.pct, 1) : ''}` : ''}</td><td>${x.won ? 'Won' : 'Lost'}${x.runoff ? ' runoff' : ''}${x.raceId && x.year === 2026 ? ` <a href="/2026/race/${x.raceId}/">results</a>` : ''}</td></tr>`).join('')}
+  </tbody></table></div>` : '';
+  const primaries = pr.length ? `<h3>Primaries</h3>
+  <div class="tbl"><table><thead><tr><th>Year</th><th>Race</th><th class="n">Share</th><th>Top rival</th><th>Result</th></tr></thead><tbody>
+  ${pr.map(x => `<tr><td>${x.year}</td><td>${primLabel(x)}</td><td class="n">${x.pct != null && !x.uncontested ? pct(x.pct, 1) + (x.runoffPct != null ? `<br><small>runoff ${pct(x.runoffPct, 1)}</small>` : '') : ''}</td><td>${x.uncontested ? 'Unopposed' : x.opponent ? `${esc(x.opponent.name)}${x.party === 'T2' && x.opponent.party ? ` (${esc(x.opponent.party)})` : ''}${x.opponent.pct != null ? ', ' + pct(x.opponent.pct, 1) : ''}${x.field > 2 ? `<br><small>${x.field} candidates</small>` : ''}` : ''}</td><td>${x.won ? (x.party === 'T2' ? 'Advanced' : 'Won') : 'Lost'}${x.runoffPct != null ? ' runoff' : ''}</td></tr>`).join('')}
+  </tbody></table></div>` : '';
+  return `<h2>Elections</h2>${general}${primaries}`;
 }
 
 function billsSec(p) {
