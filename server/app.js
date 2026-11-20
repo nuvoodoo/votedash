@@ -56,7 +56,7 @@ http.createServer((req, res) => {
     if (p === '/members') return html(req, res, P.members(url.searchParams));
     if (p === '/incoming') return html(req, res, P.incoming());
     if (p === '/votes') return html(req, res, P.votes(url.searchParams));
-    if (p === '/money') return html(req, res, P.moneyP());
+    if (p === '/money') return html(req, res, P.moneyP(url.searchParams));
     if (p === '/about') return html(req, res, P.about());
     if (p === '/search') { const r = P.search(url.searchParams); if (r && r.redirect) { res.writeHead(302, { Location: r.redirect }); return res.end(); } return html(req, res, r); }
     if (p === '/find') { P.find(url.searchParams).then(b => html(req, res, b)).catch(e => { console.error(e); send(req, res, 500, Buffer.from('Server error'), 'text/plain', 'no-store'); }); return; }
@@ -67,7 +67,7 @@ http.createServer((req, res) => {
     if ((m = p.match(/^\/api\/graph\/([\w-]+)$/))) { const pp = D.byId.get(m[1]); return pp ? json(req, res, P.graph(pp)) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/m\/([\w-]+)(\/(votes|speeches|network))?$/))) {
       const pp = D.bySlug.get(m[1]); if (!pp) return html(req, res, P.notFound(), 404);
-      if (!m[3]) return html(req, res, P.member(pp));
+      if (!m[3]) return html(req, res, P.member(pp, url.searchParams));
       if (m[3] === 'votes') return pp.votes ? html(req, res, P.memberVotes(pp, +url.searchParams.get('page') || 1)) : html(req, res, P.notFound(), 404);
       if (m[3] === 'speeches') { const b = P.memberSpeeches(pp); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
       return html(req, res, P.network(pp));
@@ -75,8 +75,8 @@ http.createServer((req, res) => {
     if ((m = p.match(/^\/state\/([a-z]{2})$/))) { const b = P.stateP(m[1].toUpperCase()); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/vote\/([HS]\d+)$/))) { const rc = D.rcByK.get(m[1]); return rc ? html(req, res, P.vote(rc)) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/bill\/([a-z]+\d+)$/))) { const b = P.bill(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
-    if ((m = p.match(/^\/f\/([\w-]+)$/))) { const f = D.fundersBySlug.get(m[1]); return f ? html(req, res, P.funder(f)) : html(req, res, P.notFound(), 404); }
-    if ((m = p.match(/^\/industry\/([\w-]+)$/))) { const b = P.industry(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
+    if ((m = p.match(/^\/f\/([\w-]+)$/))) { const f = D.fundersBySlug.get(m[1]); return f ? html(req, res, P.funder(f, url.searchParams)) : html(req, res, P.notFound(), 404); }
+    if ((m = p.match(/^\/industry\/([\w-]+)$/))) { const b = P.industry(m[1], url.searchParams); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/issue\/([\w-]+)$/))) { const b = P.issue(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     return html(req, res, P.notFound(), 404);
   } catch (e) {

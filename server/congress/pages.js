@@ -135,7 +135,7 @@ const nice = s => !s ? '' : s !== s.toUpperCase() ? s : s.toLowerCase().split(/(
 }).join('').replace(/\bMc([a-z])/g, (_, c) => 'Mc' + c.toUpperCase()).replace(/\b\w{1,2}&\w{1,2}\b/g, m => m.toUpperCase());
 
 // ---------------- member ----------------
-function member(p) {
+function member(p, q) {
   const chamberName = p.chamber === 'S' ? 'Senate' : 'House';
   const role = p.status === 'elect' ? `${p.chamber === 'S' ? 'Senator-elect' : 'Representative-elect'}, ${seatLabel(p)}${p.chamber === 'H' && !p.delegate ? ' District' : ''}`
     : `${p.chamber === 'S' ? (p.rank === 'senior' ? 'Senior senator' : p.rank === 'junior' ? 'Junior senator' : 'Senator') + ' from ' + D.STATES[p.state] : p.delegate ? 'Delegate from ' + D.STATES[p.state] : 'Representative, ' + seatLabel(p) + ' District'}`;
@@ -149,7 +149,7 @@ function member(p) {
   add('overview', 'Overview', overview(p, cy));
   add('coming-up', 'Coming up', comingFor(p));
   add('votes', 'Votes', votesSec(p));
-  add('money', 'Money', moneySec(p));
+  add('money', 'Money', moneySec(p, yearOf(q)));
   add('elections', 'Elections', electionsSec(p));
   add('bills', 'Bills', billsSec(p));
   add('speeches', 'Speeches', speechesSec(p));
@@ -227,16 +227,56 @@ function vrow(rc, c, flag) {
   return `<li class="${flag ? 'brk' : ''}"><span class="vc v${c}">${VOTE_WORD[c]}</span><a href="/vote/${rc.k}"><b>${esc(rcTitle(rc))}</b><small>${esc(rc.question)}, ${date(rc.date)}. ${esc(rc.result)} ${rc.yea}-${rc.nay}</small></a></li>`;
 }
 
-// all money raised 2021-26 by source
-function sources(p) {
+// ---- money by year ----
+const YEARS = [2026, 2025, 2024, 2023, 2022, 2021];
+const cycleOf = y => y + (y % 2);
+const cyLabel = cy => `${cy - 1}-${String(cy).slice(2)}`;
+const yearOf = q => { const y = q && +q.get('year'); return YEARS.includes(y) ? y : null; };
+function yearNav(base, y, anchor = '') {
+  return `<nav class="seg sm years" aria-label="Year">${[[null, 'All years'], ...YEARS.map(v => [v, String(v)])].map(([v, l]) => `<a href="${base}${v ? (base.includes('?') ? '&' : '?') + 'year=' + v : ''}${anchor}" aria-pressed="${y === v}">${l}</a>`).join('')}</nav>`;
+}
+// per-year indexes built from the dated contribution files, cached per data build
+const viewCache = new Map();
+function view(y) {
+  const key = D.meta.built + '|' + y; if (viewCache.has(key)) return viewCache.get(key);
+  if (viewCache.size > 14) viewCache.clear();
+  const ys = String(y); const givenTo = new Map(), givenBy = new Map(), ieFor = new Map(), ieAg = new Map(), ieP = new Map();
+  for (const [pid, cms] of Object.entries(D.pacHistory)) for (const [cm, arr] of Object.entries(cms)) {
+    let t = 0; for (let i = 0; i < arr.length; i += 2) if (String(arr[i]).slice(0, 4) === ys) t += arr[i + 1];
+    if (!t) continue;
+    if (!givenTo.has(pid)) givenTo.set(pid, {}); givenTo.get(pid)[cm] = t;
+    if (!givenBy.has(cm)) givenBy.set(cm, {}); givenBy.get(cm)[pid] = t;
+  }
+  for (const [pid, cms] of Object.entries(D.ieYear)) for (const [cm, yrs] of Object.entries(cms)) {
+    const v = yrs[ys]; if (!v) continue;
+    if (!ieP.has(pid)) ieP.set(pid, { for: {}, against: {} });
+    if (v[0]) { ieP.get(pid).for[cm] = v[0]; if (!ieFor.has(cm)) ieFor.set(cm, {}); ieFor.get(cm)[pid] = v[0]; }
+    if (v[1]) { ieP.get(pid).against[cm] = v[1]; if (!ieAg.has(cm)) ieAg.set(cm, {}); ieAg.get(cm)[pid] = v[1]; }
+  }
+  const ind = new Map(), byInd = new Map();
+  for (const [pid, cms] of givenTo) {
+    const p = D.byId.get(pid); if (!p) continue; const bi = {};
+    for (const [cm, amt] of Object.entries(cms)) {
+      const k = D.industryOf(cm); if (!k) continue; bi[k] = (bi[k] || 0) + amt;
+      const t = ind.get(k) || { id: k, total: 0, D: 0, R: 0, I: 0, recipients: {} };
+      t.total += amt; t[p.party === 'R' ? 'R' : p.party === 'D' ? 'D' : 'I'] += amt; t.recipients[pid] = (t.recipients[pid] || 0) + amt; ind.set(k, t);
+    }
+    byInd.set(pid, Object.entries(bi).sort((a, b) => b[1] - a[1]));
+  }
+  const v = { y, cycle: cycleOf(y), givenTo, givenBy, ieFor, ieAg, ieP, ind, byInd };
+  viewCache.set(key, v); return v;
+}
+const topOf = (o, n) => Object.entries(o || {}).sort((a, b) => b[1] - a[1]).slice(0, n).map(([id, amt]) => ({ id, amt }));
+// money raised by source, all cycles or one cycle
+function sources(p, cy) {
   const s = { indiv: 0, pac: 0, party: 0, self: 0, receipts: 0 };
-  for (const c of Object.values((p.money && p.money.cycles) || {})) for (const k of Object.keys(s)) s[k] += c[k] || 0;
+  for (const [y, c] of Object.entries((p.money && p.money.cycles) || {})) { if (cy && +y !== cy) continue; for (const k of Object.keys(s)) s[k] += c[k] || 0; }
   s.other = Math.max(0, s.receipts - s.indiv - s.pac - s.party - s.self);
   return s;
 }
-const shareOf = (p, amt) => { const r = sources(p).receipts; return r > 0 ? (amt / r * 100 < 0.1 ? '<0.1%' : (amt / r * 100).toFixed(amt / r < 0.01 ? 2 : 1) + '%') : ''; };
-function sourcesPie(p) {
-  const s = sources(p); if (!(s.receipts > 0)) return '';
+const shareOf = (p, amt, cy) => { const r = sources(p, cy).receipts; return r > 0 ? (amt / r * 100 < 0.1 ? '<0.1%' : (amt / r * 100).toFixed(amt / r < 0.01 ? 2 : 1) + '%') : ''; };
+function sourcesPie(p, cy) {
+  const s = sources(p, cy); if (!(s.receipts > 0)) return '';
   const parts = [['indiv', 'Individuals'], ['pac', 'PACs'], ['party', 'Party committees'], ['self', 'Self-funded'], ['other', 'Other receipts']].filter(([k]) => s[k] > 0);
   const tot = parts.reduce((a, [k]) => a + s[k], 0); const R = 70, r = 42, C = 80;
   let a0 = -Math.PI / 2;
@@ -247,8 +287,8 @@ function sourcesPie(p) {
     const d = `M${pt(R, a0)}A${R},${R} 0 ${big} 1 ${pt(R, a1)}L${pt(r, a1)}A${r},${r} 0 ${big} 0 ${pt(r, a0)}Z`; a0 = a1;
     return `<path d="${d}" class="ms-${k}"/>`;
   }).join('');
-  return `<h3>Where the money comes from</h3><div class="pie"><svg viewBox="0 0 160 160" role="img" aria-label="Sources of campaign money since 2021">${arcs}<text x="${C}" y="${C - 2}" text-anchor="middle" class="pie-n">${money(s.receipts)}</text><text x="${C}" y="${C + 14}" text-anchor="middle" class="pie-l">since 2021</text></svg>
-  <ul class="pie-k">${parts.map(([k, l]) => `<li><i class="m-${k}"></i><span>${l}</span><b>${s[k] / tot < 0.001 ? "<0.1" : (s[k] / tot * 100).toFixed(1)}%</b><small>${money(s[k])}</small></li>`).join('')}</ul></div>`;
+  return `<h3>Where the money comes from${cy ? `, ${cyLabel(cy)} cycle` : ''}</h3><div class="pie"><svg viewBox="0 0 160 160" role="img" aria-label="Sources of campaign money">${arcs}<text x="${C}" y="${C - 2}" text-anchor="middle" class="pie-n">${money(s.receipts)}</text><text x="${C}" y="${C + 14}" text-anchor="middle" class="pie-l">${cy ? cyLabel(cy) : 'since 2021'}</text></svg>
+  <ul class="pie-k">${parts.map(([k, l]) => `<li><i class="m-${k}"></i><span>${l}</span><b>${s[k] / tot < 0.001 ? '<0.1' : (s[k] / tot * 100).toFixed(1)}%</b><small>${money(s[k])}</small></li>`).join('')}</ul></div>`;
 }
 // one member's history with one PAC
 function pacHist(pid, cm) {
@@ -266,25 +306,32 @@ function histDetails(pid, cm) {
     <p class="cyt">${Object.entries(byCy).map(([cy, a]) => `<span>${typeof cy === 'string' && cy === 'Undated' ? 'Undated' : `${cy - 1}-${String(cy).slice(2)}`}: <b>${money(a, true)}</b></span>`).join('')}</p>
     <ol class="tx">${h.slice().reverse().map(x => `<li><time>${x.date ? date(x.date) : 'Undated'}</time><b>${money(x.amt, true)}</b></li>`).join('')}</ol></details>`;
 }
-function moneySec(p) {
+function moneySec(p, y) {
   const m = p.money; if (!m) return '';
-  const cycles = Object.entries(m.cycles).sort((a, b) => b[0] - a[0]);
+  const V = y ? view(y) : null, cy = y ? cycleOf(y) : null;
+  const cycles = Object.entries(m.cycles).filter(([c]) => !cy || +c === cy).sort((a, b) => b[0] - a[0]);
   const max = Math.max(...cycles.map(([, c]) => c.receipts), 1);
-  const top = m.topPacs.slice(0, 12).map(x => ({ ...x, f: D.funders.get(x.id) })).filter(x => x.f);
-  const ind = (m.byIndustry || []).slice(0, 8);
+  const pacs = y ? topOf(V.givenTo.get(p.id), 25) : m.topPacs;
+  const pacTotal = y ? Object.values(V.givenTo.get(p.id) || {}).reduce((a, b) => a + b, 0) : m.pacTotal;
+  const pacCount = y ? Object.keys(V.givenTo.get(p.id) || {}).length : m.pacCount;
+  const ind = (y ? V.byInd.get(p.id) || [] : m.byIndustry || []).slice(0, 8);
   const indMax = ind.length ? ind[0][1] : 1;
+  const ieF = y ? topOf((V.ieP.get(p.id) || {}).for, 10) : m.ieFor, ieA = y ? topOf((V.ieP.get(p.id) || {}).against, 10) : m.ieAgainst;
+  const when = y ? `in ${y}` : 'since 2021';
   return `<h2>Money</h2>
-  <p class="sub">Campaign committee receipts reported to the FEC. Cycles run two years, ending on Election Day.</p>
-  <div class="cyc">${cycles.map(([y, c]) => `<div class="cy"><div class="cy-h"><b>${y - 1}-${String(y).slice(2)}</b><span>${money(c.receipts)} raised${c.through ? `, through ${date(c.through)}` : ''}</span></div>
+  ${yearNav(href(p), y, '#money')}
+  <p class="sub">Campaign committee receipts reported to the FEC. Cycles run two years, ending on Election Day${y ? `; ${y} falls in the ${cyLabel(cy)} cycle` : ''}.</p>
+  ${cycles.length ? `<div class="cyc">${cycles.map(([cyc, c]) => `<div class="cy"><div class="cy-h"><b>${cyLabel(+cyc)}</b><span>${money(c.receipts)} raised${c.through ? `, through ${date(c.through)}` : ''}</span></div>
     <div class="stack" style="width:${Math.max(2, c.receipts / max * 100).toFixed(1)}%" aria-hidden="true">${[['indiv', 'Individuals'], ['pac', 'PACs'], ['party', 'Party'], ['self', 'Self']].map(([k]) => c[k] > 0 ? `<i class="m-${k}" style="flex:${c[k]}"></i>` : '').join('')}</div>
-    <p class="cy-k"><span><i class="m-indiv"></i>Individuals ${money(c.indiv)}</span><span><i class="m-pac"></i>PACs ${money(c.pac)}</span>${c.party ? `<span><i class="m-party"></i>Party ${money(c.party)}</span>` : ''}${c.self ? `<span><i class="m-self"></i>Self-funded ${money(c.self)}</span>` : ''}<span>Cash on hand ${money(c.cash)}</span></p></div>`).join('')}</div>
-  ${ind.length ? `<h3>Top industries</h3><p class="sub">PAC contributions since 2021, grouped by the industry behind each PAC.</p><ul class="hbars">${ind.map(([id, amt]) => `<li><a href="/industry/${id}">${esc(D.indName.get(id))}</a><span class="hb"><i style="width:${(amt / indMax * 100).toFixed(1)}%"></i></span><b>${money(amt)}</b></li>`).join('')}</ul>` : ''}
-  ${sourcesPie(p)}
-  ${top.length ? `<h3>Top PAC donors</h3><p class="sub">${m.pacCount} PACs gave ${money(m.pacTotal)} since 2021. Share is each PAC's part of everything ${esc(p.name)} raised in that time. Open a row for every contribution.</p>
-  <div class="tbl"><table class="pacs"><thead><tr><th>PAC</th><th>Connected to</th><th class="n">Given</th><th class="n">Share</th></tr></thead><tbody>${m.topPacs.map(x => ({ ...x, f: D.funders.get(x.id) })).filter(x => x.f).map(x => `<tr><td>${pacCell(p, x.f)}</td><td>${esc(nice(x.f.org) || '')}<small class="kd">${esc(x.f.kind)}</small></td><td class="n">${money(x.amt, true)}</td><td class="n">${shareOf(p, x.amt)}</td></tr>`).join('')}</tbody></table></div>` : ''}
-  ${m.ieFor.length || m.ieAgainst.length ? `<h3>Outside spending</h3><div class="two">
-    ${m.ieFor.length ? `<div><h4>Spent to help them</h4><ol class="rank sm">${m.ieFor.slice(0, 6).map(x => fundRow(x)).join('')}</ol></div>` : ''}
-    ${m.ieAgainst.length ? `<div><h4>Spent to defeat them</h4><ol class="rank sm">${m.ieAgainst.slice(0, 6).map(x => fundRow(x)).join('')}</ol></div>` : ''}</div>` : ''}`;
+    <p class="cy-k"><span><i class="m-indiv"></i>Individuals ${money(c.indiv)}</span><span><i class="m-pac"></i>PACs ${money(c.pac)}</span>${c.party ? `<span><i class="m-party"></i>Party ${money(c.party)}</span>` : ''}${c.self ? `<span><i class="m-self"></i>Self-funded ${money(c.self)}</span>` : ''}<span>Cash on hand ${money(c.cash)}</span></p></div>`).join('')}</div>` : ''}
+  ${sourcesPie(p, cy)}
+  ${ind.length ? `<h3>Top industries</h3><p class="sub">PAC contributions ${when}, grouped by the industry behind each PAC.</p><ul class="hbars">${ind.map(([id, amt]) => `<li><a href="/industry/${id}${y ? '?year=' + y : ''}">${esc(D.indName.get(id))}</a><span class="hb"><i style="width:${(amt / indMax * 100).toFixed(1)}%"></i></span><b>${money(amt)}</b></li>`).join('')}</ul>` : ''}
+  ${pacs.length ? `<h3>Top PAC donors</h3><p class="sub">${pacCount} PACs gave ${money(pacTotal)} ${when}. Share is each PAC's part of everything ${esc(p.name)} raised ${cy ? `in the ${cyLabel(cy)} cycle` : 'since 2021'}. Open a row for every contribution.</p>
+  <div class="tbl"><table class="pacs"><thead><tr><th>PAC</th><th>Connected to</th><th class="n">Given</th><th class="n">Share</th></tr></thead><tbody>${pacs.map(x => ({ ...x, f: D.funders.get(x.id) })).filter(x => x.f).map(x => `<tr><td>${pacCell(p, x.f)}</td><td>${esc(nice(x.f.org) || '')}<small class="kd">${esc(x.f.kind)}</small></td><td class="n">${money(x.amt, true)}</td><td class="n">${shareOf(p, x.amt, cy)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+  ${ieF.length || ieA.length ? `<h3>Outside spending ${when}</h3><div class="two">
+    ${ieF.length ? `<div><h4>Spent to help them</h4><ol class="rank sm">${ieF.slice(0, 6).map(x => fundRow(x)).join('')}</ol></div>` : ''}
+    ${ieA.length ? `<div><h4>Spent to defeat them</h4><ol class="rank sm">${ieA.slice(0, 6).map(x => fundRow(x)).join('')}</ol></div>` : ''}</div>` : ''}
+  ${y && !cycles.length && !pacs.length && !ieF.length && !ieA.length ? `<p class="sub">No FEC money records for ${esc(p.name)} in ${y}.</p>` : ''}`;
 }
 function fundRow(x) { const f = D.funders.get(x.id); return f ? `<li><a href="/f/${f.slug}"><b>${esc(nice(f.name))}</b><small>${esc(f.kind)}</small></a><b class="amt">${money(x.amt)}</b></li>` : ''; }
 
@@ -588,51 +635,68 @@ function bill(k) {
 }
 
 // ---------------- money ----------------
-function moneyP() {
+function moneyP(q) {
+  const y = yearOf(q), V = y ? view(y) : null, cy = y ? cycleOf(y) : null;
+  const when = y ? `in ${y}` : 'since 2021';
   const cur = D.people.filter(p => p.status !== 'elect');
-  const raised = cur.filter(p => lastCycle(p)).sort((a, b) => lastCycle(b).receipts - lastCycle(a).receipts).slice(0, 15);
-  const pacs = [...D.funders.values()].filter(f => f.total > 0).sort((a, b) => b.total - a.total).slice(0, 20);
-  const ie = [...D.funders.values()].sort((a, b) => b.ie - a.ie).slice(0, 15);
-  const inds = [...D.industryTotals.values()].sort((a, b) => b.total - a.total).slice(0, 20);
+  const rc = p => cy ? (p.money && p.money.cycles[cy] ? p.money.cycles[cy].receipts : 0) : (lastCycle(p) ? lastCycle(p).receipts : 0);
+  const raised = cur.filter(p => rc(p) > 0).sort((a, b) => rc(b) - rc(a)).slice(0, 15);
+  const givenOf = f => y ? (V.givenBy.get(f.id) || {}) : f.given;
+  const totalOf = f => Object.values(givenOf(f)).reduce((a, b) => a + b, 0);
+  const pacs = [...D.funders.values()].map(f => [f, y ? totalOf(f) : f.total]).filter(([, t]) => t > 0).sort((a, b) => b[1] - a[1]).slice(0, 20);
+  const ieOf = f => y ? Object.values(V.ieFor.get(f.id) || {}).reduce((a, b) => a + b, 0) + Object.values(V.ieAg.get(f.id) || {}).reduce((a, b) => a + b, 0) : f.ie;
+  const ie = [...D.funders.values()].map(f => [f, ieOf(f)]).filter(([, t]) => t > 0).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  const inds = [...(y ? V.ind : D.industryTotals).values()].sort((a, b) => b.total - a.total).slice(0, 20);
   const im = inds.length ? inds[0].total : 1;
-  const body = `<div class="wrap"><h1>Money in Congress</h1><p class="lede">Who funds the members of Congress, from FEC filings for the 2022, 2024 and 2026 cycles.</p>
-  ${inds.length ? `<h2>Industries</h2><p class="sub">PAC contributions to current members and members-elect since 2021, by industry. Bar color shows the split between Democrats and Republicans.</p><ul class="hbars ind">${inds.map(t => `<li><a href="/industry/${t.id}">${esc(D.indName.get(t.id))}</a><span class="hb split" style="width:${(t.total / im * 100).toFixed(1)}%"><i class="fD" style="flex:${t.D || 0}"></i><i class="fI" style="flex:${t.I || 0}"></i><i class="fR" style="flex:${t.R || 0}"></i></span><b>${money(t.total)}</b></li>`).join('')}</ul>` : ''}
-  <div class="cols"><div class="col-main"><h2>Biggest PAC givers</h2><div class="tbl"><table><thead><tr><th>PAC</th><th>Kind</th><th class="n">To members</th><th>Split</th></tr></thead><tbody>
-  ${pacs.map(f => { const s = split(f.given); return `<tr><td><a href="/f/${f.slug}">${esc(nice(f.name))}</a></td><td>${esc(f.kind)}</td><td class="n">${money(f.total)}</td><td>${splitBar(s)}</td></tr>`; }).join('')}</tbody></table></div></div>
-  <aside class="col-side"><h2>Most raised this cycle</h2><ol class="rank">${raised.map(p => `<li>${personLink(p)}<b class="amt">${money(lastCycle(p).receipts)}</b></li>`).join('')}</ol></aside></div>
-  <h2 id="outside">Biggest outside spenders</h2><p class="sub">Independent expenditures for or against current members and members-elect.</p>
+  const body = `<div class="wrap"><h1>Money in Congress${y ? `, ${y}` : ''}</h1><p class="lede">Who funds the members of Congress, from FEC filings for the 2022, 2024 and 2026 cycles.</p>
+  ${yearNav('/money', y)}
+  ${inds.length ? `<h2>Industries</h2><p class="sub">PAC contributions to current members and members-elect ${when}, by industry. Bar color shows the split between Democrats and Republicans.</p><ul class="hbars ind">${inds.map(t => `<li><a href="/industry/${t.id}${y ? '?year=' + y : ''}">${esc(D.indName.get(t.id))}</a><span class="hb split" style="width:${(t.total / im * 100).toFixed(1)}%"><i class="fD" style="flex:${t.D || 0}"></i><i class="fI" style="flex:${t.I || 0}"></i><i class="fR" style="flex:${t.R || 0}"></i></span><b>${money(t.total)}</b></li>`).join('')}</ul>` : ''}
+  <div class="cols"><div class="col-main">${pacs.length ? `<h2>Biggest PAC givers ${when}</h2><div class="tbl"><table><thead><tr><th>PAC</th><th>Kind</th><th class="n">To members</th><th>Split</th></tr></thead><tbody>
+  ${pacs.map(([f, t]) => `<tr><td><a href="/f/${f.slug}${y ? '?year=' + y : ''}">${esc(nice(f.name))}</a></td><td>${esc(f.kind)}</td><td class="n">${money(t)}</td><td>${splitBar(split(givenOf(f)))}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>
+  <aside class="col-side">${raised.length ? `<h2>Most raised, ${cy ? `${cyLabel(cy)} cycle` : 'this cycle'}</h2><ol class="rank">${raised.map(p => `<li>${personLink(p)}<b class="amt">${money(rc(p))}</b></li>`).join('')}</ol>` : ''}</aside></div>
+  ${ie.length ? `<h2 id="outside">Biggest outside spenders ${when}</h2><p class="sub">Independent expenditures for or against current members and members-elect.</p>
   <div class="tbl"><table><thead><tr><th>Group</th><th>Kind</th><th class="n">Spent</th><th>Biggest target</th></tr></thead><tbody>
-  ${ie.map(f => { const t = Object.entries({ ...f.ieFor, ...prefix(f.ieAgainst) }).sort((a, b) => b[1] - a[1])[0]; const tp = t && D.byId.get(t[0].replace(/^-/, '')); return `<tr><td><a href="/f/${f.slug}">${esc(nice(f.name))}</a></td><td>${esc(f.kind)}</td><td class="n">${money(f.ie)}</td><td>${tp ? `${t[0].startsWith('-') ? 'Against' : 'For'} <a href="${href(tp)}">${esc(tp.name)}</a>` : ''}</td></tr>`; }).join('')}</tbody></table></div></div>`;
-  return layout({ title: 'Money in Congress', path: '/money', body, active: '/money' });
+  ${ie.map(([f, amt]) => { const forO = y ? V.ieFor.get(f.id) || {} : f.ieFor, agO = y ? V.ieAg.get(f.id) || {} : f.ieAgainst; const t = Object.entries({ ...forO, ...prefix(agO) }).sort((a, b) => b[1] - a[1])[0]; const tp = t && D.byId.get(t[0].replace(/^-/, '')); return `<tr><td><a href="/f/${f.slug}${y ? '?year=' + y : ''}">${esc(nice(f.name))}</a></td><td>${esc(f.kind)}</td><td class="n">${money(amt)}</td><td>${tp ? `${t[0].startsWith('-') ? 'Against' : 'For'} <a href="${href(tp)}${y ? '?year=' + y : ''}#money">${esc(tp.name)}</a>` : ''}</td></tr>`; }).join('')}</tbody></table></div>` : ''}</div>`;
+  return layout({ title: y ? `Money in Congress, ${y}` : 'Money in Congress', path: '/money' + (y ? '?year=' + y : ''), body, active: '/money' });
 }
 const prefix = o => Object.fromEntries(Object.entries(o).map(([k, v]) => ['-' + k, v]));
 function split(given) { const s = { D: 0, R: 0, I: 0 }; for (const [id, amt] of Object.entries(given)) { const p = D.byId.get(id); if (p) s[p.party === 'R' ? 'R' : p.party === 'D' ? 'D' : 'I'] += amt; } return s; }
 function splitBar(s) { const t = s.D + s.R + s.I || 1; return `<span class="split mini" title="${pct(s.D / t)} to Democrats, ${pct(s.R / t)} to Republicans"><i class="fD" style="flex:${s.D}"></i><i class="fI" style="flex:${s.I}"></i><i class="fR" style="flex:${s.R}"></i></span><small>${pct(s.D / t)} D</small>`; }
 
-function funder(f) {
-  const s = split(f.given); const t = s.D + s.R + s.I;
-  const rec = Object.entries(f.given).map(([id, amt]) => [D.byId.get(id), amt]).filter(([p]) => p).sort((a, b) => b[1] - a[1]);
+function funder(f, q) {
+  const y = yearOf(q), V = y ? view(y) : null, cy = y ? cycleOf(y) : null;
+  const given = y ? V.givenBy.get(f.id) || {} : f.given, ieFor = y ? V.ieFor.get(f.id) || {} : f.ieFor, ieAgainst = y ? V.ieAg.get(f.id) || {} : f.ieAgainst;
+  const gTotal = Object.values(given).reduce((a, b) => a + b, 0), ieTotal = Object.values(ieFor).reduce((a, b) => a + b, 0) + Object.values(ieAgainst).reduce((a, b) => a + b, 0);
+  const when = y ? `in ${y}` : 'since 2021';
+  const s = split(given); const t = s.D + s.R + s.I;
+  const rec = Object.entries(given).map(([id, amt]) => [D.byId.get(id), amt]).filter(([p]) => p).sort((a, b) => b[1] - a[1]);
   const ind = D.industryOf(f.id); const lob = D.lobbying && D.lobbying.byCommittee[f.id];
   const iel = (o, l) => { const e = Object.entries(o).map(([id, amt]) => [D.byId.get(id), amt]).filter(([p]) => p).sort((a, b) => b[1] - a[1]); return e.length ? `<div><h3>${l}</h3><ol class="rank sm">${e.slice(0, 12).map(([p, a]) => `<li>${personLink(p)}<b class="amt">${money(a)}</b></li>`).join('')}</ol></div>` : ''; };
   const body = `<div class="wrap"><p class="crumb"><a href="/money">Money</a>${ind ? `, <a href="/industry/${ind}">${esc(D.indName.get(ind))}</a>` : ''}</p>
   <h1>${esc(nice(f.name))}</h1>
   <p class="lede">${esc(f.kind)}${f.org ? ` connected to ${esc(nice(f.org))}` : ''}${f.city ? `, ${esc(nice(f.city))}, ${esc(f.state)}` : ''}. FEC committee <a href="https://www.fec.gov/data/committee/${f.id}/" rel="noopener">${f.id}</a>.</p>
-  <dl class="facts">${t ? `<div><dt>Given to members</dt><dd>${money(f.total)}</dd><dd class="s">${rec.length} recipients since 2021</dd></div><div><dt>To Democrats</dt><dd>${pct(s.D / t)}</dd><dd class="s">${money(s.D)}</dd></div><div><dt>To Republicans</dt><dd>${pct(s.R / t)}</dd><dd class="s">${money(s.R)}</dd></div>` : ''}${f.ie ? `<div><dt>Outside spending</dt><dd>${money(f.ie)}</dd><dd class="s">For and against members</dd></div>` : ''}${lob && lob.spend && (lob.spend['2025'] || lob.spend['2026']) ? `<div><dt>Lobbying, 2025-26</dt><dd>${money((lob.spend['2025'] || 0) + (lob.spend['2026'] || 0))}</dd><dd class="s">Lobbying Disclosure Act filings</dd></div>` : ''}</dl>
-  ${rec.length ? `<h2>Recipients</h2><p class="sub">Share is the gift's part of everything that member raised since 2021. Open a row for every contribution.</p><div class="tbl"><table class="pacs"><thead><tr><th>Member</th><th class="n">Given</th><th class="n">Share</th></tr></thead><tbody>${rec.slice(0, 80).map(([p, a]) => `<tr><td>${personLink(p)}${histDetails(p.id, f.id)}</td><td class="n">${money(a, true)}</td><td class="n">${shareOf(p, a)}</td></tr>`).join('')}</tbody></table></div>` : ''}
-  ${Object.keys(f.ieFor).length || Object.keys(f.ieAgainst).length ? `<h2>Outside spending</h2><div class="two">${iel(f.ieFor, 'To help')}${iel(f.ieAgainst, 'To defeat')}</div>` : ''}
+  ${yearNav('/f/' + f.slug, y)}
+  <dl class="facts">${t ? `<div><dt>Given to members</dt><dd>${money(gTotal)}</dd><dd class="s">${rec.length} recipients ${when}</dd></div><div><dt>To Democrats</dt><dd>${pct(s.D / t)}</dd><dd class="s">${money(s.D)}</dd></div><div><dt>To Republicans</dt><dd>${pct(s.R / t)}</dd><dd class="s">${money(s.R)}</dd></div>` : ''}${ieTotal ? `<div><dt>Outside spending</dt><dd>${money(ieTotal)}</dd><dd class="s">For and against members ${when}</dd></div>` : ''}${lob && lob.spend && (lob.spend['2025'] || lob.spend['2026']) ? `<div><dt>Lobbying, 2025-26</dt><dd>${money((lob.spend['2025'] || 0) + (lob.spend['2026'] || 0))}</dd><dd class="s">Lobbying Disclosure Act filings</dd></div>` : ''}</dl>
+  ${rec.length ? `<h2>Recipients</h2><p class="sub">Share is the gift's part of everything that member raised ${cy ? `in the ${cyLabel(cy)} cycle` : 'since 2021'}. Open a row for every contribution.</p><div class="tbl"><table class="pacs"><thead><tr><th>Member</th><th class="n">Given</th><th class="n">Share</th></tr></thead><tbody>${rec.slice(0, 80).map(([p, a]) => `<tr><td>${personLink(p)}${histDetails(p.id, f.id)}</td><td class="n">${money(a, true)}</td><td class="n">${shareOf(p, a, cy)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+  ${Object.keys(ieFor).length || Object.keys(ieAgainst).length ? `<h2>Outside spending ${when}</h2><div class="two">${iel(ieFor, 'To help')}${iel(ieAgainst, 'To defeat')}</div>` : ''}
+  ${y && !rec.length && !ieTotal ? `<p class="sub">No contributions or outside spending for members in ${y}.</p>` : ''}
   ${lob && (lob.issues || []).length ? `<h2>What ${esc(nice(lob.client))} lobbies on</h2><p class="tags">${lob.issues.slice(0, 20).map(i => `<span>${esc(i.name)} <b>${i.filings}</b></span>`).join('')}</p>${lob.bills && lob.bills.length ? `<p class="sub">Bills named in filings: ${lob.bills.slice(0, 20).map(esc).join(', ')}.</p>` : ''}<p><a href="${esc(lob.url)}" rel="noopener">Lobbying filings on LDA.gov</a></p>` : ''}</div>`;
-  return layout({ title: nice(f.name), desc: `${nice(f.name)} (${f.kind}): ${money(f.total)} to members of Congress, ${t ? pct(s.R / t) + ' to Republicans' : ''}.`, path: `/f/${f.slug}`, body, active: '/money' });
+  return layout({ title: nice(f.name), desc: `${nice(f.name)} (${f.kind}): ${money(f.total)} to members of Congress, ${t ? pct(s.R / t) + ' to Republicans' : ''}.`, path: `/f/${f.slug}` + (y ? '?year=' + y : ''), body, active: '/money' });
 }
-function industry(id) {
-  const t = D.industryTotals.get(id); if (!t) return null;
+function industry(id, q) {
+  const y = yearOf(q); if (!D.industryTotals.get(id)) return null;
+  const t = (y ? view(y).ind.get(id) : D.industryTotals.get(id)) || { id, total: 0, D: 0, R: 0, I: 0, recipients: {} };
+  const when = y ? `in ${y}` : 'since 2021';
   const sec = D.sectorOf.get(id);
   const rec = Object.entries(t.recipients).map(([pid, a]) => [D.byId.get(pid), a]).filter(([p]) => p).sort((a, b) => b[1] - a[1]);
-  const pacs = [...D.funders.values()].filter(f => D.industryOf(f.id) === id && f.total > 0).sort((a, b) => b.total - a.total);
-  const body = `<div class="wrap"><p class="crumb"><a href="/money">Money</a>${sec ? `, ${esc(sec.name)}` : ''}</p><h1>${esc(D.indName.get(id))}</h1>
-  <dl class="facts"><div><dt>Given to members</dt><dd>${money(t.total)}</dd><dd class="s">PAC contributions since 2021</dd></div><div><dt>To Democrats</dt><dd>${pct(t.D / t.total)}</dd></div><div><dt>To Republicans</dt><dd>${pct(t.R / t.total)}</dd></div></dl>
+  const ptot = f => y ? Object.values(view(y).givenBy.get(f.id) || {}).reduce((a, b) => a + b, 0) : f.total;
+  const pacs = [...D.funders.values()].filter(f => D.industryOf(f.id) === id).map(f => [f, ptot(f)]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const body = `<div class="wrap"><p class="crumb"><a href="/money">Money</a>${sec ? `, ${esc(sec.name)}` : ''}</p><h1>${esc(D.indName.get(id))}${y ? `, ${y}` : ''}</h1>
+  ${yearNav('/industry/' + id, y)}
+  ${t.total ? `<dl class="facts"><div><dt>Given to members</dt><dd>${money(t.total)}</dd><dd class="s">PAC contributions ${when}</dd></div><div><dt>To Democrats</dt><dd>${pct(t.D / t.total)}</dd></div><div><dt>To Republicans</dt><dd>${pct(t.R / t.total)}</dd></div></dl>` : `<p class="sub">No PAC contributions from this industry to members in ${y}.</p>`}
   <div class="cols"><div class="col-main"><h2>Top recipients</h2><ol class="rank">${rec.slice(0, 20).map(([p, a]) => `<li>${personLink(p)}<b class="amt">${money(a)}</b></li>`).join('')}</ol></div>
-  <aside class="col-side"><h2>PACs in this industry</h2><ol class="rank sm">${pacs.slice(0, 25).map(f => `<li><a href="/f/${f.slug}"><b>${esc(nice(f.name))}</b><small>${esc(nice(f.org) || f.kind)}</small></a><b class="amt">${money(f.total)}</b></li>`).join('')}</ol></aside></div></div>`;
-  return layout({ title: `${D.indName.get(id)} money in Congress`, path: `/industry/${id}`, body, active: '/money' });
+  <aside class="col-side"><h2>PACs in this industry ${when}</h2><ol class="rank sm">${pacs.slice(0, 25).map(([f, v]) => `<li><a href="/f/${f.slug}${y ? '?year=' + y : ''}"><b>${esc(nice(f.name))}</b><small>${esc(nice(f.org) || f.kind)}</small></a><b class="amt">${money(v)}</b></li>`).join('')}</ol></aside></div></div>`;
+  return layout({ title: `${D.indName.get(id)} money in Congress`, path: `/industry/${id}` + (y ? '?year=' + y : ''), body, active: '/money' });
 }
 
 // ---------------- issues ----------------

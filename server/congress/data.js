@@ -32,6 +32,7 @@ function build() {
   const record = load('record.json', true);
   const leadership = load('leadership.json', true);
   const pacHistory = load('pachistory.json', true) || {};
+  const ieYear = load('ieyear.json', true) || {};
   const caucuses = load('caucuses.json', true);
 
   const byId = new Map(people.map(p => [p.id, p]));
@@ -77,7 +78,7 @@ function build() {
   for (const f of fundersById.values()) if (f.total + f.ie >= 10000) search.push({ t: 'funder', key: norm(`${f.name} ${f.org || ''}`), f });
   if (bills) for (const [k, b] of Object.entries(bills.bills)) search.push({ t: 'bill', key: norm(`${k} ${b.type}${b.number} ${b.type} ${b.number} ${b.short || ''} ${b.title}`), k, b });
 
-  Object.assign(D, { dataDir: DIR, caucuses, pacHistory, leadership, givenTo, people, byId, bySlug, order, rollcalls, rcByK, rcPos, funders: fundersById, fundersBySlug, meta, bills, speeches, industries, indName, sectorOf, sectors, industryOf, industryTotals, lobbying, record, chambers, states, search, STATES });
+  Object.assign(D, { ieYear, dataDir: DIR, caucuses, pacHistory, leadership, givenTo, people, byId, bySlug, order, rollcalls, rcByK, rcPos, funders: fundersById, fundersBySlug, meta, bills, speeches, industries, indName, sectorOf, sectors, industryOf, industryTotals, lobbying, record, chambers, states, search, STATES });
   D.recentRolls = { H: rollcalls.filter(r => r.chamber === 'H').sort(byDate), S: rollcalls.filter(r => r.chamber === 'S').sort(byDate) };
   D.allRolls = [...rollcalls].sort(byDate);
 }
