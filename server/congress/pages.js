@@ -1429,21 +1429,56 @@ function postMortem() {
     const res = t => t.won == null ? '' : t.stage === 'Primary' && /^(CA|WA)-/.test(t.seat) ? (t.won ? 'Advanced' : 'Eliminated') : t.won ? 'Won' : 'Lost';
     const hit = t => t.won == null ? '' : (t.forAmt >= t.againstAmt) === t.won ? 'Yes' : 'No';
     add('israel', 'Pro-Israel PACs', `<h2>Pro-Israel PACs</h2>
-  <p class="sub">AIPAC, its super PAC United Democracy Project and ${I.groups.length - 1} other pro-Israel PACs spent ${money(S.total)} on 2026 House and Senate candidates. ${share(S.primary, S.total)} of it went into primaries, and ${share(S.forD + S.againstD, S.total)} into Democratic races.</p>
-  <dl class="facts"><div><dt>Spent</dt><dd>${money(S.total)}</dd><dd class="s">${money(S.contrib)} given, ${money(S.ie)} in outside spending</dd></div><div><dt>Share of all PAC and super PAC money</dt><dd>${share(S.total, I.all)}</dd><dd class="s">of ${money(I.all)} in House and Senate races</dd></div><div><dt>Share of primary outside spending</dt><dd>${share(S.primIe, I.allPrimIe)}</dd><dd class="s">of ${money(I.allPrimIe)}</dd></div><div><dt>On winners</dt><dd>${share(S.win, dec)}</dd><dd class="s">${money(S.lose)} on losers</dd></div></dl>
+  <p class="sub">AIPAC, its super PAC United Democracy Project and ${I.groups.length - 1} other pro-Israel PACs spent ${money(S.total)} on 2026 House and Senate candidates${S.bundled ? `, counting ${money(S.bundled)} in donations bundled through AIPAC PAC` : ''}. ${share(S.primary, S.total)} of it went into primaries, and ${share(S.forD + S.againstD, S.total)} into Democratic races.</p>
+  <dl class="facts"><div><dt>Spent</dt><dd>${money(S.total)}</dd><dd class="s">${money(S.contrib)} given, ${S.bundled ? `${money(S.bundled)} bundled, ` : ''}${money(S.ie)} in outside spending</dd></div><div><dt>Share of all PAC and super PAC money</dt><dd>${share(S.total - (S.bundled || 0), I.all)}</dd><dd class="s">of ${money(I.all)} in House and Senate races</dd></div><div><dt>Share of primary outside spending</dt><dd>${share(S.primIe, I.allPrimIe)}</dd><dd class="s">of ${money(I.allPrimIe)}</dd></div><div><dt>On winners</dt><dd>${share(S.win, dec)}</dd><dd class="s">${money(S.lose)} on losers</dd></div></dl>
   <h3>By party</h3>
-  <p class="sub">Money spent for and against candidates of each party, primaries and general elections together.</p>
-  <div class="tbl"><table><thead><tr><th>Group</th><th class="n">For Democrats</th><th class="n">Against Democrats</th><th class="n">For Republicans</th><th class="n">Against Republicans</th><th class="n">Total</th><th class="n">Share of all</th></tr></thead><tbody>
-  ${I.groups.map(g => `<tr><td>${gl(g)}</td>${cell(g.forD)}${cell(g.againstD)}${cell(g.forR)}${cell(g.againstR)}<td class="n">${money(g.total)}</td><td class="n">${share(g.total, I.all)}</td></tr>`).join('')}
-  <tr><td><b>All pro-Israel PACs</b></td>${cell(S.forD)}${cell(S.againstD)}${cell(S.forR)}${cell(S.againstR)}<td class="n"><b>${money(S.total)}</b></td><td class="n"><b>${share(S.total, I.all)}</b></td></tr></tbody></table></div>
+  <p class="sub">Money spent for and against candidates of each party, primaries and general elections together.${S.bundled ? " AIPAC's row includes donations bundled through AIPAC PAC; the share column covers PAC and super PAC money only." : ''}</p>
+  <div class="tbl"><table><thead><tr><th>Group</th><th class="n">For Democrats</th><th class="n">Against Democrats</th><th class="n">For Republicans</th><th class="n">Against Republicans</th><th class="n">Total</th><th class="n">Share of all PAC money</th></tr></thead><tbody>
+  ${I.groups.map(g => `<tr><td>${gl(g)}</td>${cell(g.forD)}${cell(g.againstD)}${cell(g.forR)}${cell(g.againstR)}<td class="n">${money(g.total)}</td><td class="n">${share(g.total - (g.bundled || 0), I.all)}</td></tr>`).join('')}
+  <tr><td><b>All pro-Israel PACs</b></td>${cell(S.forD)}${cell(S.againstD)}${cell(S.forR)}${cell(S.againstR)}<td class="n"><b>${money(S.total)}</b></td><td class="n"><b>${share(S.total - (S.bundled || 0), I.all)}</b></td></tr></tbody></table></div>
   <h3>Wins and losses</h3>
   <p class="sub">A dollar counts as a win when the candidate it backed won, or the candidate it opposed lost, in the contest it was spent on.</p>
   <ul class="poll-key pm-key"><li><span class="k fW" aria-hidden="true"></span>Backed the winner</li><li><span class="k fL" aria-hidden="true"></span>Backed the loser</li></ul>
   <ul class="hbars pm-sp">${I.groups.filter(g => g.win + g.lose).map(g => `<li>${gl(g)}${winBar(g.win, g.lose, iMax)}<b>${money(g.win + g.lose)} <small>${share(g.win, g.win + g.lose)} on winners</small></b></li>`).join('')}</ul>
   <h3>Biggest targets</h3>
-  <div class="tbl"><table><thead><tr><th>Candidate</th><th>Race</th><th class="n">Spent for</th><th class="n">Spent against</th><th>Result</th><th>Got its way</th></tr></thead><tbody>
-  ${I.targets.map(t => `<tr><td>${pc(t.p)} ${pl(t.name, t.slug)}</td><td>${esc(t.seat)}<br><small>${t.stage}</small></td>${cell(t.forAmt)}${cell(t.againstAmt)}<td>${res(t)}</td><td>${hit(t)}</td></tr>`).join('')}
+  <div class="tbl"><table><thead><tr><th>Candidate</th><th>Race</th><th class="n">Spent for</th>${S.bundled ? '<th class="n">Bundled</th>' : ''}<th class="n">Spent against</th><th>Result</th><th>Got its way</th></tr></thead><tbody>
+  ${I.targets.map(t => `<tr><td>${pc(t.p)} ${pl(t.name, t.slug)}</td><td>${esc(t.seat)}<br><small>${t.stage}</small></td>${cell(t.forAmt - (t.bundled || 0))}${S.bundled ? cell(t.bundled) : ''}${cell(t.againstAmt)}<td>${res(t)}</td><td>${hit(t)}</td></tr>`).join('')}
   </tbody></table></div>`);
+  }
+
+  const G = X.progressive;
+  if (G && G.candidates.length) {
+    const pc1 = (a, b) => b ? `${Math.round(a / b * 100)}%` : '';
+    const sh = v => v == null ? '' : `${(v * 100).toFixed(1)}%`;
+    const P = G.primary, ISS = { m4a: 'Medicare for All', climate: 'Climate and Green New Deal', housing: 'Housing and rent', costs: 'Cost of living', taxrich: 'Taxing the wealthy', labor: 'Unions and wages', gaza: 'Gaza and aid to Israel', ice: 'Ending ICE deportations', corpmoney: 'Money in politics', studentdebt: 'Student debt and free college', abortion: 'Abortion rights', childcare: 'Childcare and paid leave', police: 'Policing and public safety', democracy: 'Democracy and voting rights', aipac: 'Refusing AIPAC money', crypto_ai: 'Crypto, AI and big tech money', jobs: 'Federal jobs guarantee', education: 'Public schools', guns: 'Gun safety', veterans: 'Veterans', immigration_reform: 'Path to citizenship', antitrust: 'Monopolies and price gouging' };
+    const endorsed = G.candidates.filter(o => o.groups.some(g => !['CPCM', 'LINE'].includes(g)));
+    const res = o => o.gen ? (o.gen.won ? 'Won general' : 'Lost general') : o.prim ? (o.prim.won ? (o.prim.t2 ? 'Advanced' : 'Won primary') : 'Lost primary') : '';
+    const GL = Object.fromEntries(G.groups.map(g => [g.id, g.id === 'CPCM' ? 'CPC member' : g.id === 'LINE' ? 'Left party line' : g.id]));
+    const lines = G.candidates.filter(o => o.groups.includes('LINE') && o.gen).sort((a, b) => b.gen.pct - a.gen.pct).slice(0, 10);
+    const iMax = G.issues.counts.length ? G.issues.counts[0].n : 1;
+    add('progressives', 'Progressives', `<h2>Progressives and socialists</h2>
+  <p class="sub">${endorsed.length} candidates endorsed by the Democratic Socialists of America, Justice Democrats, Our Revolution, the Working Families Party or the Progressive Caucus PAC, plus Progressive Caucus members who ran again and candidates on socialist and other left party lines.</p>
+  <dl class="facts"><div><dt>Progressive challengers and open-seat candidates</dt><dd>${pc1(P.progChal.won, P.progChal.n)}</dd><dd class="s">won ${P.progChal.won} of ${P.progChal.n} contested primaries</dd></div><div><dt>Other Democratic challengers and open-seat candidates</dt><dd>${pc1(P.otherChal.won, P.otherChal.n)}</dd><dd class="s">won ${P.otherChal.won} of ${P.otherChal.n}</dd></div><div><dt>Progressive incumbents</dt><dd>${pc1(P.progInc.won, P.progInc.n)}</dd><dd class="s">won ${P.progInc.won} of ${P.progInc.n} contested primaries</dd></div><div><dt>Other Democratic incumbents</dt><dd>${pc1(P.otherInc.won, P.otherInc.n)}</dd><dd class="s">won ${P.otherInc.won} of ${P.otherInc.n}</dd></div></dl>
+  <p class="sub">Contested primaries are Democratic and top-two primaries where two or more Democrats each won at least 10% of the vote.</p>
+  <h3>General election, by pre-election rating</h3>
+  <p class="sub">Democratic nominees' average share of the two-party vote, with seats won.</p>
+  <div class="tbl"><table><thead><tr><th>Rating</th><th class="n">Progressive nominees</th><th class="n">Vote share</th><th class="n">Other Democrats</th><th class="n">Vote share</th></tr></thead><tbody>
+  ${G.general.map(r => `<tr><td>${esc(r.rating)}</td><td class="n">${r.prog.won} of ${r.prog.n}</td><td class="n">${sh(r.prog.share)}</td><td class="n">${r.other.won} of ${r.other.n}</td><td class="n">${sh(r.other.share)}</td></tr>`).join('')}
+  </tbody></table></div>
+  <h3>By endorsing group</h3>
+  <div class="tbl"><table><thead><tr><th>Group</th><th class="n">Candidates</th><th class="n">Won primary</th><th class="n">Lost primary</th><th class="n">Won general</th><th class="n">Lost general</th></tr></thead><tbody>
+  ${G.groups.map(g => `<tr><td>${esc(g.label)}</td><td class="n">${g.n}</td><td class="n">${g.id === 'LINE' ? '' : g.primWon}</td><td class="n">${g.id === 'LINE' ? '' : g.primLost}</td><td class="n">${g.genWon}</td><td class="n">${g.genLost}</td></tr>`).join('')}
+  </tbody></table></div>
+  ${G.issues.counts.length ? `<h3>What they ran on</h3>
+  <p class="sub">Issues ${G.issues.sites} endorsed candidates campaigned on, from their campaign sites and campaign coverage, by how many ran on each one.</p>
+  <ul class="hbars">${G.issues.counts.filter(i => ISS[i.id] && i.n >= 3).map(i => `<li><span>${esc(ISS[i.id])}</span><span class="hb"><i style="width:${(i.n / iMax * 100).toFixed(1)}%"></i></span><b>${i.n} <small>${pc1(i.n, G.issues.sites)}, ${i.won} won</small></b></li>`).join('')}</ul>` : ''}
+  ${G.platforms.length ? `<h3>The groups' platforms</h3>${G.platforms.map(p => `<details class="pm-more"><summary><b>${esc(p.group)}</b></summary><ul>${p.planks.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${p.source ? `<p class="sub"><a href="${esc(p.source)}" target="_blank" rel="noopener">Source</a></p>` : ''}</details>`).join('')}` : ''}
+  ${lines.length ? `<h3>Socialist and left party lines</h3><p class="sub">Best general-election results for candidates outside the two major parties on the left.</p>
+  <div class="tbl"><table><thead><tr><th>Candidate</th><th>Party line</th><th>Race</th><th class="n">Vote</th></tr></thead><tbody>${lines.map(o => `<tr><td>${esc(o.name)}</td><td>${esc(o.line)}</td><td>${esc(o.seat)}</td><td class="n">${o.gen.pct.toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>` : ''}
+  <details class="pm-more"><summary><b>All endorsed candidates</b> <span class="cnt">${endorsed.length}</span></summary>
+  <div class="tbl"><table><thead><tr><th>Candidate</th><th>Race</th><th>Endorsed by</th><th>Result</th></tr></thead><tbody>
+  ${endorsed.map(o => `<tr><td>${pl(o.name, o.slug)}</td><td>${esc(o.seat)}</td><td>${o.groups.map(g => GL[g] || g).join(', ')}</td><td>${res(o)}</td></tr>`).join('')}
+  </tbody></table></div></details>`);
   }
 
   const body = `<div class="wrap"><h1>The 2026 midterms</h1><p class="lede">${lede}</p></div>

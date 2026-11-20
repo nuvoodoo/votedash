@@ -219,12 +219,87 @@ for (const c of lines('itpas2.txt')) {
   const ck = c[16] + '|' + pgi; const t = isrCand.get(ck) || { id: c[16], name: pName(cd[1].split(',').reverse().join(' ').trim().toLowerCase()), p: pt, seat: cd[5] === 'S' ? `${cd[4]} Senate` : `${cd[4]}-${+cd[6] || 'AL'}`, stage: pgi === 'G' ? 'General' : pgi === 'S' ? 'Special' : 'Primary', forAmt: 0, againstAmt: 0, won }; isrCand.set(ck, t);
   t[against ? 'againstAmt' : 'forAmt'] += amt;
 }
-const R0 = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'number' ? Math.round(v) : v]));
+// AIPAC PAC's bundled (earmarked) contributions forwarded to candidates: tools/congress/postmortem/aipac-earmarks.js
+const cclCand = new Map(lines('ccl.txt').filter(c => c[2] === '2026').map(c => [c[3], c[0]]));
+const EARM = fs.existsSync(path.join(RAW, 'aipac-earmarks.json')) ? J(RAW, 'aipac-earmarks.json') : [];
+for (const e of EARM) {
+  if (!/^EARMARK/i.test(e.desc || '') || !e.amt) continue;
+  const cd = cnById.get(e.cid) || cnById.get(cclCand.get(e.rid)); if (!cd) continue;
+  const pgi = /^G/.test(e.el || '') ? 'G' : /^S/.test(e.el || '') ? 'S' : /^G/.test(e.el || '') ? 'G' : 'P', amt = e.amt, pt = partyOf(cd);
+  const won = outcome(pgi, cd);
+  const s = isr.get('AIPAC'); s.total += amt; s.bundled = (s.bundled || 0) + amt; if (pgi !== 'G') s.primary += amt;
+  if (pt === 'O') s.other += amt; else s['for' + pt] += amt;
+  s[won == null ? 'open' : won ? 'win' : 'lose'] += amt;
+  const ck = cd[0] + '|' + pgi; const t = isrCand.get(ck) || { id: cd[0], name: pName(cd[1].split(',').reverse().join(' ').trim().toLowerCase()), p: pt, seat: cd[5] === 'S' ? `${cd[4]} Senate` : `${cd[4]}-${+cd[6] || 'AL'}`, stage: pgi === 'G' ? 'General' : pgi === 'S' ? 'Special' : 'Primary', forAmt: 0, againstAmt: 0, won }; isrCand.set(ck, t);
+  t.forAmt += amt; t.bundled = (t.bundled || 0) + amt;
+}
+const R0 =o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'number' ? Math.round(v) : v]));
 const israelRows = [...isr.entries()].map(([g, s]) => R0({ name: ISRAEL_NAMES[g] || (fundById[g] && fundById[g].name) || cmName.get(g) || g, label: true, slug: (fundById[g === 'AIPAC' ? 'C00799031' : g] || {}).slug || null, ...s, ids: undefined }))
   .filter(s => s.total >= 50000).sort((a, b) => b.total - a.total);
-const israelSum = R0(israelRows.reduce((o, s) => { for (const k of ['total', 'contrib', 'ie', 'primary', 'primIe', 'forD', 'forR', 'againstD', 'againstR', 'win', 'lose', 'open']) o[k] = (o[k] || 0) + s[k]; return o; }, {}));
+const israelSum = R0(israelRows.reduce((o, s) => { for (const k of ['total', 'contrib', 'ie', 'bundled', 'primary', 'primIe', 'forD', 'forR', 'againstD', 'againstR', 'win', 'lose', 'open']) o[k] = (o[k] || 0) + (s[k] || 0); return o; }, {}));
 const israel = { sum: israelSum, all: Math.round(allCmte), allIe: Math.round(allIe), allPrimIe: Math.round(allPrimIe), groups: israelRows,
-  targets: [...isrCand.values()].map(t => { const pp = people.find(p => (p.ids && p.ids.fec || p.fec || []).includes(t.id)); return R0({ ...t, name: pp ? pp.name : t.name.replace(/(Jr|Sr|Ii|Iii|Iv)\.?/g, '').replace(/\s[A-Z]\.?(?=\s|$)/g, '').replace(/\s+/g, ' ').trim(), slug: slugOf(pp) }); }).filter(t => t.forAmt + t.againstAmt >= 250000).sort((a, b) => (b.forAmt + b.againstAmt) - (a.forAmt + a.againstAmt)).slice(0, 20) };
+  targets: [...isrCand.values()].map(t => { const pp = people.find(p => (p.ids && p.ids.fec || p.fec || []).includes(t.id)); return R0({ ...t, name: pp ? pp.name : t.name.replace(/\b(Jr|Sr|Ii|Iii|Iv)\b\.?/g, '').replace(/\s[A-Z]\.?(?=\s|$)/g, '').replace(/\s+/g, ' ').trim(), slug: slugOf(pp) }); }).filter(t => t.forAmt + t.againstAmt >= 250000).sort((a, b) => (b.forAmt + b.againstAmt) - (a.forAmt + a.againstAmt)).slice(0, 20) };
+
+// ---------- progressives: DSA, Justice Democrats, Our Revolution, WFP, CPC PAC, CPC members, socialist lines ----------
+const PF = fs.existsSync(path.join(STATIC, 'progressives-2026.json')) ? J(STATIC, 'progressives-2026.json') : { candidates: [] };
+const nameEq = (a, b) => norm(a) === norm(b) || (lastOf(a) === lastOf(b) && firstOf(a)[0] === firstOf(b)[0]);
+const seatKey = (st, ch, d) => ch === 'S' ? `${st} Senate` : `${st}-${d || 'AL'}`;
+const progs = new Map(); // seat|name -> record
+const addProg = (o, g) => {
+  const k = [...progs.keys()].find(x => { const r = progs.get(x); return r.seat === seatKey(o.st, o.ch, o.d) && nameEq(r.name, o.name); }) || seatKey(o.st, o.ch, o.d) + '|' + o.name;
+  const r = progs.get(k) || { name: o.name, st: o.st, ch: o.ch, d: o.ch === 'S' ? null : (o.d || 0), seat: seatKey(o.st, o.ch, o.d), groups: [], line: null }; progs.set(k, r);
+  for (const x of [].concat(g)) if (x && !r.groups.includes(x)) r.groups.push(x);
+  return r;
+};
+for (const c of PF.candidates) addProg(c, c.groups);
+for (const [id, l] of Object.entries(cauc.members)) {
+  const p = byId.get(id); if (!l.includes('progressive') || !p || p.status === 'elect') continue;
+  if (!(p.race2026 && p.race2026.ran) && !(p.primaries || []).some(x => x.year === 2026 && !x.special && x.chamber === p.chamber)) continue;
+  addProg({ name: p.name, st: p.state, ch: p.chamber, d: p.district || 0 }, 'CPCM');
+}
+const LEFT_LINE = /socialis|working families|working class|green|peace and freedom|psl|workers/i;
+for (const r of fed) for (const c of r.cands) if (LEFT_LINE.test(c.pf || '') && !/national socialist/i.test(c.pf)) {
+  const o = addProg({ name: c.n, st: r.state, ch: r.cat === 'senate' ? 'S' : 'H', d: distOf(r) }, 'LINE'); o.line = c.pf;
+}
+const demPrim = EX.primaries.filter(x => x.y === 2026 && (x.pt === 'D' || x.pt === 'T2'));
+const primFor = (st, ch, d, n) => { for (const r of demPrim) { if (r.st !== st || r.ch !== ch || (ch === 'H' && (r.d || 0) !== (d || 0))) continue; const c = r.c.find(z => nameEq(z.n, n)); if (c) return { r, c }; } return null; };
+const genFor = (st, ch, d, n) => { const r = raceRows.find(x => x.st === st && x.ch === ch && (ch === 'S' || x.d === (d || 0))); if (!r) return null; const c = r.cs.find(z => nameEq(z.n, n)); return c ? { r, c } : null; };
+const isInc = (st, ch, d, n) => current.some(p => p.state === st && p.chamber === ch && (ch === 'S' || (p.district || 0) === (d || 0)) && nameEq(p.name, n));
+const twoParty = (r, c) => { const o = r.cs.filter(x => x !== c && x.p === 'R').reduce((s, x) => s + x.v, 0); return c.v + o ? c.v / (c.v + o) : null; };
+const progList = [...progs.values()].map(o => {
+  const pr = primFor(o.st, o.ch, o.d, o.name), ge = genFor(o.st, o.ch, o.d, o.name);
+  const pp = personFor({ cat: o.ch === 'S' ? 'senate' : 'house', state: o.st }, { n: o.name });
+  return { ...o, slug: slugOf(pp), inc: isInc(o.st, o.ch, o.d, o.name),
+    prim: pr ? { won: !!pr.c.w, pct: pr.c.rpc ?? pr.c.pc, field: pr.r.c.filter(z => z.pc >= 0.05).length, t2: pr.r.pt === 'T2' } : null,
+    gen: ge ? { won: ge.c === ge.r.w, pct: ge.c.pc, party: ge.c.p, rating: snap.races.find(x => x.id === ge.r.id).rating, tp: ge.c.p === 'D' ? twoParty(ge.r, ge.c) : null } : null };
+}).filter(o => o.prim || o.gen);
+const progNames = new Set(progList.map(o => o.seat + '|' + norm(o.name)));
+const isProg = (seat, n) => progNames.has(seat + '|' + norm(n)) || progList.some(o => o.seat === seat && nameEq(o.name, n));
+// primaries: candidates with at least 10% of the vote in a Democratic (or top-two) primary with two or more such candidates
+const primRows = [];
+for (const r of demPrim) {
+  const seat = seatKey(r.st, r.ch, r.d), field = r.c.filter(z => z.pc >= 0.10 && (r.pt === 'D' || z.p === 'D'));
+  if (field.length < 2) continue;
+  for (const c of field) primRows.push({ prog: isProg(seat, c.n), inc: isInc(r.st, r.ch, r.d, c.n), won: !!c.w });
+}
+const rate = l => ({ n: l.length, won: l.filter(x => x.won).length });
+const primary = { prog: rate(primRows.filter(x => x.prog)), other: rate(primRows.filter(x => !x.prog)),
+  progInc: rate(primRows.filter(x => x.prog && x.inc)), otherInc: rate(primRows.filter(x => !x.prog && x.inc)),
+  progChal: rate(primRows.filter(x => x.prog && !x.inc)), otherChal: rate(primRows.filter(x => !x.prog && !x.inc)) };
+// general: Democratic nominees by pre-election rating
+const RATINGS = ['Safe D', 'Likely D', 'Lean D', 'Tilt D', 'Tossup', 'Tilt R', 'Lean R', 'Likely R', 'Safe R'];
+const genRows = raceRows.map(r => { const c = r.cs.find(x => x.p === 'D'); if (!c) return null; return { prog: isProg(r.seat, c.n), rating: snap.races.find(x => x.id === r.id).rating, won: c === r.w, tp: twoParty(r, c) }; }).filter(Boolean);
+const general = RATINGS.map(rt => { const g = genRows.filter(x => x.rating === rt), a = l => { const v = l.map(x => x.tp).filter(x => x != null); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
+  const P = g.filter(x => x.prog), O = g.filter(x => !x.prog); return { rating: rt, prog: { ...rate(P), share: a(P) }, other: { ...rate(O), share: a(O) } }; }).filter(x => x.prog.n);
+const GROUPS = [['DSA', 'Democratic Socialists of America'], ['JD', 'Justice Democrats'], ['OR', 'Our Revolution'], ['WFP', 'Working Families Party'], ['CPC', 'Progressive Caucus PAC'], ['CPCM', 'Progressive Caucus members'], ['LINE', 'Socialist and left party lines']];
+const byGroup = GROUPS.map(([id, label]) => { const l = progList.filter(o => o.groups.includes(id)); return { id, label, n: l.length, primWon: l.filter(o => o.prim && o.prim.won).length, primLost: l.filter(o => o.prim && !o.prim.won).length, genWon: l.filter(o => o.gen && o.gen.won).length, genLost: l.filter(o => o.gen && !o.gen.won && o.gen.party === 'D').length + l.filter(o => o.gen && !o.gen.won && o.gen.party !== 'D').length }; }).filter(g => g.n);
+const ISS = fs.existsSync(path.join(STATIC, 'progressive-issues-2026.json')) ? J(STATIC, 'progressive-issues-2026.json') : [];
+for (const o of progList) { const i = ISS.find(x => x.found && x.seat === o.seat && nameEq(x.name, o.name)); if (i) { o.issues = i.issues; o.top = i.top || []; o.site = i.website || null; } }
+const withIss = progList.filter(o => o.issues);
+const issueCounts = Object.entries(withIss.reduce((m, o) => { for (const k of o.issues) m[k] = (m[k] || 0) + 1; return m; }, {})).map(([id, n]) => ({ id, n, top: withIss.filter(o => (o.top || []).includes(id)).length,
+  won: withIss.filter(o => o.issues.includes(id) && ((o.gen && o.gen.won) || (!o.gen && o.prim && o.prim.won))).length })).sort((a, b) => b.n - a.n);
+const progressive = { groups: byGroup, primary, general, candidates: progList.sort((a, b) => a.seat.localeCompare(b.seat)),
+  platforms: PF.platforms || [], issues: { sites: withIss.length, counts: issueCounts } };
 
 const out = { built: new Date().toISOString(), electionDate: '2026-11-03',
   seats: { H: { before: hBefore, after: hAfter }, S: { before: sBefore, after: sAfter } },
@@ -232,7 +307,7 @@ const out = { built: new Date().toISOString(), electionDate: '2026-11-03',
   flips, defeated, primaryLosers, close, caucuses, ballot, ballotMoney,
   votes: { summary: voteSummary, splits, keyLaws },
   money: { totals, spenders: spenders.slice(0, 25), industries: industries.slice(0, 20), costly, outspent, losingSpenders },
-  israel,
+  israel, progressive,
 };
 fs.writeFileSync(path.join(OUT, 'postmortem.json'), JSON.stringify(out));
 console.log('postmortem', JSON.stringify({ seats: out.seats, counts: out.counts, fecMatched: fecToRace.size, races: raceRows.length, splits: splits.length, keyLaws: keyLaws.length, spenders: spenders.length, totals }));
