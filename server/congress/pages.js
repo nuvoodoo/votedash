@@ -39,7 +39,7 @@ function home() {
         <button type="button" aria-pressed="false" data-mode="vote">Latest vote</button>
       </div>
       <p class="ch-key" data-key="party"><span><i class="fD"></i>Democrat</span><span><i class="fR"></i>Republican</span><span><i class="fI"></i>Independent</span></p>
-      ${D.caucuses ? `<p class="ch-key" data-key="caucus" hidden>${[['freedom', 'Freedom Caucus'], ['rsc', 'Republican Study Committee'], ['mainstreet', 'Main Street'], ['noneR', 'Other Republicans'], ['progressive', 'Progressive Caucus'], ['newdem', 'New Democrats'], ['bluedog', 'Blue Dogs'], ['noneD', 'Other Democrats']].map(([k, l]) => `<span><i class="c${k}"></i>${l}</span>`).join('')}</p>` : ''}
+      ${D.caucuses ? `<p class="ch-key cau-key" data-key="caucus" hidden>${[['freedom', 'Freedom Caucus'], ['rsc', 'Republican Study Committee'], ['mainstreet', 'Main Street'], ['noneR', 'Other Republicans'], ['progressive', 'Progressive Caucus'], ['newdem', 'New Democrats'], ['bluedog', 'Blue Dogs'], ['noneD', 'Other Democrats']].map(([k, l]) => `<a href="${k.startsWith('none') ? `/members?party=${k.slice(4)}` : `/caucus/${k}`}" data-cau="${k}"><i class="c${k}"></i>${l}</a>`).join('')}</p>` : ''}
       <p class="ch-key" data-key="vote" hidden><span><i class="vY"></i>Yea</span><span><i class="vN"></i>Nay</span><span><i class="v0"></i>Not voting</span></p>
     </div>
     <div class="ch-grid">
@@ -165,7 +165,7 @@ function member(p, q) {
     <p class="ph-role">${chip(p)} ${esc(PARTY[p.party] || p.partyName)}${p.caucus && p.caucus !== p.party ? `, caucuses with ${PARTY[p.caucus]}s` : ''}</p>
     <h1>${esc(p.name)}</h1>
     <p class="ph-seat">${esc(role)}${p.since && p.status !== 'elect' ? `. In the ${chamberName} since ${new Date(firstInChamber(p)).getUTCFullYear()}` : ''}${p.birthday ? `. Age ${age(p.birthday)}` : ''}.</p>
-    ${(() => { const m = D.caucuses && D.caucuses.members[p.id]; if (!m || !m.length) return ''; return `<p class="ph-cau">${m.map(id => { const c = D.caucuses.caucuses.find(x => x.id === id); return c ? `<span class="cau c${H.caucusOf({ id: p.id }) === id ? id : ''}">${esc(c.name)}</span>` : ''; }).join('')}</p>`; })()}
+    ${(() => { const m = D.caucuses && D.caucuses.members[p.id]; if (!m || !m.length) return ''; return `<p class="ph-cau">${m.map(id => { const c = D.caucuses.caucuses.find(x => x.id === id); return c ? `<a href="/caucus/${id}" class="cau c${H.caucusOf({ id: p.id }) === id ? id : ''}">${esc(c.name)}</a>` : ''; }).join('')}</p>`; })()}
     ${status ? `<p class="ph-status">${status}</p>` : ''}
     <p class="ph-act">${p.url ? `<a class="btn" href="${esc(p.url)}" rel="noopener">Official website</a>` : ''}${p.contact ? `<a class="btn ghost" href="${esc(p.contact)}" rel="noopener">Contact their office</a>` : ''}${p.phone ? `<span class="ph-phone">${esc(p.phone)}</span>` : ''}</p>
     ${(() => { const l = contactLinks(p).filter(([n]) => n !== 'Official website' && n !== 'Contact form'); return l.length ? `<p class="ph-links">${l.map(([n, u]) => `<a href="${esc(u)}" rel="noopener">${esc(n)}</a>`).join('')}</p>` : ''; })()}
@@ -892,6 +892,58 @@ const QHELP = [
 ];
 const qHelp = q => { const h = QHELP.find(([re]) => re.test(q || '')); return h ? h[1] : ''; };
 
+// ---------------- caucuses ----------------
+function caucusPage(id, q) {
+  const C = D.caucuses && D.caucuses.caucuses.find(c => c.id === id); if (!C) return null;
+  const ms = D.people.filter(p => (D.caucuses.members[p.id] || []).includes(id));
+  const ids = new Set(ms.map(p => p.id));
+  const parties = ['R', 'D', 'I'].map(pt => [pt, ms.filter(p => p.party === pt).length]).filter(([, n]) => n);
+  // voting record: how the caucus voted on each roll call, and where it split from its party
+  const rows = [];
+  for (const rc of D.allRolls) {
+    const order = D.order[rc.chamber]; let y = 0, n = 0;
+    order.forEach((pid, i) => { if (!ids.has(pid)) return; const c = rc.codes[i]; if (c === 'Y') y++; else if (c === 'N') n++; });
+    if (y + n < 3) continue;
+    const pos = y > n ? 'Y' : n > y ? 'N' : null;
+    const pt = C.party === 'R' || C.party === 'D' ? C.party : null;
+    const partyPos = pt && rc.partyPos ? rc.partyPos[pt] : null;
+    rows.push({ rc, y, n, pos, cohesion: Math.max(y, n) / (y + n), breaks: !!(pos && partyPos && pos !== partyPos) });
+  }
+  const avgCoh = rows.length ? rows.reduce((a, r) => a + r.cohesion, 0) / rows.length : null;
+  const breaks = rows.filter(r => r.breaks);
+  const unity = ms.filter(p => p.votes && p.votes.unity != null);
+  const avgUnity = unity.length ? unity.reduce((a, p) => a + p.votes.unity, 0) / unity.length : null;
+  const avgScore = ms.filter(p => p.nominate != null);
+  // money behind the members
+  const y = yearOf(q), V = y ? view(y) : null;
+  const pacs = {}, ind = {}; let raised = 0;
+  for (const p of ms) {
+    const given = y ? V.givenTo.get(p.id) || {} : D.givenTo.get(p.id) || {};
+    for (const [cm, amt] of Object.entries(given)) pacs[cm] = (pacs[cm] || 0) + amt;
+    for (const [k, v] of (y ? V.byInd.get(p.id) : p.money && p.money.byIndustry) || []) ind[k] = (ind[k] || 0) + v;
+    raised += y ? (p.money && p.money.cycles[cycleOf(y)] ? p.money.cycles[cycleOf(y)].receipts : 0) : sources(p).receipts;
+  }
+  const topPacs = Object.entries(pacs).map(([cm, v]) => [D.funders.get(cm), v]).filter(([f]) => f && !/Leadership PAC|Party committee/.test(f.kind)).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  const topInd = Object.entries(ind).filter(([k]) => k !== 'leadership-pacs').sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const pacSum = Object.values(pacs).reduce((a, b) => a + b, 0);
+  const im = topInd.length ? topInd[0][1] : 1;
+  const ch = ms.some(p => p.chamber === 'H') ? 'H' : 'S';
+  const when = y ? `in ${y}` : 'since 2021';
+  const body = `<div class="wrap"><p class="crumb"><a href="/">Seat chart</a>, caucuses</p><h1>${esc(C.name)}</h1>
+  <p class="lede">${ms.length} members of the ${ch === 'H' ? 'House' : 'Senate'}${ms.some(p => p.chamber === 'S') && ms.some(p => p.chamber === 'H') ? ' and Senate' : ''}${parties.length > 1 ? `: ${parties.map(([pt, n]) => `${n} ${PARTY[pt]}${n === 1 ? '' : 's'}`).join(', ')}` : ''}. Member list from <a href="${esc(C.source.url)}" rel="noopener">${esc(C.source.name.replace(/\s*\([^)]*\)\s*$/, ''))}</a>.</p>
+  <figure class="vote-seats">${seatChart(ch, p => ids.has(p.id) ? 'f' + p.party : 'fx', { label: `${C.name} members in the ${ch === 'H' ? 'House' : 'Senate'}` })}</figure>
+  <dl class="facts">${avgCoh != null ? `<div><dt>Votes together</dt><dd>${pct(avgCoh, 1)}</dd><dd class="s">Average share voting with the caucus majority</dd></div>` : ''}${avgUnity != null ? `<div><dt>With their party</dt><dd>${pct(avgUnity, 1)}</dd><dd class="s">Average party loyalty of members</dd></div>` : ''}${breaks.length ? `<div><dt>Broke with party</dt><dd>${breaks.length}</dd><dd class="s">Roll calls where most of the caucus voted against most of its party</dd></div>` : ''}${pacSum ? `<div><dt>PAC money ${when}</dt><dd>${money(pacSum)}</dd><dd class="s">To caucus members</dd></div>` : ''}</dl>
+  <div class="cols"><div class="col-main">
+  ${breaks.length ? `<h2>Where the caucus split from its party</h2><ol class="rolls">${breaks.slice(0, 12).map(r => rollRow(r.rc).replace('</a></li>', `<span class="rr-p">Caucus ${r.y}-${r.n}</span></a></li>`)).join('')}</ol>` : ''}
+  <h2>Recent votes</h2><ol class="rolls">${rows.slice(0, 15).map(r => rollRow(r.rc).replace('</a></li>', `<span class="rr-p">Caucus ${r.y}-${r.n}</span></a></li>`)).join('')}</ol>
+  ${topInd.length ? `<h2>Industries funding its members ${when}</h2>${yearNav('/caucus/' + id, y)}<ul class="hbars">${topInd.map(([k, v]) => `<li><a href="/industry/${k}${y ? '?year=' + y : ''}">${esc(D.indName.get(k))}</a><span class="hb"><i style="width:${(v / im * 100).toFixed(1)}%"></i></span><b>${money(v)}</b></li>`).join('')}</ul>` : ''}
+  </div><aside class="col-side">
+  ${topPacs.length ? `<h2>Top PAC donors to members ${when}</h2><ol class="rank sm">${topPacs.map(([f, v]) => `<li><a href="/f/${f.slug}${y ? '?year=' + y : ''}"><b>${esc(nice(f.name))}</b><small>${esc(nice(f.org) || f.kind)}</small></a><b class="amt">${money(v)}</b></li>`).join('')}</ol>` : ''}
+  <h2>Members <span class="cnt">${ms.length}</span></h2><ol class="rank sm">${ms.sort((a, b) => a.last.localeCompare(b.last)).map(p => `<li>${personLink(p)}</li>`).join('')}</ol>
+  </aside></div></div>`;
+  return layout({ title: C.name, desc: `${C.name}: ${ms.length} members, how they vote together and who funds them.`, path: `/caucus/${id}`, body, active: '/members' });
+}
+
 // ---------------- leadership ----------------
 const leaderRoles = id => D.leadership ? D.leadership.current.filter(c => c.person === id) : [];
 function leadership() {
@@ -1062,8 +1114,8 @@ function about() {
 function notFound() { return layout({ title: 'Page not found', body: `<div class="wrap narrow"><h1>That page isn't here</h1><p>Search for a member, state, PAC or bill.</p><form class="bigsearch" action="/search"><label for="nq" class="vh">Search</label><input id="nq" name="q" type="search" data-suggest><button>Search</button></form></div>`, noindex: true }); }
 
 function sitemap() {
-  const u = [...'/ /leadership /tracker /find /committees /schedule /members /votes /money /issues /incoming /about'.split(' '), ...D.people.map(href), ...Object.keys(D.STATES).filter(s => D.states[s]).map(s => `/state/${s.toLowerCase()}`), ...Object.keys(D.meta.committees).map(c => `/committee/${c.toLowerCase()}`), ...D.rollcalls.map(r => `/vote/${r.k}`), ...[...D.funders.values()].filter(f => f.total + f.ie >= 25000).map(f => `/f/${f.slug}`), ...[...D.industryTotals.keys()].map(i => `/industry/${i}`), ...(D.bills ? Object.keys(D.bills.issues).map(a => `/issue/${slugIssue(a)}`) : [])];
+  const u = [...(D.caucuses ? D.caucuses.caucuses.map(c => `/caucus/${c.id}`) : []), ...'/ /leadership /tracker /find /committees /schedule /members /votes /money /issues /incoming /about'.split(' '), ...D.people.map(href), ...Object.keys(D.STATES).filter(s => D.states[s]).map(s => `/state/${s.toLowerCase()}`), ...Object.keys(D.meta.committees).map(c => `/committee/${c.toLowerCase()}`), ...D.rollcalls.map(r => `/vote/${r.k}`), ...[...D.funders.values()].filter(f => f.total + f.ie >= 25000).map(f => `/f/${f.slug}`), ...[...D.industryTotals.keys()].map(i => `/industry/${i}`), ...(D.bills ? Object.keys(D.bills.issues).map(a => `/issue/${slugIssue(a)}`) : [])];
   return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${u.map(x => `<url><loc>${SITE}${x}</loc></url>`).join('')}</urlset>`;
 }
 
-module.exports = { leadership, leaderElection, tracker, committees, committee, find, contactLinks, schedule, home, member, memberVotes, memberSpeeches, network, graph, members, stateP, incoming, votes, vote, bill, moneyP, funder, industry, issues, issue, search, suggest, about, notFound, sitemap };
+module.exports = { caucusPage, leadership, leaderElection, tracker, committees, committee, find, contactLinks, schedule, home, member, memberVotes, memberSpeeches, network, graph, members, stateP, incoming, votes, vote, bill, moneyP, funder, industry, issues, issue, search, suggest, about, notFound, sitemap };

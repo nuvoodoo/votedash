@@ -48,6 +48,7 @@ http.createServer((req, res) => {
 
     if (p === '/') return html(req, res, P.home());
     if (p === '/schedule') return html(req, res, P.schedule());
+    if ((m = p.match(/^\/caucus\/([a-z]+)$/))) { const b = P.caucusPage(m[1], url.searchParams); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if (p === '/leadership') { const b = P.leadership(); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/leadership\/([\w-]+)$/))) { const b = P.leaderElection(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if (p === '/tracker') return html(req, res, P.tracker(url.searchParams));

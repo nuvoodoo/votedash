@@ -40,7 +40,7 @@
     var data = JSON.parse(document.getElementById('vote-data').textContent);
     ch.querySelectorAll('[data-mode]').forEach(function (b) {
       b.addEventListener('click', function () {
-        var mode = b.dataset.mode;
+        var mode = b.dataset.mode; cauHighlight(null);
         ch.querySelectorAll('[data-mode]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
         ch.querySelectorAll('[data-key]').forEach(function (k) { k.hidden = k.dataset.key !== mode; });
         ch.querySelectorAll('[data-vote-cap]').forEach(function (k) { k.hidden = mode !== 'vote'; });
@@ -87,6 +87,27 @@
   document.addEventListener('click', function (e) { if (tip && !e.target.closest('.seat-tip') && !e.target.closest('svg.seats')) hideTip(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hideTip(); });
   window.addEventListener('scroll', function () { if (tip && tip.classList.contains('mouse')) hideTip(); }, { passive: true });
+
+  // caucus legend: hover or tap highlights its seats; click or a second tap opens the caucus
+  var cauOn = null;
+  function cauHighlight(k) {
+    cauOn = k;
+    document.querySelectorAll('.cau-key a').forEach(function (a) { a.classList.toggle('on', a.dataset.cau === k); });
+    document.querySelectorAll('svg.seats').forEach(function (svg) {
+      svg.classList.toggle('cau-hl', !!k);
+      svg.querySelectorAll('circle[data-id]').forEach(function (c) {
+        var cs = (c.dataset.cs || '').split(' '), inIt = k && (k.indexOf('none') === 0 ? (!c.dataset.c && c.dataset.p === k.slice(4)) : cs.indexOf(k) >= 0);
+        c.classList.toggle('in', !!inIt);
+      });
+    });
+  }
+  document.querySelectorAll('.cau-key a').forEach(function (a) {
+    a.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') cauHighlight(a.dataset.cau); });
+    a.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') cauHighlight(null); });
+    a.addEventListener('focus', function () { cauHighlight(a.dataset.cau); });
+    a.addEventListener('blur', function () { cauHighlight(null); });
+    a.addEventListener('click', function (e) { if (lastPointer !== 'mouse' && cauOn !== a.dataset.cau) { e.preventDefault(); cauHighlight(a.dataset.cau); } });
+  });
 
   // state picker submits on change
   document.querySelectorAll('select[data-autosubmit]').forEach(function (s) { s.addEventListener('change', function () { s.form.submit(); }); });

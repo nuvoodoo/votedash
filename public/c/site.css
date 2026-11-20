@@ -486,3 +486,16 @@ svg.seats circle.fld[data-p=D]{fill:var(--ring-D)}svg.seats circle.fld[data-p=R]
 svg.seats a circle{stroke:var(--paper);stroke-width:1}
 :root{--ring-D:#C9D8F2;--ring-R:#F5CBC6;--ring-I:#DDE4BE}
 @media (prefers-color-scheme:dark){:root{--ring-D:#22344F;--ring-R:#4A2522;--ring-I:#363D22}}
+.cau-key a{display:inline-flex;align-items:center;color:var(--muted);text-decoration:none;padding:6px 8px;margin:-6px -2px;border-radius:var(--r-s);min-height:32px}
+.cau-key a:hover,.cau-key a.on{background:var(--soft);color:var(--bronze)}
+.cau-key a i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px}
+svg.seats.cau-hl a circle{opacity:.18;transition:opacity .2s}
+svg.seats.cau-hl a circle.in{opacity:1}
+@media (prefers-reduced-motion:reduce){svg.seats.cau-hl a circle{transition:none}}
+a.cau{text-decoration:none}a.cau:hover{border-color:var(--bronze)}
+svg.seats circle.cnoneR{fill:var(--paper);stroke:var(--rep);stroke-width:1.6}
+svg.seats circle.cnoneD{fill:var(--paper);stroke:var(--dem);stroke-width:1.6}
+svg.seats circle.cnoneI{fill:var(--paper);stroke:var(--ind);stroke-width:1.6}
+.cau-key i.cnoneR{background:var(--paper);box-shadow:inset 0 0 0 1.6px var(--rep)}
+.cau-key i.cnoneD{background:var(--paper);box-shadow:inset 0 0 0 1.6px var(--dem)}
+.vote-seats{max-width:820px}

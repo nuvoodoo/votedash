@@ -76,7 +76,7 @@ function caucusAttr(p) {
   const m = D.caucuses && D.caucuses.members[p.id]; if (!m || !m.length) return '';
   const names = m.map(id => (D.caucuses.caucuses.find(c => c.id === id) || {}).name).filter(Boolean);
   const top = caucusOf(p);
-  return `${top ? ` data-c="${top}"` : ''} data-cn="${esc(names.join(', '))}"`;
+  return `${top ? ` data-c="${top}"` : ''} data-cs="${m.join(' ')}" data-cn="${esc(names.join(', '))}"`;
 }
 
 // ---- layout ----
