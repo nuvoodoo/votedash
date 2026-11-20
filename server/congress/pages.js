@@ -684,7 +684,7 @@ function raceResult(p, yr) {
 const resTag = w => w == null ? '' : `<em class="res ${w ? 'ok' : 'no'}">${w ? 'Won' : 'Lost'}</em>`;
 function aboutBlock(a) {
   if (!a || !a.about) return '';
-  const links = [a.site && `<a href="${esc(a.site)}" target="_blank" rel="noopener">Official website</a>`, a.wikipedia && `<a href="${esc(a.wikipedia)}" target="_blank" rel="noopener">Wikipedia</a>`].filter(Boolean);
+  const links = [a.site && `<a href="${esc(a.site)}" rel="noopener">Official website</a>`, a.wikipedia && `<a href="${esc(a.wikipedia)}" rel="noopener">Wikipedia</a>`].filter(Boolean);
   return `<div class="f-about"><p>${esc(a.about)}</p>${links.length ? `<p class="f-links">${links.join('')}</p>` : ''}</div>`;
 }
 function funder(f, q) {
@@ -700,14 +700,14 @@ function funder(f, q) {
   const iel = (o, l) => { const e = Object.entries(o).map(([id, amt]) => [D.byId.get(id), amt]).filter(([p]) => p).sort((a, b) => b[1] - a[1]); return e.length ? `<div><h3>${l}</h3><ol class="rank sm">${e.slice(0, 12).map(([p, a]) => { const w = raceResult(p, cy || 2026); return `<li>${personLink(p)}<span class="ra">${resTag(w)}<b class="amt">${money(a)}</b></span></li>`; }).join('')}</ol></div>` : ''; };
   const body = `<div class="wrap"><p class="crumb"><a href="/money">Money</a>${ind ? `, <a href="/industry/${ind}">${esc(D.indName.get(ind))}</a>` : ''}</p>
   <h1>${esc(nice(f.name))}</h1>
-  <p class="lede">${esc(f.kind)}${f.org ? ` connected to ${esc(nice(f.org))}` : ''}${f.city ? `, ${esc(nice(f.city))}, ${esc(f.state)}` : ''}. FEC committee <a href="https://www.fec.gov/data/committee/${f.id}/" target="_blank" rel="noopener">${f.id}</a>.</p>
+  <p class="lede">${esc(f.kind)}${f.org ? ` connected to ${esc(nice(f.org))}` : ''}${f.city ? `, ${esc(nice(f.city))}, ${esc(f.state)}` : ''}. FEC committee <a href="https://www.fec.gov/data/committee/${f.id}/" rel="noopener">${f.id}</a>.</p>
   ${aboutBlock(D.funderAbout[f.id])}
   ${yearNav('/f/' + f.slug, y)}
   <dl class="facts">${sc && sc.races && sc.win + sc.lose ? `<div><dt>${rcy} races won</dt><dd>${sc.won} of ${sc.races}</dd><dd class="s">${pct(sc.win / (sc.win + sc.lose))} of its ${rcy - 1}-${String(rcy).slice(2)} money on the winning side</dd></div>` : ''}${t ? `<div><dt>Given to members</dt><dd>${money(gTotal)}</dd><dd class="s">${rec.length} recipients ${when}</dd></div><div><dt>To Democrats</dt><dd>${pct(s.D / t)}</dd><dd class="s">${money(s.D)}</dd></div><div><dt>To Republicans</dt><dd>${pct(s.R / t)}</dd><dd class="s">${money(s.R)}</dd></div>` : ''}${ieTotal ? `<div><dt>Outside spending</dt><dd>${money(ieTotal)}</dd><dd class="s">For and against members ${when}</dd></div>` : ''}${lob && lob.spend && (lob.spend['2025'] || lob.spend['2026']) ? `<div><dt>Lobbying, 2025-26</dt><dd>${money((lob.spend['2025'] || 0) + (lob.spend['2026'] || 0))}</dd><dd class="s">Lobbying Disclosure Act filings</dd></div>` : ''}</dl>
   ${rec.length ? `<h2>Recipients</h2><p class="sub">Share is the gift's part of everything that member raised ${cy ? `in the ${cyLabel(cy)} cycle` : 'since 2021'}. Open a row for every contribution.</p><div class="tbl"><table class="pacs"><thead><tr><th>Member</th><th class="n">Given</th><th class="n">Share</th><th>${rcy} race</th></tr></thead><tbody>${rec.slice(0, 80).map(([p, a]) => `<tr><td>${personLink(p)}${histDetails(p.id, f.id)}</td><td class="n">${money(a, true)}</td><td class="n">${shareOf(p, a, cy)}</td><td>${resTag(raceResult(p, rcy))}</td></tr>`).join('')}</tbody></table></div>` : ''}
   ${Object.keys(ieFor).length || Object.keys(ieAgainst).length ? `<h2>Outside spending ${when}</h2><div class="two">${iel(ieFor, 'To help')}${iel(ieAgainst, 'To defeat')}</div>` : ''}
   ${y && !rec.length && !ieTotal ? `<p class="sub">No contributions or outside spending for members in ${y}.</p>` : ''}
-  ${lob && (lob.issues || []).length ? `<h2>What ${esc(nice(lob.client))} lobbies on</h2><p class="tags">${lob.issues.slice(0, 20).map(i => `<span>${esc(i.name)} <b>${i.filings}</b></span>`).join('')}</p>${lob.bills && lob.bills.length ? `<p class="sub">Bills named in filings: ${lob.bills.slice(0, 20).map(esc).join(', ')}.</p>` : ''}<p><a href="${esc(lob.url)}" target="_blank" rel="noopener">Lobbying filings on LDA.gov</a></p>` : ''}</div>`;
+  ${lob && (lob.issues || []).length ? `<h2>What ${esc(nice(lob.client))} lobbies on</h2><p class="tags">${lob.issues.slice(0, 20).map(i => `<span>${esc(i.name)} <b>${i.filings}</b></span>`).join('')}</p>${lob.bills && lob.bills.length ? `<p class="sub">Bills named in filings: ${lob.bills.slice(0, 20).map(esc).join(', ')}.</p>` : ''}<p><a href="${esc(lob.url)}" rel="noopener">Lobbying filings on LDA.gov</a></p>` : ''}</div>`;
   return layout({ title: nice(f.name), desc: `${nice(f.name)} (${f.kind}): ${money(f.total)} to members of Congress, ${t ? pct(s.R / t) + ' to Republicans' : ''}.`, path: `/f/${f.slug}` + (y ? '?year=' + y : ''), body, active: '/money' });
 }
 function industry(id, q) {
@@ -1413,10 +1413,10 @@ function postMortem() {
   <p class="sub">Candidate fundraising plus outside spending in 2026 House and Senate general-election races: ${money(M.totals.all)} in all, ${money(M.totals.losing)} of it behind candidates who lost. "Behind" a candidate counts their own fundraising, outside spending for them and outside spending against their opponent.</p>
   <ul class="poll-key pm-key"><li><span class="k fW" aria-hidden="true"></span>Backed the winner</li><li><span class="k fL" aria-hidden="true"></span>Backed the loser</li></ul>
   <h3>Biggest spenders</h3>
-  <p class="sub">PAC contributions and independent expenditures for or against general-election candidates.</p>
+  <p class="sub">PAC contributions and independent expenditures for or against 2026 House and Senate candidates, primaries and general elections together. Each dollar is scored by the result of the contest it was spent on.</p>
   <ul class="hbars pm-sp">${M.spenders.map(s => `<li>${fl2(s)}${winBar(s.win, s.lose, spMax)}<b>${money(s.total)} <small>${pct(s.win / s.total)} on winners</small></b></li>`).join('')}</ul>
   <h3>Industries</h3>
-  <p class="sub">PAC contributions to general-election candidates, by the industry behind each PAC.</p>
+  <p class="sub">PAC contributions to 2026 House and Senate candidates, primaries included, by the industry behind each PAC.</p>
   <ul class="hbars pm-sp">${M.industries.map(s => `<li><a href="/industry/${s.id}">${esc(s.name)}</a>${winBar(s.win, s.lose, inMax)}<b>${money(s.win + s.lose)} <small>${pct(s.win / (s.win + s.lose))} on winners</small></b></li>`).join('')}</ul>
   <h3>Costliest races</h3>
   <div class="tbl"><table>${rHead}<tbody>${M.costly.map(rRow).join('')}</tbody></table></div>
