@@ -10,17 +10,20 @@ const MK = require('./markets');
 const KEY = process.env.DATA_GOV_KEY || readEnvKey();
 const CACHE = process.env.LIVE_CACHE || path.join(os.tmpdir(), 'votedash-live.json');
 const UA = 'Mozilla/5.0 (compatible; VoteDash/1.0; +https://votedash.net/about)';
-const L = { house: [], senate: [], meetings: {}, fresh: [], updated: null };
+const L = { house: [], senate: [], meetings: {}, fresh: [], updated: null, sources: {} };
+// last success / failure per upstream host, for /api/data-status (the crew's watch reads it)
+function mark(url, err) { let h; try { h = new URL(url).host; } catch { return; } const s = L.sources[h] || (L.sources[h] = {}); if (err) { s.fail = new Date().toISOString(); s.error = String(err); } else s.ok = new Date().toISOString(); }
 function readEnvKey() { try { const t = fs.readFileSync(path.join(__dirname, '../../../votedash.env'), 'utf8'); const m = t.match(/^DATA_GOV_KEY=(.+)$/m); return m ? m[1].trim() : null; } catch { return null; } }
 
 async function get(url, type = 'text') {
   for (let i = 0; i < 3; i++) {
     try {
       const r = await fetch(url, { headers: { 'User-Agent': UA } });
-      if (r.status === 404) return null;
+      if (r.status === 404) { mark(url); return null; }
       if (!r.ok) throw new Error(r.status);
-      return type === 'json' ? await r.json() : await r.text();
-    } catch (e) { if (i === 2) { console.error('live fetch', url.replace(/api_key=[^&]+/, 'api_key=x'), e.message); return null; } await new Promise(r => setTimeout(r, 1500 * (i + 1))); }
+      const out = type === 'json' ? await r.json() : await r.text();
+      mark(url); return out;
+    } catch (e) { if (i === 2) { mark(url, e.message); console.error('live fetch', url.replace(/api_key=[^&]+/, 'api_key=x'), e.message); return null; } await new Promise(r => setTimeout(r, 1500 * (i + 1))); }
   }
 }
 const dec = s => (s || '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#8217;|&rsquo;/g, '’').replace(/&#8216;|&lsquo;/g, '‘').replace(/&#8220;|&ldquo;/g, '“').replace(/&#8221;|&rdquo;/g, '”').replace(/&#8211;|&ndash;/g, '-').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
