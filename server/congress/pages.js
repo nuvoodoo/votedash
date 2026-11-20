@@ -149,6 +149,7 @@ function member(p, q) {
   add('overview', 'Overview', overview(p, cy));
   add('coming-up', 'Coming up', comingFor(p));
   add('markets', 'Prediction markets', (MKT.get().members[p.id] || []).length ? `<h2>Prediction markets</h2><p class="sub">Market-implied chances, updated every 10 minutes.</p>${pmRows(MKT.get().members[p.id])}` : '');
+  add('polling', 'Polling', memberPolling(p));
   add('votes', 'Votes', votesSec(p));
   add('money', 'Money', moneySec(p, yearOf(q)));
   add('elections', 'Elections', electionsSec(p));
@@ -375,7 +376,7 @@ function speechesSec(p) {
 const KIND = { ethics: 'Ethics', legal: 'Legal', censure: 'Censure', investigation: 'Investigation', 'campaign-finance': 'Campaign finance', 'stock-trading': 'Stock trading', other: 'Other' };
 function recordSec(p) {
   const r = D.record && D.record.byPerson[p.id]; if (!r || !r.length) return '';
-  return `<h2>Record</h2><ul class="rec">${r.map(x => `<li><p class="rec-k"><span class="kind">${esc(KIND[x.kind] || x.kind)}</span>${x.status ? `<span class="st">${esc(x.status)}</span>` : ''}<time>${esc(x.date)}</time></p><h3>${esc(x.title)}</h3><p>${esc(x.summary)}</p><p class="src">${x.sources.map(s => `<a href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>`).join(' ')}</p></li>`).join('')}</ul>`;
+  return `<h2>Record</h2><ul class="rec">${r.map(x => `<li><p class="rec-k"><span class="kind">${esc(KIND[x.kind] || x.kind)}</span>${x.status ? `<span class="st">${esc(x.status)}</span>` : ''}<time>${esc(x.date)}</time></p><h3>${esc(x.title)}</h3><p>${esc(x.summary)}</p><p class="poll-src">${x.sources.map(s => `<a href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>`).join(' ')}</p></li>`).join('')}</ul>`;
 }
 
 function connectionsSec(p) {
@@ -720,7 +721,7 @@ function issue(slug) {
   const rcs = x.rollcalls.map(k => D.rcByK.get(k)).filter(Boolean).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15);
   const body = `<div class="wrap"><p class="crumb"><a href="/issues">Issues</a></p><h1>${esc(name)}</h1>
   <p class="lede">${bl.length} bills in the 119th Congress${bl.filter(([, b]) => b.law).length ? `, ${bl.filter(([, b]) => b.law).length} signed into law` : ''}.</p>
-  <div class="cols"><div class="col-main">${rcs.length ? `<h2>Roll call votes</h2><ol class="rolls">${rcs.map(rollRow).join('')}</ol>` : ''}
+  <div class="cols"><div class="col-main">${issuePolling(name)}${rcs.length ? `<h2>Roll call votes</h2><ol class="rolls">${rcs.map(rollRow).join('')}</ol>` : ''}
   <h2>Bills with the most support</h2><ul class="blist">${bl.slice(0, 25).map(([k, b]) => `<li><a href="/bill/${k}"><span class="bl">${billLabel(k)}</span><b>${esc(b.short || b.title)}</b><small>${b.law ? 'Became law. ' : ''}${b.cosponsors} cosponsors.</small></a></li>`).join('')}</ul></div>
   <aside class="col-side"><h2>Most active sponsors</h2><ol class="rank sm">${topS.map(([p, n]) => `<li>${personLink(p)}<b class="amt">${n} bills</b></li>`).join('')}</ol></aside></div></div>`;
   return layout({ title: `${name} in Congress`, path: `/issue/${slug}`, body, active: '/issues' });
@@ -794,8 +795,8 @@ function byDay(list) { const g = new Map(); for (const m of list) { const d = m.
 function schedule() {
   const L = LV.L; const meet = LV.upcomingMeetings(14);
   const recent = D.allRolls.slice(0, 10);
-  const hs = L.house.map(w => `<div class="wk"><h3>${weekLabel(w.week)} <a class="src" href="${esc(w.url)}" rel="noopener">Majority Leader floor schedule</a></h3>${w.cats.map(c => `<h4>${esc(c.name)}</h4><ul class="floor">${c.items.map(i => floorItem(i, w.week)).join('')}</ul>`).join('')}</div>`).join('');
-  const ss = L.senate.map(s => `<div class="sday"><h3>${s.date ? dayLabel(s.date + 'T17:00:00Z') : esc(s.title)} <a class="src" href="${esc(s.url)}" rel="noopener">Senate floor schedule</a></h3>${s.paras.map(p => `<p>${billInline(p)}</p>`).join('')}</div>`).join('');
+  const hs = L.house.map(w => `<div class="wk"><h3>${weekLabel(w.week)} <a class="poll-src" href="${esc(w.url)}" rel="noopener">Majority Leader floor schedule</a></h3>${w.cats.map(c => `<h4>${esc(c.name)}</h4><ul class="floor">${c.items.map(i => floorItem(i, w.week)).join('')}</ul>`).join('')}</div>`).join('');
+  const ss = L.senate.map(s => `<div class="sday"><h3>${s.date ? dayLabel(s.date + 'T17:00:00Z') : esc(s.title)} <a class="poll-src" href="${esc(s.url)}" rel="noopener">Senate floor schedule</a></h3>${s.paras.map(p => `<p>${billInline(p)}</p>`).join('')}</div>`).join('');
   const ms = [...byDay(meet)].map(([d, list]) => `<h3>${esc(d)}</h3><ul class="mts">${list.map(meetingRow).join('')}</ul>`).join('');
   const body = `<div class="wrap"><h1>This week in Congress</h1>
   <p class="lede">What the House and Senate plan to take up, the committee hearings ahead and the latest roll calls. Updated every 10 minutes from the House Majority Leader, the Senate floor schedule, Congress.gov and the House and Senate clerks.</p>
@@ -978,6 +979,54 @@ const QHELP = [
 ];
 const qHelp = q => { const h = QHELP.find(([re]) => re.test(q || '')); return h ? h[1] : ''; };
 
+// ---------------- polling ----------------
+// one 100% bar split into parts; text stays in ink, colour keys sit beside it
+function pollBar(parts) {
+  const tot = parts.reduce((a, x) => a + x.v, 0) || 1;
+  return `<div class="poll"><div class="poll-bar" role="img" aria-label="${esc(parts.map(x => `${x.l} ${x.v}%`).join(', '))}">${parts.filter(x => x.v > 0).map(x => `<i class="${x.c}" style="width:${(x.v / tot * 100).toFixed(1)}%"></i>`).join('')}</div>
+  <ul class="poll-key">${parts.map(x => `<li><span class="k ${x.c}" aria-hidden="true"></span>${esc(x.l)} <b>${x.v}%</b></li>`).join('')}</ul></div>`;
+}
+const pollSrc = (o, extra) => `<p class="poll-src"><a href="${o.url}">${esc(o.pollster)}</a>, ${esc(o.dates)}, ${o.n.toLocaleString('en-US')} ${esc(o.pop)}${o.moe ? `, margin of error ±${o.moe} points` : ''}.${extra || ''}</p>`;
+const PARTYWORD = { D: 'Democrats', R: 'Republicans', I: 'Independents' };
+function memberPolling(p) {
+  const out = [];
+  const fav = D.polls && D.polls.favorability[p.id];
+  if (fav) {
+    const now = fav[0];
+    out.push(`<h3>Nationally</h3><p class="sub">Overall opinion of ${esc(p.name)} among all U.S. adults.</p>
+    ${pollBar([{ l: 'Favorable', v: now.fav, c: 'yes' }, { l: 'Never heard of', v: now.unheard, c: 'ns' }, { l: 'Unfavorable', v: now.unfav, c: 'no' }])}
+    ${fav.length > 1 ? `<div class="tbl"><table class="poll-trend"><thead><tr><th>Survey</th><th class="n">Favorable</th><th class="n">Unfavorable</th><th class="n">Never heard of</th></tr></thead><tbody>${fav.map(r => `<tr><td>${esc(r.dates)}</td><td class="n">${r.fav}%</td><td class="n">${r.unfav}%</td><td class="n">${r.unheard}%</td></tr>`).join('')}</tbody></table></div>` : ''}
+    ${pollSrc(D.polls.pew, ` <a href="${D.polls.pew.topline}">Full questionnaire and results</a>.`)}`);
+  }
+  const a = D.approval && D.approval.members[p.id];
+  if (a) {
+    const cur = `${p.state}-${String(p.district || 1).padStart(2, '0')}`;
+    const seat = p.chamber === 'S' ? D.STATES[p.state] : a.place === cur ? `the ${seatLabel(p)} District` : a.place;
+    out.push(`<h3>In ${esc(seat)}</h3><p class="sub">Job approval among adults in ${p.chamber === 'S' ? 'the state' : 'the district'}.</p>
+    ${pollBar([{ l: 'Approve', v: a.approve, c: 'yes' }, { l: 'Not sure', v: a.unsure, c: 'ns' }, { l: 'Disapprove', v: a.disapprove, c: 'no' }])}
+    ${a.byParty ? `<ul class="pm poll-party">${['D', 'I', 'R'].map(k => `<li><span class="pm-l">${PARTYWORD[k]}</span><span class="pm-bar" aria-hidden="true"><i style="width:${a.byParty[k]}%"></i></span><b>${a.byParty[k]}%</b></li>`).join('')}</ul><p class="sub">Approval by the respondent's own party.</p>` : ''}
+    <p class="poll-src"><a href="${D.approval.url}">Cooperative Election Study</a>, ${a.years.join(' and ')} surveys, ${a.n.toLocaleString('en-US')} respondents in ${p.chamber === 'S' ? esc(D.STATES[p.state]) : 'the district'}${p.chamber === 'S' ? '' : ', small-area estimate'}, margin of error ±${a.moe} points.</p>`);
+  }
+  return out.length ? `<h2>Polling</h2>${out.join('')}` : '';
+}
+function congressPolling() {
+  const P = D.polls; if (!P) return '';
+  const c = P.congress, d = P.demPlans;
+  return `<section class="pm-sec"><h2>${esc(c.label)}</h2>${pollBar([{ l: 'Approve', v: c.approve, c: 'yes' }, { l: 'Disapprove or no opinion', v: 100 - c.approve, c: 'ns' }])}
+  <ul class="pm poll-party">${['R', 'I', 'D'].map(k => `<li><span class="pm-l">${PARTYWORD[k]}</span><span class="pm-bar" aria-hidden="true"><i style="width:${c.byParty[k]}%"></i></span><b>${c.byParty[k]}%</b></li>`).join('')}</ul>
+  ${pollSrc(c)}
+  <h2>Democratic leaders' plans</h2><p class="sub">Approval of ${esc(d.label.charAt(0).toLowerCase() + d.label.slice(1))}.</p>${pollBar([{ l: 'Approve', v: d.approve, c: 'yes' }, { l: 'Disapprove', v: d.disapprove, c: 'no' }])}
+  ${pollSrc(P.pew)}</section>`;
+}
+function issuePolling(area) {
+  const P = D.polls; if (!P) return '';
+  const it = P.issues.items.find(x => x.area === area); if (!it) return '';
+  const [t, dm, nd] = it.v;
+  return `<section class="pm-sec"><h2>Polling: ${esc(it.label.toLowerCase())}</h2><p class="sub">${esc(P.issues.question)}</p>
+  ${pollBar([{ l: P.issues.options[0], v: t, c: 'rp' }, { l: P.issues.options[2], v: nd, c: 'ns' }, { l: P.issues.options[1], v: dm, c: 'dm' }])}
+  ${pollSrc(P.pew)}</section>`;
+}
+
 // ---------------- prediction markets ----------------
 const MKT = require('./markets');
 const pmPct = v => v < 0.01 ? '<1%' : v > 0.99 ? '>99%' : `${Math.round(v * 100)}%`;
@@ -1103,7 +1152,7 @@ function leadership() {
     ${e.result.length ? `<p class="tally">${e.result.map(r => `${r.won ? '<b>' : ''}${esc(r.name)}${r.votes != null ? ` ${r.votes}` : ''}${r.won ? '</b>' : ''}`).join(', ')}</p>` : ''}</li>`;
   const body = `<div class="wrap"><h1>Congressional leadership</h1><p class="lede">Who runs the House and Senate and each party's caucus, and how they were chosen. Party leaders are picked in closed caucus and conference votes; the Speaker is then elected on the House floor by name.</p>
   <div class="cols"><div class="col-main">${sec('House')}${sec('Senate')}</div>
-  <aside class="col-side">${Object.entries(MKT.get().leaders).map(([race, rows]) => pmSection(`Prediction markets: ${MKT.RACE[race].toLowerCase()}`, rows.slice(0, 6), raceLink)).join('')}${by(120).length ? `<h2>Leadership elections for the 120th Congress</h2><ul class="els">${by(120).map(elRow).join('')}</ul>` : ''}
+  <aside class="col-side">${congressPolling()}${Object.entries(MKT.get().leaders).map(([race, rows]) => pmSection(`Prediction markets: ${MKT.RACE[race].toLowerCase()}`, rows.slice(0, 6), raceLink)).join('')}${by(120).length ? `<h2>Leadership elections for the 120th Congress</h2><ul class="els">${by(120).map(elRow).join('')}</ul>` : ''}
   ${by(119).length ? `<h2>119th Congress</h2><ul class="els">${by(119).map(elRow).join('')}</ul>` : ''}</aside></div></div>`;
   return layout({ title: 'Congressional leadership', desc: 'The Speaker, party leaders and whips of the House and Senate, and every leadership election, including caucus nominations and the Speaker vote.', path: '/leadership', body, active: '/leadership' });
 }
@@ -1124,7 +1173,7 @@ function leaderElection(id) {
   <p>${esc(e.summary)}</p>
   ${e.result.length ? `<div class="tbl"><table><thead><tr><th>Candidate</th><th class="n">Votes</th><th>Result</th></tr></thead><tbody>${e.result.map(r => { const p = r.person && D.byId.get(r.person); return `<tr><td>${p ? personLink(p) : esc(r.name)}</td><td class="n">${r.votes ?? ''}</td><td>${r.won ? 'Elected' : ''}</td></tr>`; }).join('')}</tbody></table></div>` : ''}
   ${chart}
-  <p class="src">${e.sources.map(s => `<a href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>`).join(' ')}</p></div>`;
+  <p class="poll-src">${e.sources.map(s => `<a href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>`).join(' ')}</p></div>`;
   return layout({ title: `${e.office}, ${e.body}`, path: `/leadership/${e.id}`, body, active: '/leadership' });
 }
 

@@ -46,7 +46,7 @@ const count = (dir, f, fn) => { try { return fn(JSON.parse(fs.readFileSync(path.
   fs.rmSync(NEXT, { recursive: true, force: true });
   fs.cpSync(LIVE, NEXT, { recursive: true });
   // hand-curated or slow-to-build files always come from the deployed code
-  for (const f of ['record.json', 'leadership.json', 'lobbying.json', 'zips.json']) if (fs.existsSync(path.join(BUNDLED, f))) fs.copyFileSync(path.join(BUNDLED, f), path.join(NEXT, f));
+  for (const f of ['record.json', 'leadership.json', 'lobbying.json', 'zips.json', 'approval.json', 'polls.json']) if (fs.existsSync(path.join(BUNDLED, f))) fs.copyFileSync(path.join(BUNDLED, f), path.join(NEXT, f));
 
   log('downloading');
   const gh = 'https://unitedstates.github.io/congress-legislators/';

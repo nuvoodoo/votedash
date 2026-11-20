@@ -1,0 +1,52 @@
+{
+  "congress": {
+    "label": "Approval of Congress",
+    "approve": 14,
+    "byParty": { "R": 29, "I": 13, "D": 4 },
+    "pollster": "Gallup",
+    "dates": "Oct. 1-19, 2026",
+    "n": 1200,
+    "pop": "U.S. adults",
+    "moe": 4,
+    "url": "https://news.gallup.com/poll/716204/record-lows-say-congressional-incumbents-deserve-reelection.aspx"
+  },
+  "pew": {
+    "pollster": "Pew Research Center",
+    "dates": "Nov. 9-15, 2026",
+    "n": 10247,
+    "pop": "U.S. adults",
+    "moe": 1.4,
+    "url": "https://www.pewresearch.org/politics/2026/11/19/how-americans-view-trump-key-administration-officials-and-democratic-congressional-leaders/",
+    "topline": "https://www.pewresearch.org/wp-content/uploads/sites/20/2026/11/PP_2026.11.19_post-midterm-attitudes_topline.pdf"
+  },
+  "favorability": {
+    "J000294": [
+      { "dates": "Nov. 9-15, 2026", "fav": 23, "unfav": 37, "unheard": 37 },
+      { "dates": "Sep. 22-28, 2025", "fav": 24, "unfav": 30, "unheard": 45 },
+      { "dates": "Jan. 27-Feb. 2, 2025", "fav": 28, "unfav": 26, "unheard": 44 },
+      { "dates": "Jan. 18-24, 2023", "fav": 23, "unfav": 24, "unheard": 51 }
+    ],
+    "S000148": [
+      { "dates": "Nov. 9-15, 2026", "fav": 22, "unfav": 49, "unheard": 26 },
+      { "dates": "Sep. 22-28, 2025", "fav": 21, "unfav": 50, "unheard": 26 },
+      { "dates": "Jan. 27-Feb. 2, 2025", "fav": 28, "unfav": 46, "unheard": 25 },
+      { "dates": "May 13-19, 2024", "fav": 27, "unfav": 46, "unheard": 25 },
+      { "dates": "Jul. 10-16, 2023", "fav": 27, "unfav": 49, "unheard": 22 },
+      { "dates": "Jan. 18-24, 2023", "fav": 28, "unfav": 44, "unheard": 26 },
+      { "dates": "Jun. 27-Jul. 4, 2022", "fav": 28, "unfav": 43, "unheard": 26 }
+    ]
+  },
+  "demPlans": { "label": "Democratic congressional leaders' policies and plans for the future", "approve": 55, "disapprove": 41 },
+  "issues": {
+    "question": "Who do you think will have the better approach to each of the following issues?",
+    "options": ["Donald Trump", "Democrats in Congress", "Not much difference"],
+    "items": [
+      { "label": "The economy", "area": "Economics and Public Finance", "v": [27, 45, 26] },
+      { "label": "The conflict with Iran", "area": "International Affairs", "v": [26, 48, 24] },
+      { "label": "Healthcare", "area": "Health", "v": [20, 52, 27] },
+      { "label": "Ethics in government", "area": "Government Operations and Politics", "v": [18, 47, 34] },
+      { "label": "Immigration policy", "area": "Immigration", "v": [34, 47, 17] },
+      { "label": "Trade and tariffs", "area": "Foreign Trade and International Finance", "v": [27, 50, 21] }
+    ]
+  }
+}

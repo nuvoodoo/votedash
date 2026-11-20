@@ -612,3 +612,21 @@ svg.tline{width:100%;min-width:620px;height:auto;display:block}
 .pm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:4px 28px}
 .pm-grid h3{margin:16px 0 4px}
 @media (max-width:520px){.pm li{grid-template-columns:1fr 70px 44px}}
+
+/* polling */
+.poll{margin:10px 0 6px}
+.poll-bar{display:flex;gap:2px;height:14px;border-radius:4px;overflow:hidden;background:var(--paper)}
+.poll-bar i{display:block;height:100%}
+.poll-bar .yes{background:var(--yea)}.poll-bar .no{background:var(--nay)}.poll-bar .ns{background:var(--absent)}.poll-bar .dm{background:var(--dem)}.poll-bar .rp{background:var(--rep)}
+.poll-key{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px 20px;font-size:15px;color:var(--bronze)}
+.poll-key li{display:flex;align-items:center;gap:7px}
+.poll-key .k{width:10px;height:10px;border-radius:2px;flex:none}
+.poll-key .yes{background:var(--yea)}.poll-key .no{background:var(--nay)}.poll-key .ns{background:var(--absent)}.poll-key .dm{background:var(--dem)}.poll-key .rp{background:var(--rep)}
+.poll-key b{font-variant-numeric:tabular-nums}
+.poll-party{margin-top:10px}
+.poll-trend{margin-top:12px}
+#polling h3{margin:22px 0 2px}
+.poll-src{font-size:13px;color:var(--muted);margin:8px 0 0}
+.poll-src a{color:inherit}
+.poll-trend td:first-child{white-space:nowrap}
+@media (max-width:520px){.poll-trend{font-size:13px}.poll-trend th{white-space:normal;vertical-align:bottom}.poll-trend th,.poll-trend td{padding-left:3px;padding-right:3px}}
