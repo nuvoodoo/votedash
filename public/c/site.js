@@ -112,3 +112,8 @@
   // state picker submits on change
   document.querySelectorAll('select[data-autosubmit]').forEach(function (s) { s.addEventListener('change', function () { s.form.submit(); }); });
 })();
+// off-site links created in the browser also open in a new tab
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a[href]'); if (!a || a.target) return;
+  if (a.host && a.host !== location.host && /^https?:/.test(a.protocol)) { a.target = '_blank'; a.rel = 'noopener'; }
+}, true);

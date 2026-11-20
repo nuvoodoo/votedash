@@ -630,3 +630,8 @@
   route();
   loadSnapshot().catch(() => {});
 })();
+// off-site links open in a new tab
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a[href]'); if (!a || a.target) return;
+  if (a.host && a.host !== location.host && /^https?:/.test(a.protocol)) { a.target = '_blank'; a.rel = 'noopener'; }
+}, true);

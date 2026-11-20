@@ -82,6 +82,12 @@ function caucusAttr(p) {
 // ---- layout ----
 const NAV = [['/find', 'Your reps'], ['/members', 'Members'], ['/committees', 'Committees'], ['/leadership', 'Leaders'], ['/schedule', 'Schedule'], ['/tracker', 'Bills'], ['/votes', 'Votes'], ['/money', 'Money'], ['/incoming', 'Incoming']];
 function layout({ title: t, desc, path: p, body, active, jsonld, scripts = '', noindex }) {
+  // off-site links open in a new tab
+  body = body.replace(/<a ([^>]*?)href="(https?:\/\/(?!votedash\.net)[^"]+)"([^>]*)>/g, (m, pre, url, post) => {
+    if (/target=/.test(pre + post)) return m;
+    const attrs = (pre + post).replace(/\s*rel="[^"]*"/, '');
+    return `<a ${pre.replace(/\s*rel="[^"]*"/, '')}href="${url}"${post.replace(/\s*rel="[^"]*"/, '')} target="_blank" rel="noopener">`;
+  });
   const url = SITE + (p || '/');
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(t ? t + ' | VoteDash' : 'VoteDash: every member of Congress, how they vote and who funds them')}</title>
