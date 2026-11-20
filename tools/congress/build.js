@@ -4,8 +4,8 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const RAW = path.join(__dirname, '../../data/raw');
-const OUT = path.join(__dirname, '../../server/congress/data');
+const RAW = process.env.CONGRESS_RAW || path.join(__dirname, '../../data/raw');
+const OUT = process.env.CONGRESS_OUT || path.join(__dirname, '../../server/congress/data');
 fs.mkdirSync(OUT, { recursive: true });
 const J = f => JSON.parse(fs.readFileSync(path.join(RAW, f), 'utf8'));
 const exists = f => fs.existsSync(path.join(RAW, f));

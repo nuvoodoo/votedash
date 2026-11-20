@@ -2,7 +2,14 @@
 // Loads the built JSON in server/congress/data and indexes it for the pages.
 const fs = require('fs');
 const path = require('path');
-const DIR = path.join(__dirname, 'data');
+const BUNDLED = path.join(__dirname, 'data');
+// nightly rebuilds land in CONGRESS_DATA (persistent disk); use whichever copy was built last
+let DIR = BUNDLED;
+function pickDir() {
+  const d = process.env.CONGRESS_DATA; if (!d || !fs.existsSync(path.join(d, 'people.json'))) return BUNDLED;
+  const built = dir => { try { return JSON.parse(fs.readFileSync(path.join(dir, 'meta.json'), 'utf8')).built || ''; } catch { return ''; } };
+  return built(d) > built(BUNDLED) ? d : BUNDLED;
+}
 const load = (f, optional) => {
   const p = path.join(DIR, f);
   if (!fs.existsSync(p)) { if (optional) return null; throw new Error('missing ' + p); }
@@ -13,6 +20,7 @@ const STATES = { AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA:
 
 const D = {};
 function build() {
+  DIR = pickDir();
   const people = load('people.json');
   const { order, rollcalls } = load('rollcalls.json');
   const funders = load('funders.json');
@@ -69,7 +77,7 @@ function build() {
   for (const f of fundersById.values()) if (f.total + f.ie >= 10000) search.push({ t: 'funder', key: norm(`${f.name} ${f.org || ''}`), f });
   if (bills) for (const [k, b] of Object.entries(bills.bills)) search.push({ t: 'bill', key: norm(`${k} ${b.type}${b.number} ${b.type} ${b.number} ${b.short || ''} ${b.title}`), k, b });
 
-  Object.assign(D, { caucuses, pacHistory, leadership, givenTo, people, byId, bySlug, order, rollcalls, rcByK, rcPos, funders: fundersById, fundersBySlug, meta, bills, speeches, industries, indName, sectorOf, sectors, industryOf, industryTotals, lobbying, record, chambers, states, search, STATES });
+  Object.assign(D, { dataDir: DIR, caucuses, pacHistory, leadership, givenTo, people, byId, bySlug, order, rollcalls, rcByK, rcPos, funders: fundersById, fundersBySlug, meta, bills, speeches, industries, indName, sectorOf, sectors, industryOf, industryTotals, lobbying, record, chambers, states, search, STATES });
   D.recentRolls = { H: rollcalls.filter(r => r.chamber === 'H').sort(byDate), S: rollcalls.filter(r => r.chamber === 'S').sort(byDate) };
   D.allRolls = [...rollcalls].sort(byDate);
 }

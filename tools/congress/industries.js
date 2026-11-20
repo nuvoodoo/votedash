@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '../..');
-const DATA = path.join(ROOT, 'server/congress/data');
+const DATA = process.env.CONGRESS_OUT || path.join(ROOT, 'server/congress/data');
 const funders = JSON.parse(fs.readFileSync(path.join(DATA, 'funders.json'), 'utf8'));
 const people = JSON.parse(fs.readFileSync(path.join(DATA, 'people.json'), 'utf8'));
 const overrides = JSON.parse(fs.readFileSync(path.join(__dirname, 'industry-overrides.json'), 'utf8')).committees;

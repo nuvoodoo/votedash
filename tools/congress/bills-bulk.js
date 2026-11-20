@@ -4,8 +4,8 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const RAW = path.join(__dirname, '../../data/raw/billstatus');
-const OUT = path.join(__dirname, '../../server/congress/data');
+const RAW = path.join(process.env.CONGRESS_RAW || path.join(__dirname, '../../data/raw'), 'billstatus');
+const OUT = process.env.CONGRESS_OUT || path.join(__dirname, '../../server/congress/data');
 const TYPES = ['hr', 's', 'hres', 'sres', 'hjres', 'sjres', 'hconres', 'sconres'];
 
 const dec = s => (s || '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();

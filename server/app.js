@@ -37,6 +37,8 @@ http.createServer((req, res) => {
     let p = decodeURIComponent(url.pathname);
     if (p.length > 1 && p.endsWith('/') && !p.startsWith('/2026')) { res.writeHead(301, { Location: p.slice(0, -1) + url.search }); return res.end(); }
     if (p === '/healthz' || p === '/readyz') return send(req, res, 200, Buffer.from('ok'), 'text/plain', 'no-store');
+    if (p === '/api/data-status') { let last = null; try { last = JSON.parse(fs.readFileSync(path.join(process.env.CONGRESS_HOME || '/nonexistent', 'last-run.json'), 'utf8')); } catch {} return send(req, res, 200, Buffer.from(JSON.stringify({ dataDir: D.dataDir === path.join(__dirname, 'congress/data') ? 'bundled' : 'disk', built: D.meta.built, running: nightlyRunning, last })), 'application/json', 'no-store'); }
+    if (p === '/api/rebuild' && req.method === 'POST') { if (!process.env.REBUILD_TOKEN || req.headers.authorization !== 'Bearer ' + process.env.REBUILD_TOKEN) return send(req, res, 403, Buffer.from('forbidden'), 'text/plain', 'no-store'); runNightly(); return send(req, res, 202, Buffer.from('started'), 'text/plain', 'no-store'); }
     if (p === '/2026') { res.writeHead(301, { Location: '/2026/' }); return res.end(); }
     if (p.startsWith('/2026/')) { if (file(req, res, ARCHIVE, p, 'public, max-age=3600')) return; return html(req, res, P.notFound(), 404); }
     if (p.startsWith('/c/') || p.startsWith('/portraits/') || p === '/favicon.svg') { if (file(req, res, PUB, p, p.startsWith('/portraits/') ? 'public, max-age=604800' : 'public, max-age=86400')) return; return send(req, res, 404, Buffer.from('not found'), 'text/plain'); }
@@ -81,4 +83,25 @@ http.createServer((req, res) => {
     console.error(req.url, e);
     send(req, res, 500, Buffer.from('Server error'), 'text/plain', 'no-store');
   }
-}).listen(PORT, () => { console.log('VoteDash Congress on', PORT); if (process.env.LIVE !== '0') LV.start(); });
+}).listen(PORT, () => { console.log('VoteDash Congress on', PORT, 'data', D.dataDir); if (process.env.LIVE !== '0') LV.start(); if (process.env.CONGRESS_HOME) nightlyTimer(); });
+
+// nightly rebuild at 3:30 a.m. Eastern, in a child process; reload the data when it succeeds
+let nightlyRunning = false, lastNightly = null;
+function runNightly() {
+  if (nightlyRunning) return; nightlyRunning = true;
+  const { fork } = require('child_process');
+  const child = fork(path.join(__dirname, '../tools/congress/nightly.js'), [], { env: { ...process.env, CONGRESS_HOME: process.env.CONGRESS_HOME }, execArgv: ['--max-old-space-size=900'] });
+  child.on('exit', code => {
+    nightlyRunning = false; lastNightly = new Date().toISOString();
+    if (code === 0) { try { D.reload(); LV.refresh(); console.log('nightly: reloaded data from', D.dataDir); } catch (e) { console.error('nightly reload failed', e); } }
+    else console.error('nightly: failed with code', code);
+  });
+}
+function nightlyTimer() {
+  setInterval(() => {
+    const et = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const today = et.toDateString();
+    if (et.getHours() === 3 && et.getMinutes() >= 30 && lastRunDay !== today) { lastRunDay = today; runNightly(); }
+  }, 60e3).unref();
+}
+let lastRunDay = null;

@@ -6,8 +6,8 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const RAW = path.join(__dirname, '../../data/raw/caucuses');
-const OUT = path.join(__dirname, '../../server/congress/data');
+const RAW = path.join(process.env.CONGRESS_RAW || path.join(__dirname, '../../data/raw'), 'caucuses');
+const OUT = process.env.CONGRESS_OUT || path.join(__dirname, '../../server/congress/data');
 const REFRESH = process.argv.includes('--refresh');
 const VERBOSE = process.argv.includes('--verbose'); // print every non-exact match for review
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36';

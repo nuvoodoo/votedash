@@ -15,9 +15,9 @@ const path = require('path');
 const zlib = require('zlib');
 
 const ROOT = path.join(__dirname, '../..');
-const RAW = path.join(ROOT, 'data/raw/govinfo');
-const OUT = path.join(ROOT, 'server/congress/data/speeches.json');
-const PEOPLE = path.join(ROOT, 'server/congress/data/people.json');
+const RAW = path.join(process.env.CONGRESS_RAW || path.join(ROOT, 'data/raw'), 'govinfo');
+const OUT = path.join(process.env.CONGRESS_OUT || path.join(ROOT, 'server/congress/data'), 'speeches.json');
+const PEOPLE = path.join(process.env.CONGRESS_OUT || path.join(ROOT, 'server/congress/data'), 'people.json');
 const ENV = path.join(ROOT, '../votedash.env');
 const START = '2025-01-03';
 const MAX_ITEMS = 60;
@@ -27,6 +27,7 @@ const NO_HTML = args.includes('--no-html');
 const REFRESH_DAYS = +((args.find(a => a.startsWith('--refresh-days=')) || '').split('=')[1] || 14);
 
 const KEY = (() => {
+  if (process.env.DATA_GOV_KEY) return process.env.DATA_GOV_KEY;
   const line = fs.readFileSync(ENV, 'utf8').split(/\r?\n/).find(l => l.startsWith('DATA_GOV_KEY='));
   if (!line) throw new Error('DATA_GOV_KEY missing from votedash.env');
   return line.slice('DATA_GOV_KEY='.length).trim().replace(/^"|"$/g, '');
