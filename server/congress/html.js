@@ -81,7 +81,7 @@ function caucusAttr(p) {
 
 // ---- layout ----
 const NAV = [['/find', 'Your reps'], ['/members', 'Members'], ['/committees', 'Committees'], ['/leadership', 'Leaders'], ['/schedule', 'Schedule'], ['/tracker', 'Bills'], ['/votes', 'Votes'], ['/money', 'Money'], ['/incoming', 'Incoming'], ['/2026-post-mortem', '2026 results']];
-function layout({ title: t, desc, path: p, body, active, jsonld, scripts = '', noindex }) {
+function layout({ title: t, desc, path: p, body, active, jsonld, scripts = '', noindex, image }) {
   // off-site links open in a new tab
   body = body.replace(/<a ([^>]*?)href="(https?:\/\/(?!votedash\.net)[^"]+)"([^>]*)>/g, (m, pre, url, post) => {
     if (/target=/.test(pre + post)) return m;
@@ -92,8 +92,8 @@ function layout({ title: t, desc, path: p, body, active, jsonld, scripts = '', n
 <title>${esc(t ? t + ' | VoteDash' : 'VoteDash: every member of Congress, how they vote and who funds them')}</title>
 <meta name="description" content="${esc(desc || 'Votes, money, elections, speeches and records for every member of the U.S. House and Senate, plus the members-elect of the 120th Congress.')}">
 <link rel="canonical" href="${url}">${noindex ? '<meta name="robots" content="noindex">' : ''}
-<meta property="og:type" content="website"><meta property="og:site_name" content="VoteDash"><meta property="og:title" content="${esc(t || 'VoteDash')}"><meta property="og:description" content="${esc(desc || 'Every member of Congress, how they vote and who funds them.')}"><meta property="og:url" content="${url}">
-<meta name="twitter:card" content="summary">
+<meta property="og:type" content="${jsonld && JSON.stringify(jsonld).includes('"ProfilePage"') ? 'profile' : 'website'}"><meta property="og:site_name" content="VoteDash"><meta property="og:title" content="${esc(t || 'VoteDash')}"><meta property="og:description" content="${esc(desc || 'Every member of Congress, how they vote and who funds them.')}"><meta property="og:url" content="${url}">
+${image ? `<meta property="og:image" content="${image}"><meta name="twitter:image" content="${image}">` : ''}<meta name="twitter:card" content="summary"><meta name="twitter:title" content="${esc(t || 'VoteDash')}"><meta name="twitter:description" content="${esc(desc || 'Every member of Congress, how they vote and who funds them.')}">
 <meta name="theme-color" content="#17232C">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

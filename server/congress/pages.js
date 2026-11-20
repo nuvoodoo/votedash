@@ -208,15 +208,27 @@ function member(p, q, tab) {
   </div>
   ${p.status !== 'elect' && p.nominate != null && !p.delegate ? `<figure class="ph-seatmap">${seatChart(p.chamber, q => q.id === p.id ? 'f' + q.party : 'fx', { highlight: p.id, label: `${p.name}'s seat among ${chamberName} colleagues, ordered by voting record` })}<figcaption>${seatPhrase(p)}</figcaption></figure>` : ''}
 </div>
-<nav class="subnav" aria-label="On this page"><div class="wrap">${nav.map(([id, l]) => `<a href="#${id}">${l}</a>`).join('')}</div></nav>
+<nav class="subnav" aria-label="${esc(p.name)}"><div class="wrap">${nav.map(([id, l]) => `<a href="${id ? `${href(p)}/${id}` : href(p)}"${(id || null) === (tab || null) ? ' aria-current="page"' : ''}>${l}</a>`).join('')}</div></nav>
 </header>
 <div class="wrap pb">
   <div class="pb-main">${sections.join('')}</div>
   <aside class="pb-rail">${rail(p)}</aside>
 </div>
 </article>`;
-  const desc = `${title(p)} ${p.name} (${short(p)}): ${v ? `votes with party ${pct(v.unity, 0)}, ` : ''}${cy ? `raised ${money(cy.receipts)} in ${cy.y} cycle, ` : ''}election history, speeches and record.`;
-  return layout({ title: `${p.name}, ${short(p)}`, desc, path: href(p), body, active: '/members', jsonld: { '@context': 'https://schema.org', '@type': 'Person', name: p.name, jobTitle: role, affiliation: PARTY[p.party], url: SITE + href(p), image: H.hasPortrait(p) ? `${SITE}/portraits/w/${p.id}.webp` : undefined, sameAs: [p.url, p.ids && p.ids.wikipedia ? 'https://en.wikipedia.org/wiki/' + encodeURIComponent(p.ids.wikipedia.replace(/ /g, '_')) : null].filter(Boolean) } });
+  const nm = `${title(p)} ${p.name}`;
+  const [tTitle, tDesc] = tab ? tabSeo(p, tab, q) : [`${nm} (${short(p)}): votes, donors and record`, `${nm} (${short(p)}), ${role}: ${v ? `${v.cast} votes cast, ${pct(v.unity, 0)} with their party, ` : ''}${cy ? `${money(cy.receipts)} raised in the ${cy.y} cycle, ` : ''}top donors, election results, bills, speeches and record.`];
+  const yq = tab === 'money' && yearOf(q) ? '?year=' + yearOf(q) : tab === 'votes' && +q.get('page') > 1 ? '?page=' + +q.get('page') : '';
+  const path = (tab ? `${href(p)}/${tab}` : href(p)) + yq, img = H.hasPortrait(p) ? `${SITE}/portraits/w/${p.id}.webp` : null;
+  const person = { '@type': 'Person', '@id': SITE + href(p) + '#person', name: p.name, jobTitle: role, url: SITE + href(p), image: img || undefined, birthDate: p.birthday || undefined,
+    affiliation: PARTY[p.party] ? { '@type': 'PoliticalParty', name: PARTY[p.party] + ' Party' } : undefined,
+    memberOf: p.status === 'elect' ? undefined : { '@type': 'GovernmentOrganization', name: `United States ${chamberName}` },
+    sameAs: [p.url, /^[A-Z]\d{6}$/.test(p.id) ? `https://bioguide.congress.gov/search/bio/${p.id}` : null, p.ids && p.ids.wikipedia ? 'https://en.wikipedia.org/wiki/' + encodeURIComponent(p.ids.wikipedia.replace(/ /g, '_')) : null].filter(Boolean) };
+  const crumbs = [['Members', '/members'], [p.name, href(p)], ...(tab ? [[TABS.find(t => t[0] === tab)[1], `${href(p)}/${tab}`]] : [])];
+  const jsonld = { '@context': 'https://schema.org', '@graph': [
+    { '@type': tab ? 'WebPage' : 'ProfilePage', '@id': SITE + path, url: SITE + path, name: tTitle, description: tDesc, [tab ? 'about' : 'mainEntity']: { '@id': person['@id'] } },
+    person,
+    { '@type': 'BreadcrumbList', itemListElement: crumbs.map(([n, u], i) => ({ '@type': 'ListItem', position: i + 1, name: n, item: SITE + u })) }] };
+  return layout({ title: tTitle, desc: tDesc, path, body, active: '/members', image: img, jsonld });
 }
 function firstInChamber(p) { const t = p.terms.find(t => (t.type === 'sen') === (p.chamber === 'S')); return t.start; }
 function statusLine(p) {
@@ -342,7 +354,7 @@ function histDetails(pid, cm) {
     <p class="cyt">${Object.entries(byCy).map(([cy, a]) => `<span>${typeof cy === 'string' && cy === 'Undated' ? 'Undated' : `${cy - 1}-${String(cy).slice(2)}`}: <b>${money(a, true)}</b></span>`).join('')}</p>
     <ol class="tx">${h.slice().reverse().map(x => `<li><time>${x.date ? date(x.date) : 'Undated'}</time><b>${money(x.amt, true)}</b></li>`).join('')}</ol></details>`;
 }
-function moneySec(p, y) {
+function moneySec(p, y, base = href(p), anchor = '#money') {
   const m = p.money; if (!m) return '';
   const V = y ? view(y) : null, cy = y ? cycleOf(y) : null;
   const cycles = Object.entries(m.cycles).filter(([c]) => !cy || +c === cy).sort((a, b) => b[0] - a[0]);
@@ -355,7 +367,7 @@ function moneySec(p, y) {
   const ieF = y ? topOf((V.ieP.get(p.id) || {}).for, 10) : m.ieFor, ieA = y ? topOf((V.ieP.get(p.id) || {}).against, 10) : m.ieAgainst;
   const when = y ? `in ${y}` : 'since 2021';
   return `<h2>Money</h2>
-  ${yearNav(href(p), y, '#money')}
+  ${yearNav(base, y, anchor)}
   <p class="sub">Campaign committee receipts reported to the FEC. Cycles run two years, ending on Election Day${y ? `; ${y} falls in the ${cyLabel(cy)} cycle` : ''}.</p>
   ${cycles.length ? `<div class="cyc">${cycles.map(([cyc, c]) => `<div class="cy"><div class="cy-h"><b>${cyLabel(+cyc)}</b><span>${money(c.receipts)} raised${c.through ? `, through ${date(c.through)}` : ''}</span></div>
     <div class="stack" style="width:${Math.max(2, c.receipts / max * 100).toFixed(1)}%" aria-hidden="true">${[['indiv', 'Individuals'], ['pac', 'PACs'], ['party', 'Party'], ['self', 'Self']].map(([k]) => c[k] > 0 ? `<i class="m-${k}" style="flex:${c[k]}"></i>` : '').join('')}</div>
@@ -398,22 +410,24 @@ function electionsSec(p) {
   return `<h2>Elections</h2>${general}${primaries}${raceSpendersSec(p)}`;
 }
 
-function billsSec(p) {
+function billsSec(p, full) {
   const bm = D.bills && D.bills.byMember[p.id]; if (!bm || !bm.sponsored.length) return '';
-  const list = bm.sponsored.map(k => [k, D.bills.bills[k]]).filter(([, b]) => b).sort((a, b) => (b[1].law - a[1].law) || (b[1].cosponsors - a[1].cosponsors)).slice(0, 10);
+  const all = bm.sponsored.map(k => [k, D.bills.bills[k]]).filter(([, b]) => b).sort((a, b) => (b[1].law - a[1].law) || (b[1].cosponsors - a[1].cosponsors)), list = full ? all : all.slice(0, 10);
   const areas = {}; for (const k of bm.sponsored) { const a = D.bills.bills[k] && D.bills.bills[k].policyArea; if (a) areas[a] = (areas[a] || 0) + 1; }
   const topAreas = Object.entries(areas).sort((a, b) => b[1] - a[1]).slice(0, 6);
   return `<h2>Bills</h2><p class="sub">${bm.sponsored.length} sponsored and ${bm.cosponsored.length} cosponsored in the 119th Congress.</p>
   ${topAreas.length ? `<p class="tags">${topAreas.map(([a, n]) => `<a href="/issue/${slugIssue(a)}">${esc(a)} <b>${n}</b></a>`).join('')}</p>` : ''}
-  <ul class="blist">${list.map(([k, b]) => `<li><a href="/bill/${k}"><span class="bl">${billLabel(k)}</span><b>${esc(b.short || b.title)}</b><small>${b.law ? 'Became law. ' : ''}${esc(b.latest ? b.latest.text : '')}${b.cosponsors ? ` ${b.cosponsors} cosponsors.` : ''}</small></a></li>`).join('')}</ul>`;
+  <ul class="blist">${list.map(([k, b]) => `<li><a href="/bill/${k}"><span class="bl">${billLabel(k)}</span><b>${esc(b.short || b.title)}</b><small>${b.law ? 'Became law. ' : ''}${esc(b.latest ? b.latest.text : '')}${b.cosponsors ? ` ${b.cosponsors} cosponsors.` : ''}</small></a></li>`).join('')}</ul>${full ? (bm.cosponsored.length ? `<h3>Cosponsored</h3><ul class="blist">${bm.cosponsored.map(k => [k, D.bills.bills[k]]).filter(([, b]) => b).map(([k, b]) => `<li><a href="/bill/${k}"><span class="bl">${billLabel(k)}</span><b>${esc(b.short || b.title)}</b><small>${b.law ? 'Became law. ' : ''}${esc(b.latest ? b.latest.text : '')}</small></a></li>`).join('')}</ul>` : '') : all.length > 10 || bm.cosponsored.length ? `<p><a class="more" href="${href(p)}/bills">All ${bm.sponsored.length} sponsored and ${bm.cosponsored.length} cosponsored bills</a></p>` : ''}`;
 }
+const clip = (t, n = 158) => t.length > n ? t.slice(0, t.lastIndexOf(' ', n - 1)) + '…' : t;
 const slugIssue = a => a.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-function speechesSec(p) {
+function speechesSec(p, full) {
   const sp = D.speeches && D.speeches.byMember[p.id]; if (!sp || !sp.count) return '';
+  const n = full ? sp.items.length : 8;
   return `<h2>Speeches</h2><p class="sub">${sp.count} floor speeches in the Congressional Record this Congress.</p>
-  <ul class="slist">${sp.items.slice(0, 8).map(s => `<li><a href="${esc(s.url)}" rel="noopener"><b>${esc(s.title)}</b><small>${esc(s.chamber)}, ${date(s.date)}</small>${s.excerpt ? `<q>${esc(s.excerpt)}</q>` : ''}</a></li>`).join('')}</ul>
-  ${sp.items.length > 8 ? `<p><a class="more" href="${href(p)}/speeches">All speeches</a></p>` : ''}`;
+  <ul class="slist">${sp.items.slice(0, n).map(s => `<li><a href="${esc(s.url)}" rel="noopener"><b>${esc(s.title)}</b><small>${esc(s.chamber)}, ${date(s.date)}</small>${s.excerpt ? `<q>${esc(s.excerpt)}</q>` : ''}</a></li>`).join('')}</ul>
+  ${!full && sp.items.length > 8 ? `<p><a class="more" href="${href(p)}/speeches">All speeches</a></p>` : ''}`;
 }
 
 const KIND = { ethics: 'Ethics', legal: 'Legal', censure: 'Censure', investigation: 'Investigation', 'campaign-finance': 'Campaign finance', 'stock-trading': 'Stock trading', other: 'Other' };
@@ -471,22 +485,15 @@ function rail(p) {
 }
 
 // full vote history
-function memberVotes(p, page) {
+function votesFull(p, page) {
+  if (!p.votes) return '';
   const rolls = D.recentRolls[p.chamber].filter(rc => codeFor(p, rc) != null && (codeFor(p, rc) !== '0' || wasIn(p, rc)));
   const per = 100, pages = Math.ceil(rolls.length / per); page = Math.min(Math.max(1, page), pages || 1);
   const list = rolls.slice((page - 1) * per, page * per);
   const party = p.party === 'I' ? (p.caucus || 'D') : p.party;
-  const body = `<div class="wrap narrow"><p class="crumb"><a href="${href(p)}">${esc(p.name)}</a></p><h1>Every vote by ${esc(p.name)}</h1>
-  <p class="sub">${rolls.length} roll calls in the 119th Congress, newest first. Amber marks a vote against the majority of their party on a party-line roll call.</p>
+  return `<h2>Votes</h2><p class="sub">${rolls.length} roll calls in the 119th Congress, newest first. Amber marks a vote against the majority of their party on a party-line roll call.</p>
   <ul class="vlist">${list.map(rc => { const c = codeFor(p, rc); return vrow(rc, c, rc.partyLine && (c === 'Y' || c === 'N') && c !== rc.partyPos[party]); }).join('')}</ul>
-  ${pager(`${href(p)}/votes`, page, pages)}</div>`;
-  return layout({ title: `Votes by ${p.name}`, path: `${href(p)}/votes${page > 1 ? '?page=' + page : ''}`, body, active: '/members' });
-}
-function memberSpeeches(p) {
-  const sp = D.speeches && D.speeches.byMember[p.id]; if (!sp) return null;
-  const body = `<div class="wrap narrow"><p class="crumb"><a href="${href(p)}">${esc(p.name)}</a></p><h1>Floor speeches by ${esc(p.name)}</h1><p class="sub">${sp.count} speeches in the Congressional Record this Congress${sp.items.length < sp.count ? `; the ${sp.items.length} most recent are listed` : ''}.</p>
-  <ul class="slist">${sp.items.map(s => `<li><a href="${esc(s.url)}" rel="noopener"><b>${esc(s.title)}</b><small>${esc(s.chamber)}, ${date(s.date)}</small>${s.excerpt ? `<q>${esc(s.excerpt)}</q>` : ''}</a></li>`).join('')}</ul></div>`;
-  return layout({ title: `Speeches by ${p.name}`, path: `${href(p)}/speeches`, body, active: '/members' });
+  ${pager(`${href(p)}/votes`, page, pages)}`;
 }
 function pager(base, page, pages) {
   if (pages <= 1) return '';
@@ -501,7 +508,7 @@ function network(p) {
   <div class="net-tools seg" role="group" aria-label="Show"><button type="button" aria-pressed="true" data-net="all">Money and votes</button><button type="button" aria-pressed="false" data-net="money">Money</button><button type="button" aria-pressed="false" data-net="votes">Votes</button></div>
   <div class="net" id="net" data-id="${p.id}" role="img" aria-label="Network graph"></div>
   <p class="ch-key"><span><i class="fD"></i>Democrat</span><span><i class="fR"></i>Republican</span><span><i class="fI"></i>Independent</span><span><i class="fPac"></i>PAC</span></p></div>`;
-  return layout({ title: `${p.name} network`, path: `${href(p)}/network`, body, active: '/members', scripts: '<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script><script src="/c/net.js?v=3" defer></script>' });
+  return layout({ title: `${title(p)} ${p.name}: money and votes network`, desc: `The PACs that fund ${p.name} (${short(p)}), the other members those PACs fund, and the colleagues who vote most like them, as an interactive network.`, path: `${href(p)}/network`, body, active: '/members', scripts: '<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script><script src="/c/net.js?v=4" defer></script>' });
 }
 function graph(p) {
   const nodes = new Map(); const links = [];
@@ -563,7 +570,7 @@ function stateP(st) {
   <h2>Senators</h2><ul class="cards">${sen.map(p => `<li>${personLink(p, statusTag(p))}</li>`).join('')}</ul>
   <h2>Representatives</h2><ul class="cards">${rep.map(p => `<li>${personLink(p, statusTag(p))}</li>`).join('')}</ul>
   ${inc.length ? `<h2>Members-elect</h2><ul class="faces">${inc.map(p => `<li>${electCard(p)}</li>`).join('')}</ul>` : ''}</div>`;
-  return layout({ title: `${D.STATES[st]} congressional delegation`, path: `/state/${st.toLowerCase()}`, body, active: '/members' });
+  return layout({ title: `${D.STATES[st]} congressional delegation`, desc: `${D.STATES[st]}'s ${sen.length} senators and ${rep.length} representatives${inc.length ? ` plus ${inc.length} members-elect` : ''}: votes, money, elections and records for each.`, path: `/state/${st.toLowerCase()}`, body, active: '/members' });
 }
 const statusTag = p => p.status === 'leaving' ? ', leaving' : p.elect ? `, ${p.elect.chamber === 'S' ? 'senator' : 'rep.'}-elect` : '';
 
@@ -596,7 +603,7 @@ function votes(q) {
   <div class="seg sm" role="group" aria-label="Partisanship">${[[null, 'All votes'], ['0', 'Bipartisan']].map(([v, l]) => `<a href="${qs('partyline', v)}" aria-pressed="${(q.get('partyline') || null) === v}">${l}</a>`).join('')}</div></div>
   <p class="sub">${list.length} roll calls in the 119th Congress.</p>
   <ol class="rolls">${list.slice((page - 1) * per, page * per).map(rollRow).join('')}</ol>${pager(qs('page', null), page, pages)}</div>`;
-  return layout({ title: 'Roll call votes', path: '/votes', body, active: '/votes' });
+  return layout({ title: 'Roll call votes', desc: 'Every House and Senate roll call vote in the 119th Congress, with party splits, results and how each member voted.', path: '/votes', body, active: '/votes' });
 }
 function vote(rc) {
   const ids = D.order[rc.chamber]; const map = Object.fromEntries(ids.map((id, i) => [id, rc.codes[i]]));
@@ -678,7 +685,7 @@ function bill(k) {
   ${billStory(k, b)}
   ${b.subjects && b.subjects.length ? `<h2>Subjects</h2><p class="tags">${b.subjects.slice(0, 20).map(s => `<span>${esc(s)}</span>`).join('')}</p>` : ''}
   <p><a class="btn" href="${esc(b.url)}" rel="noopener">Read the bill on Congress.gov</a></p></div>`;
-  return layout({ title: `${billLabel(k)}: ${b.short || b.title}`, path: `/bill/${k}`, body, active: '/issues' });
+  return layout({ title: `${billLabel(k)}: ${b.short || b.title}`, desc: clip(`${billLabel(k)}, ${b.title}.${b.law ? ' Became law.' : b.latest ? ' Latest: ' + b.latest.text : ''} Sponsor, ${b.cosponsors || 0} cosponsors, votes and status.`), path: `/bill/${k}`, body, active: '/issues' });
 }
 
 // ---------------- money ----------------
@@ -704,7 +711,7 @@ function moneyP(q) {
   ${ie.length ? `<h2 id="outside">Biggest outside spenders ${when}</h2><p class="sub">Independent expenditures for or against current members and members-elect.</p>
   <div class="tbl"><table><thead><tr><th>Group</th><th>Kind</th><th class="n">Spent</th><th>Biggest target</th></tr></thead><tbody>
   ${ie.map(([f, amt]) => { const forO = y ? V.ieFor.get(f.id) || {} : f.ieFor, agO = y ? V.ieAg.get(f.id) || {} : f.ieAgainst; const t = Object.entries({ ...forO, ...prefix(agO) }).sort((a, b) => b[1] - a[1])[0]; const tp = t && D.byId.get(t[0].replace(/^-/, '')); return `<tr><td><a href="/f/${f.slug}${y ? '?year=' + y : ''}">${esc(nice(f.name))}</a></td><td>${esc(f.kind)}</td><td class="n">${money(amt)}</td><td>${tp ? `${t[0].startsWith('-') ? 'Against' : 'For'} <a href="${href(tp)}${y ? '?year=' + y : ''}#money">${esc(tp.name)}</a>` : ''}</td></tr>`; }).join('')}</tbody></table></div>` : ''}</div>`;
-  return layout({ title: y ? `Money in Congress, ${y}` : 'Money in Congress', path: '/money' + (y ? '?year=' + y : ''), body, active: '/money' });
+  return layout({ title: y ? `Money in Congress, ${y}` : 'Money in Congress', desc: `Who funds Congress${y ? ` in ${y}` : ''}: the biggest PACs, industries and outside spenders behind current members and members-elect, from FEC filings.`, path: '/money' + (y ? '?year=' + y : ''), body, active: '/money' });
 }
 const prefix = o => Object.fromEntries(Object.entries(o).map(([k, v]) => ['-' + k, v]));
 function split(given) { const s = { D: 0, R: 0, I: 0 }; for (const [id, amt] of Object.entries(given)) { const p = D.byId.get(id); if (p) s[p.party === 'R' ? 'R' : p.party === 'D' ? 'D' : 'I'] += amt; } return s; }
@@ -770,7 +777,7 @@ function industry(id, q) {
   ${t.total ? `<dl class="facts"><div><dt>Given to members</dt><dd>${money(t.total)}</dd><dd class="s">PAC contributions ${when}</dd></div><div><dt>To Democrats</dt><dd>${pct(t.D / t.total)}</dd></div><div><dt>To Republicans</dt><dd>${pct(t.R / t.total)}</dd></div></dl>` : `<p class="sub">No PAC contributions from this industry to members in ${y}.</p>`}
   <div class="cols"><div class="col-main"><h2>Top recipients</h2><ol class="rank">${rec.slice(0, 20).map(([p, a]) => `<li>${personLink(p)}<b class="amt">${money(a)}</b></li>`).join('')}</ol></div>
   <aside class="col-side"><h2>PACs in this industry ${when}</h2><ol class="rank sm">${pacs.slice(0, 25).map(([f, v]) => `<li><a href="/f/${f.slug}${y ? '?year=' + y : ''}"><b>${esc(nice(f.name))}</b><small>${esc(nice(f.org) || f.kind)}</small></a><b class="amt">${money(v)}</b></li>`).join('')}</ol></aside></div></div>`;
-  return layout({ title: `${D.indName.get(id)} money in Congress`, path: `/industry/${id}` + (y ? '?year=' + y : ''), body, active: '/money' });
+  return layout({ title: `${D.indName.get(id)} money in Congress`, desc: `${D.indName.get(id)} PAC money ${when}: ${t.total ? `${money(t.total)} to members of Congress, ${pct(t.D / t.total)} to Democrats and ${pct(t.R / t.total)} to Republicans. ` : ''}Top recipients and PACs.`, path: `/industry/${id}` + (y ? '?year=' + y : ''), body, active: '/money' });
 }
 
 // ---------------- issues ----------------
@@ -779,7 +786,7 @@ function issues() {
   const list = Object.entries(D.bills.issues).sort((a, b) => b[1].bills - a[1].bills);
   const body = `<div class="wrap"><h1>Issues</h1><p class="lede">Every bill in the 119th Congress sorted into its Congress.gov policy area, with the roll calls taken on each.</p>
   <ul class="issues">${list.map(([a, x]) => `<li><a href="/issue/${slugIssue(a)}"><b>${esc(a)}</b><small>${x.bills} bills${x.rollcalls.length ? `, ${x.rollcalls.length} roll calls` : ''}</small></a></li>`).join('')}</ul></div>`;
-  return layout({ title: 'Issues before Congress', path: '/issues', body, active: '/issues' });
+  return layout({ title: 'Issues before Congress', desc: 'Every bill in the 119th Congress sorted by policy area, from health and taxes to defense and immigration, with the roll calls taken on each.', path: '/issues', body, active: '/issues' });
 }
 function issue(slug) {
   if (!D.bills) return null;
@@ -794,7 +801,7 @@ function issue(slug) {
   <div class="cols"><div class="col-main">${issuePolling(name)}${rcs.length ? `<h2>Roll call votes</h2><ol class="rolls">${rcs.map(rollRow).join('')}</ol>` : ''}
   <h2>Bills with the most support</h2><ul class="blist">${bl.slice(0, 25).map(([k, b]) => `<li><a href="/bill/${k}"><span class="bl">${billLabel(k)}</span><b>${esc(b.short || b.title)}</b><small>${b.law ? 'Became law. ' : ''}${b.cosponsors} cosponsors.</small></a></li>`).join('')}</ul></div>
   <aside class="col-side"><h2>Most active sponsors</h2><ol class="rank sm">${topS.map(([p, n]) => `<li>${personLink(p)}<b class="amt">${n} bills</b></li>`).join('')}</ol></aside></div></div>`;
-  return layout({ title: `${name} in Congress`, path: `/issue/${slug}`, body, active: '/issues' });
+  return layout({ title: `${name} in Congress`, desc: `${name} in the 119th Congress: the bills with the most support, roll call votes and the members who sponsor the most.`, path: `/issue/${slug}`, body, active: '/issues' });
 }
 
 // ---------------- search ----------------
@@ -962,7 +969,7 @@ function compare(q) {
   const picker = `<form class="cmp-pick" action="/compare"><label for="ca">First member</label><select id="ca" name="a">${a ? '' : '<option value="">Choose a member</option>'}${opts(a)}</select><label for="cb">Second member</label><select id="cb" name="b">${b ? '' : '<option value="">Choose a member</option>'}${opts(b)}</select>${yearOf(q) ? `<input type="hidden" name="year" value="${yearOf(q)}">` : ''}<button type="submit">Compare</button></form>`;
   if (!a || !b || a.id === b.id) {
     const body = `<div class="wrap"><h1>Compare members</h1><p class="lede">Pick two members of Congress to see where they agree and differ: positions, votes, money and committees.</p>${picker}</div>`;
-    return layout({ title: 'Compare members of Congress', path: '/compare', body, active: '/members' });
+    return layout({ title: 'Compare members of Congress', desc: 'Pick any two members of Congress to compare their votes, positions, money, committees and caucuses side by side.', path: '/compare', body, active: '/members' });
   }
   const y = yearOf(q), V = y ? view(y) : null, cy = y ? cycleOf(y) : null, when = y ? `in ${y}` : 'since 2021';
   const side = (pa, pb) => `<div class="cmp-two"><div>${pa}</div><div>${pb}</div></div>`;
@@ -1244,7 +1251,7 @@ function leaderElection(id) {
   ${e.result.length ? `<div class="tbl"><table><thead><tr><th>Candidate</th><th class="n">Votes</th><th>Result</th></tr></thead><tbody>${e.result.map(r => { const p = r.person && D.byId.get(r.person); return `<tr><td>${p ? personLink(p) : esc(r.name)}</td><td class="n">${r.votes ?? ''}</td><td>${r.won ? 'Elected' : ''}</td></tr>`; }).join('')}</tbody></table></div>` : ''}
   ${chart}
   <p class="poll-src">${e.sources.map(s => `<a href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>`).join(' ')}</p></div>`;
-  return layout({ title: `${e.office}, ${e.body}`, path: `/leadership/${e.id}`, body, active: '/leadership' });
+  return layout({ title: `${e.office}, ${e.body}`, desc: clip(`The election for ${e.office} of the ${e.body}: candidates, vote counts and results.`), path: `/leadership/${e.id}`, body, active: '/leadership' });
 }
 
 // ---------------- committees ----------------
@@ -1361,13 +1368,62 @@ function about() {
   <h2>Elections</h2><p>Results through 2024 come from the MIT Election Data and Science Lab. 2026 results come from the VoteDash election-night count, archived at <a href="/2026/">votedash.net/2026</a>.</p>
   <h2>Bills, speeches and lobbying</h2><p>Bills, cosponsors and policy areas come from the Congress.gov API. Floor speeches come from the Congressional Record on GovInfo. Lobbying comes from Lobbying Disclosure Act filings on LDA.gov.</p>
   <h2>Record</h2><p>Each item on a member's record links to the official document or news report it is drawn from: House and Senate ethics committees, court and Justice Department records, censure resolutions and major news organizations.</p></div>`;
-  return layout({ title: 'How VoteDash works', path: '/about', body });
+  return layout({ title: 'How VoteDash works', desc: 'Where VoteDash gets its data (Congress.gov, the FEC, Voteview, the Congressional Record and election results) and how each number on the site is built.', path: '/about', body });
 }
 function notFound() { return layout({ title: 'Page not found', body: `<div class="wrap narrow"><h1>That page isn't here</h1><p>Search for a member, state, PAC or bill.</p><form class="bigsearch" action="/search"><label for="nq" class="vh">Search</label><input id="nq" name="q" type="search" data-suggest><button>Search</button></form></div>`, noindex: true }); }
 
-function sitemap() {
-  const u = [...(D.caucuses ? D.caucuses.caucuses.map(c => `/caucus/${c.id}`) : []), ...'/ /leadership /tracker /find /committees /schedule /members /votes /money /issues /incoming /about'.split(' '), ...PM_TABS.map(([k]) => k ? '/2026-post-mortem/' + k : '/2026-post-mortem'), ...D.people.map(href), ...Object.keys(D.STATES).filter(s => D.states[s]).map(s => `/state/${s.toLowerCase()}`), ...Object.keys(D.meta.committees).map(c => `/committee/${c.toLowerCase()}`), ...D.rollcalls.map(r => `/vote/${r.k}`), ...[...D.funders.values()].filter(f => f.total + f.ie >= 25000).map(f => `/f/${f.slug}`), ...[...D.industryTotals.keys()].map(i => `/industry/${i}`), ...(D.bills ? Object.keys(D.bills.issues).map(a => `/issue/${slugIssue(a)}`) : [])];
-  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${u.map(x => `<url><loc>${SITE}${x}</loc></url>`).join('')}</urlset>`;
+// sitemap index plus one sitemap per kind of page; cached per data build
+let SM = null;
+function sitemaps() {
+  if (SM && SM.built === D.meta.built) return SM;
+  const lm = (D.meta.built || new Date().toISOString()).slice(0, 10);
+  // cheap checks for which member tabs have content (coming-up and markets change too often to list)
+  const has = {
+    elections: p => (p.elections || []).length || (p.primaries || []).length, polling: p => memberPolling(p), votes: p => p.votes, money: p => p.money,
+    bills: p => D.bills && D.bills.byMember[p.id] && D.bills.byMember[p.id].sponsored.length, speeches: p => D.speeches && D.speeches.byMember[p.id] && D.speeches.byMember[p.id].count,
+    record: p => D.record && (D.record.byPerson[p.id] || []).length, connections: p => (p.votesLike || []).length || (p.sharedDonors || []).length };
+  const tabsOf = p => Object.keys(has).filter(id => has[id](p));
+  const groups = {
+    pages: [...'/ /leadership /tracker /find /committees /schedule /members /votes /money /issues /incoming /compare /about'.split(' '), ...PM_TABS.map(([k]) => k ? '/2026-post-mortem/' + k : '/2026-post-mortem'),
+      ...(D.caucuses ? D.caucuses.caucuses.map(c => `/caucus/${c.id}`) : []), ...Object.keys(D.STATES).filter(s => D.states[s]).map(s => `/state/${s.toLowerCase()}`), ...Object.keys(D.meta.committees).map(c => `/committee/${c.toLowerCase()}`),
+      ...(D.leadership && D.leadership.elections ? D.leadership.elections.map(e => `/leadership/${e.id}`) : []), ...(D.bills ? [...BV.STEPS, ...BV.SIDE].map(st => `/tracker/${st.id}`) : [])],
+    members: D.people.flatMap(p => [href(p), ...tabsOf(p).map(id => `${href(p)}/${id}`), ...(p.status !== 'elect' ? [`${href(p)}/network`] : [])]),
+    votes: D.rollcalls.map(r => `/vote/${r.k}`),
+    bills: D.bills ? Object.keys(D.bills.bills).map(k => `/bill/${k}`) : [],
+    money: [...[...D.funders.values()].filter(f => f.total + f.ie >= 25000).map(f => `/f/${f.slug}`), ...[...D.industryTotals.keys()].map(i => `/industry/${i}`), ...(D.bills ? Object.keys(D.bills.issues).map(a => `/issue/${slugIssue(a)}`) : [])],
+  };
+  const urlset = l => `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${l.map(x => `<url><loc>${SITE}${x.replace(/&/g, '&amp;')}</loc><lastmod>${lm}</lastmod></url>`).join('')}</urlset>`;
+  const files = {};
+  for (const [k, l] of Object.entries(groups)) for (let i = 0; i * 40000 < l.length; i++) files[`${k}${i ? '-' + (i + 1) : ''}.xml`] = urlset(l.slice(i * 40000, (i + 1) * 40000));
+  const index = `<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${Object.keys(files).map(f => `<sitemap><loc>${SITE}/sitemaps/${f}</loc><lastmod>${lm}</lastmod></sitemap>`).join('')}</sitemapindex>`;
+  SM = { built: D.meta.built, index, files, counts: Object.fromEntries(Object.entries(groups).map(([k, l]) => [k, l.length])) };
+  return SM;
+}
+function sitemap() { return sitemaps().index; }
+function sitemapFile(name) { return sitemaps().files[name] || null; }
+function llms() {
+  const c = sitemaps().counts;
+  return `# VoteDash
+
+> VoteDash (https://votedash.net) is a free reference on every member of the U.S. Congress: how they vote, who funds them, their election results, bills, floor speeches and record, plus the members-elect of the 120th Congress and a 2026 midterm election review.
+
+## Sections
+- [Members of Congress](${SITE}/members): all ${D.people.length} current members and members-elect. Each has a profile at /m/{slug} and tab pages at /m/{slug}/{tab}, tabs: elections, polling, votes, money, bills, speeches, record, connections.
+- [Find your representatives](${SITE}/find): by ZIP code or address.
+- [Roll call votes](${SITE}/votes): every House and Senate roll call in the 119th Congress, at /vote/{id}.
+- [Bills](${SITE}/tracker): every bill in the 119th Congress at /bill/{type}{number}, by stage at /tracker/{stage}.
+- [Issues](${SITE}/issues): bills and votes by policy area, at /issue/{slug}.
+- [Money](${SITE}/money): PACs at /f/{slug}, industries at /industry/{id}; contributions, outside spending and 2026 win rates.
+- [Committees](${SITE}/committees) at /committee/{code}, caucuses at /caucus/{id}, [Leadership](${SITE}/leadership), [Schedule](${SITE}/schedule).
+- [The 2026 midterms](${SITE}/2026-post-mortem): seats, flips, candidates, caucuses, ballot measures, money, pro-Israel PACs and progressives, each at /2026-post-mortem/{tab}.
+- [Compare two members](${SITE}/compare?a={slug}&b={slug}).
+
+## Data sources
+Congress.gov and the unitedstates/congress-legislators project (members, bills, committees), House Clerk and Senate roll call records, Voteview (DW-NOMINATE ideology scores), the Federal Election Commission (fundraising, PAC contributions, independent expenditures), the Congressional Record (floor speeches), Lobbying Disclosure Act filings, MIT Election Data and Science Lab and FEC federal election results (election history), and 2026 results as reported on election night and after.
+
+## Sitemaps
+${SITE}/sitemap.xml indexes ${Object.values(c).reduce((a, b) => a + b, 0).toLocaleString('en-US')} URLs: ${Object.entries(c).map(([k, n]) => `${k} ${n.toLocaleString('en-US')}`).join(', ')}.
+`;
 }
 
 // ---------------- 2026 post-mortem ----------------
@@ -1619,4 +1675,4 @@ ${tabNav}
   return layout({ title: tab ? `${TAB[1]}: the 2026 midterms` : 'The 2026 midterms: winners, losers, ballot measures and money', desc: lede, path: href2(tab), body, active: base });
 }
 
-module.exports = { postMortem, compare, trackerStage, caucusPage, leadership, leaderElection, tracker, committees, committee, find, contactLinks, schedule, home, member, memberVotes, memberSpeeches, network, graph, members, stateP, incoming, votes, vote, bill, moneyP, funder, industry, issues, issue, search, suggest, about, notFound, sitemap };
+module.exports = { sitemapFile, llms, postMortem, compare, trackerStage, caucusPage, leadership, leaderElection, tracker, committees, committee, find, contactLinks, schedule, home, member, network, graph, members, stateP, incoming, votes, vote, bill, moneyP, funder, industry, issues, issue, search, suggest, about, notFound, sitemap };

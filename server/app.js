@@ -68,15 +68,17 @@ const server = http.createServer((req, res) => {
     if (p === '/find') { P.find(url.searchParams).then(b => html(req, res, b)).catch(e => { console.error(e); send(req, res, 500, Buffer.from('Server error'), 'text/plain', 'no-store'); }); return; }
     if (p === '/issues') { const b = P.issues(); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if (p === '/sitemap.xml') return send(req, res, 200, Buffer.from(P.sitemap()), 'application/xml');
-    if (p === '/robots.txt') return send(req, res, 200, Buffer.from('User-agent: *\nAllow: /\nSitemap: https://votedash.net/sitemap.xml\n'), 'text/plain');
+    if (p === '/robots.txt') return send(req, res, 200, Buffer.from('User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /search\nSitemap: https://votedash.net/sitemap.xml\n'), 'text/plain');
+    if ((m = p.match(/^\/sitemaps\/([\w-]+\.xml)$/))) { const x = P.sitemapFile(m[1]); return x ? send(req, res, 200, Buffer.from(x), 'application/xml') : html(req, res, P.notFound(), 404); }
+    if (p === '/llms.txt') return send(req, res, 200, Buffer.from(P.llms()), 'text/plain; charset=utf-8');
     if (p === '/api/suggest') return json(req, res, P.suggest(url.searchParams.get('q') || ''));
     if ((m = p.match(/^\/api\/graph\/([\w-]+)$/))) { const pp = D.byId.get(m[1]); return pp ? json(req, res, P.graph(pp)) : html(req, res, P.notFound(), 404); }
-    if ((m = p.match(/^\/m\/([\w-]+)(\/(votes|speeches|network))?$/))) {
+    if ((m = p.match(/^\/m\/([\w-]+)(?:\/([\w-]+))?\/?$/))) {
       const pp = D.bySlug.get(m[1]); if (!pp) return html(req, res, P.notFound(), 404);
-      if (!m[3]) return html(req, res, P.member(pp, url.searchParams));
-      if (m[3] === 'votes') return pp.votes ? html(req, res, P.memberVotes(pp, +url.searchParams.get('page') || 1)) : html(req, res, P.notFound(), 404);
-      if (m[3] === 'speeches') { const b = P.memberSpeeches(pp); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
-      return html(req, res, P.network(pp));
+      if (m[2] === 'network') return html(req, res, P.network(pp));
+      const b = P.member(pp, url.searchParams, m[2]);
+      if (b && b.redirect) { res.writeHead(302, { Location: b.redirect }); return res.end(); }
+      return b ? html(req, res, b) : html(req, res, P.notFound(), 404);
     }
     if ((m = p.match(/^\/state\/([a-z]{2})$/))) { const b = P.stateP(m[1].toUpperCase()); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/vote\/([HS]\d+)$/))) { const rc = D.rcByK.get(m[1]); return rc ? html(req, res, P.vote(rc)) : html(req, res, P.notFound(), 404); }

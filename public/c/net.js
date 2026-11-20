@@ -54,7 +54,11 @@
         var keep = new Set([center && center.id]);
         links.forEach(function (l) { if (k === 'all' || l.k === k) { keep.add(l.source.id); keep.add(l.target.id); } });
         nd.style('display', function (d) { return keep.has(d.id) ? null : 'none'; });
+        // ?show=money|votes is the shareable link for this view
+        var u = new URL(location.href); if (k === 'all') u.searchParams.delete('show'); else u.searchParams.set('show', k); history.replaceState(null, '', u);
       });
     });
+    var show = new URLSearchParams(location.search).get('show'), sb = show && document.querySelector('[data-net="' + show + '"]');
+    if (sb) sb.click();
   });
 })();
