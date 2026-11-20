@@ -31,12 +31,14 @@ function file(req, res, root, rel, cache) {
 const html = (req, res, body, status = 200) => send(req, res, status, Buffer.from(body));
 const json = (req, res, obj) => send(req, res, 200, Buffer.from(JSON.stringify(obj)), 'application/json', 'public, max-age=300');
 
-http.createServer((req, res) => {
+let draining = false;
+const server = http.createServer((req, res) => {
   try {
     const url = new URL(req.url, 'http://x');
     let p = decodeURIComponent(url.pathname);
     if (p.length > 1 && p.endsWith('/') && !p.startsWith('/2026')) { res.writeHead(301, { Location: p.slice(0, -1) + url.search }); return res.end(); }
-    if (p === '/healthz' || p === '/readyz') return send(req, res, 200, Buffer.from('ok'), 'text/plain', 'no-store');
+    if (p === '/healthz') return send(req, res, 200, Buffer.from('ok'), 'text/plain', 'no-store');
+    if (p === '/readyz') return draining ? send(req, res, 503, Buffer.from('draining'), 'text/plain', 'no-store') : send(req, res, 200, Buffer.from('ok'), 'text/plain', 'no-store');
     if (p === '/api/data-status') { let last = null; try { last = JSON.parse(fs.readFileSync(path.join(process.env.CONGRESS_HOME || '/nonexistent', 'last-run.json'), 'utf8')); } catch {} return send(req, res, 200, Buffer.from(JSON.stringify({ dataDir: D.dataDir === path.join(__dirname, 'congress/data') ? 'bundled' : 'disk', built: D.meta.built, running: nightlyRunning, last })), 'application/json', 'no-store'); }
     if (p === '/api/rebuild' && req.method === 'POST') { if (!process.env.REBUILD_TOKEN || req.headers.authorization !== 'Bearer ' + process.env.REBUILD_TOKEN) return send(req, res, 403, Buffer.from('forbidden'), 'text/plain', 'no-store'); runNightly(); return send(req, res, 202, Buffer.from('started'), 'text/plain', 'no-store'); }
     if (p === '/2026') { res.writeHead(301, { Location: '/2026/' }); return res.end(); }
@@ -52,8 +54,10 @@ http.createServer((req, res) => {
     if (p === '/leadership') { const b = P.leadership(); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/leadership\/([\w-]+)$/))) { const b = P.leaderElection(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if (p === '/tracker') return html(req, res, P.tracker(url.searchParams));
+    if ((m = p.match(/^\/tracker\/([a-z-]+)$/))) { const b = P.trackerStage(m[1], url.searchParams); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if (p === '/committees') return html(req, res, P.committees());
     if ((m = p.match(/^\/committee\/([a-z0-9]+)$/))) { const b = P.committee(m[1], url.searchParams); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
+    if (p === '/compare') return html(req, res, P.compare(url.searchParams));
     if (p === '/members') return html(req, res, P.members(url.searchParams));
     if (p === '/incoming') return html(req, res, P.incoming());
     if (p === '/votes') return html(req, res, P.votes(url.searchParams));
@@ -106,3 +110,9 @@ function nightlyTimer() {
   }, 60e3).unref();
 }
 let lastRunDay = null;
+// graceful shutdown: stop taking new traffic, finish what is in flight, then exit
+process.on('SIGTERM', () => {
+  if (draining) return; draining = true; console.log('SIGTERM: draining');
+  setTimeout(() => server.close(() => process.exit(0)), 12000).unref();
+  setTimeout(() => process.exit(0), 25000).unref();
+});

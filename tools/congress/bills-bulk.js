@@ -50,6 +50,12 @@ for (const type of TYPES) {
       for (const v of votes) { const rk = rcKey.get(`${v.chamber[0]}${v.session}-${v.rollNumber}`); if (rk && !rollcallBill[rk]) rollcallBill[rk] = key; }
       actions.push({ date, text, type: atype, chamber, ...(votes.length ? { recordedVotes: votes } : {}) });
     }
+    const related = items(sec(x, 'relatedBills'), 6).map(it => {
+      if (tag(it, 'congress') !== '119') return null;
+      const rels = it.split('<relationshipDetails>')[1] || '';
+      const kinds = [...new Set(items(rels, 10).map(r => tag(r, 'type')))].filter(Boolean);
+      return { key: tag(it, 'type').toLowerCase() + tag(it, 'number'), rel: kinds };
+    }).filter(r => r && r.rel.length);
     const committees = items(sec(x, 'committees'), 6).map(it => ({ name: tag(it, 'name'), chamber: tag(it, 'chamber'), systemCode: tag(it, 'systemCode'),
       activities: items(it.split('<activities>')[1] || '', 10).map(a => ({ name: tag(a, 'name'), date: tag(a, 'date') })).filter(a => a.name && a.name !== 'Unknown') }));
     // stage
@@ -73,7 +79,7 @@ for (const type of TYPES) {
       type: type.toUpperCase(), number, title: dec(title), short: short && short !== dec(title) ? short : null, policyArea, subjects,
       sponsor, cosponsors: cos.length, introduced: tag(x, 'introducedDate'), latest: la ? { date: tag(la, 'actionDate'), text: tag(la, 'text') } : null,
       law: stage === 'law', lawNumber: laws[0] || null, stage, stageDate, ...(/^(hres|sres|hconres|sconres)/.test(type) && /passed/.test(stage) ? { agreed: true } : {}),
-      url: tag(x, 'legislationUrl'), actions, committees
+      url: tag(x, 'legislationUrl'), actions, committees, ...(related.length ? { related } : {})
     };
     if (sponsor && current.has(sponsor)) (byMember[sponsor] ||= { sponsored: [], cosponsored: [] }).sponsored.push(key);
     for (const c of cos) if (current.has(c)) (byMember[c] ||= { sponsored: [], cosponsored: [] }).cosponsored.push(key);
