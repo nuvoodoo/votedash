@@ -676,6 +676,11 @@ const prefix = o => Object.fromEntries(Object.entries(o).map(([k, v]) => ['-' + 
 function split(given) { const s = { D: 0, R: 0, I: 0 }; for (const [id, amt] of Object.entries(given)) { const p = D.byId.get(id); if (p) s[p.party === 'R' ? 'R' : p.party === 'D' ? 'D' : 'I'] += amt; } return s; }
 function splitBar(s) { const t = s.D + s.R + s.I || 1; return `<span class="split mini" title="${pct(s.D / t)} to Democrats, ${pct(s.R / t)} to Republicans"><i class="fD" style="flex:${s.D}"></i><i class="fI" style="flex:${s.I}"></i><i class="fR" style="flex:${s.R}"></i></span><small>${pct(s.D / t)} D</small>`; }
 
+// the member's result in that cycle's House or Senate race: general election, else a lost primary; null when not found
+function raceResult(p, yr) {
+  const g = (p.elections || []).filter(x => x.year === yr).pop(); if (g) return !!g.won;
+  return (p.primaries || []).some(x => x.year === yr && !x.won && !x.special) ? false : null;
+}
 function funder(f, q) {
   const y = yearOf(q), V = y ? view(y) : null, cy = y ? cycleOf(y) : null;
   const given = y ? V.givenBy.get(f.id) || {} : f.given, ieFor = y ? V.ieFor.get(f.id) || {} : f.ieFor, ieAgainst = y ? V.ieAg.get(f.id) || {} : f.ieAgainst;
@@ -684,7 +689,7 @@ function funder(f, q) {
   const s = split(given); const t = s.D + s.R + s.I;
   const rec = Object.entries(given).map(([id, amt]) => [D.byId.get(id), amt]).filter(([p]) => p).sort((a, b) => b[1] - a[1]);
   const ind = D.industryOf(f.id); const lob = D.lobbying && D.lobbying.byCommittee[f.id];
-  const iel = (o, l) => { const e = Object.entries(o).map(([id, amt]) => [D.byId.get(id), amt]).filter(([p]) => p).sort((a, b) => b[1] - a[1]); return e.length ? `<div><h3>${l}</h3><ol class="rank sm">${e.slice(0, 12).map(([p, a]) => `<li>${personLink(p)}<b class="amt">${money(a)}</b></li>`).join('')}</ol></div>` : ''; };
+  const iel = (o, l) => { const e = Object.entries(o).map(([id, amt]) => [D.byId.get(id), amt]).filter(([p]) => p).sort((a, b) => b[1] - a[1]); return e.length ? `<div><h3>${l}</h3><ol class="rank sm">${e.slice(0, 12).map(([p, a]) => { const w = raceResult(p, cy || 2026); return `<li>${personLink(p)}<span class="ra">${w == null ? '' : `<em class="res ${w ? 'ok' : 'no'}">${w ? 'Won' : 'Lost'}</em>`}<b class="amt">${money(a)}</b></span></li>`; }).join('')}</ol></div>` : ''; };
   const body = `<div class="wrap"><p class="crumb"><a href="/money">Money</a>${ind ? `, <a href="/industry/${ind}">${esc(D.indName.get(ind))}</a>` : ''}</p>
   <h1>${esc(nice(f.name))}</h1>
   <p class="lede">${esc(f.kind)}${f.org ? ` connected to ${esc(nice(f.org))}` : ''}${f.city ? `, ${esc(nice(f.city))}, ${esc(f.state)}` : ''}. FEC committee <a href="https://www.fec.gov/data/committee/${f.id}/" rel="noopener">${f.id}</a>.</p>
