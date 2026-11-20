@@ -165,6 +165,7 @@ function member(p) {
     <p class="ph-role">${chip(p)} ${esc(PARTY[p.party] || p.partyName)}${p.caucus && p.caucus !== p.party ? `, caucuses with ${PARTY[p.caucus]}s` : ''}</p>
     <h1>${esc(p.name)}</h1>
     <p class="ph-seat">${esc(role)}${p.since && p.status !== 'elect' ? `. In the ${chamberName} since ${new Date(firstInChamber(p)).getUTCFullYear()}` : ''}${p.birthday ? `. Age ${age(p.birthday)}` : ''}.</p>
+    ${(() => { const m = D.caucuses && D.caucuses.members[p.id]; if (!m || !m.length) return ''; return `<p class="ph-cau">${m.map(id => { const c = D.caucuses.caucuses.find(x => x.id === id); return c ? `<span class="cau c${H.caucusOf({ id: p.id }) === id ? id : ''}">${esc(c.name)}</span>` : ''; }).join('')}</p>`; })()}
     ${status ? `<p class="ph-status">${status}</p>` : ''}
     <p class="ph-act">${p.url ? `<a class="btn" href="${esc(p.url)}" rel="noopener">Official website</a>` : ''}${p.contact ? `<a class="btn ghost" href="${esc(p.contact)}" rel="noopener">Contact their office</a>` : ''}${p.phone ? `<span class="ph-phone">${esc(p.phone)}</span>` : ''}</p>
     ${(() => { const l = contactLinks(p).filter(([n]) => n !== 'Official website' && n !== 'Contact form'); return l.length ? `<p class="ph-links">${l.map(([n, u]) => `<a href="${esc(u)}" rel="noopener">${esc(n)}</a>`).join('')}</p>` : ''; })()}

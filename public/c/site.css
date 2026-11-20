@@ -464,3 +464,7 @@ svg.seats circle.tip-on,svg.seats a:hover circle{stroke:var(--bronze);stroke-wid
 .seat-tip .tv{font-weight:700;margin-top:2px}
 .seat-tip a{grid-column:1/-1;font-weight:600;font-size:14px}
 .seat-tip.mouse a{display:none}
+.ph-cau{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.cau{font-size:12.5px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--rule);background:var(--marble);color:var(--bronze)}
+.cau.cfreedom,.cau.crsc,.cau.cprogressive,.cau.cnewdem{color:#fff;border-color:transparent}
+.cau.cmainstreet,.cau.cbluedog,.cau.cproblemsolvers{color:#17232C;border-color:transparent}
