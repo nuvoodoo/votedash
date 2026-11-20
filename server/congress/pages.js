@@ -1,0 +1,962 @@
+'use strict';
+const D = require('./data');
+const H = require('./html');
+const { esc, money, pct, date, age, ord, PARTY, seatLabel, title, short, href, portrait, chip, personLink, seatChart, partyFill, layout, SITE } = H;
+
+const VOTE_WORD = { Y: 'Yea', N: 'Nay', P: 'Present', 0: 'Not voting' };
+const billLabel = k => { const m = /^([a-z]+)(\d+)$/.exec(k || ''); if (!m) return k; const t = { hr: 'H.R.', s: 'S.', hres: 'H.Res.', sres: 'S.Res.', hjres: 'H.J.Res.', sjres: 'S.J.Res.', hconres: 'H.Con.Res.', sconres: 'S.Con.Res.' }[m[1]] || m[1].toUpperCase(); return `${t} ${m[2]}`; };
+const rcBillKey = rc => D.bills && D.bills.rollcallBill[rc.k] || (rc.bill ? rc.bill.toLowerCase() : null);
+function rcTitle(rc) {
+  const bk = rcBillKey(rc); const b = bk && D.bills && D.bills.bills[bk];
+  const name = b ? (b.short || b.title) : rc.desc;
+  return name ? name : rc.question;
+}
+const cycleNow = 2026;
+const lastCycle = p => { const c = p.money && p.money.cycles; if (!c) return null; const y = c[cycleNow] ? cycleNow : Math.max(...Object.keys(c).map(Number)); return { y, ...c[y] }; };
+const codeFor = (p, rc) => { const i = D.rcPos[rc.chamber].get(p.id); return i == null ? null : rc.codes[i]; };
+
+// ---------------- home ----------------
+function home() {
+  const latestH = D.recentRolls.H[0], latestS = D.recentRolls.S[0];
+  const voteMap = rc => Object.fromEntries(D.order[rc.chamber].map((id, i) => [id, rc.codes[i]]));
+  const n = { H: D.chambers.H.length, S: D.chambers.S.length };
+  const count = (ch, pty) => D.chambers[ch].filter(p => p.party === pty).length;
+  const elect = D.people.filter(p => p.status === 'elect');
+  const leaving = D.people.filter(p => p.status === 'leaving');
+  const raisedTop = D.people.filter(p => p.status !== 'elect' && lastCycle(p)).sort((a, b) => lastCycle(b).receipts - lastCycle(a).receipts).slice(0, 8);
+  const outside = [...D.funders.values()].sort((a, b) => b.ie - a.ie).slice(0, 8);
+  const rolls = D.allRolls.slice(0, 8);
+  const body = `
+<section class="hero"><div class="wrap">
+  <h1>Every member of Congress, seated by how they vote</h1>
+  <p class="lede">${n.H} representatives and ${n.S} senators, ordered left to right by their voting record. Open any seat for their votes, money, elections, speeches and record.</p>
+  <form class="bigsearch" action="/search" role="search"><label for="hq" class="vh">Search members, states, PACs and bills</label><input id="hq" name="q" type="search" placeholder="Name, ZIP code, PAC or bill" autocomplete="off" data-suggest><button type="submit">Search</button></form>
+  <div class="chamber" data-chamber>
+    <div class="ch-tools">
+      <div class="seg" role="group" aria-label="Color seats by">
+        <button type="button" aria-pressed="true" data-mode="party">Party</button>
+        <button type="button" aria-pressed="false" data-mode="vote">Latest vote</button>
+      </div>
+      <p class="ch-key" data-key="party"><span><i class="fD"></i>Democrat</span><span><i class="fR"></i>Republican</span><span><i class="fI"></i>Independent</span></p>
+      <p class="ch-key" data-key="vote" hidden><span><i class="vY"></i>Yea</span><span><i class="vN"></i>Nay</span><span><i class="v0"></i>Not voting</span></p>
+    </div>
+    <div class="ch-grid">
+      <figure><figcaption><a href="/members?chamber=H">House</a> <span>${count('H', 'R')} R, ${count('H', 'D')} D</span></figcaption>${seatChart('H', partyFill)}<p class="ch-vote" data-vote-cap hidden><a href="/vote/${latestH.k}">${esc(latestH.question)}: ${esc(rcTitle(latestH))}</a>, ${date(latestH.date)}</p></figure>
+      <figure><figcaption><a href="/members?chamber=S">Senate</a> <span>${count('S', 'R')} R, ${count('S', 'D')} D, ${count('S', 'I')} I</span></figcaption>${seatChart('S', partyFill)}<p class="ch-vote" data-vote-cap hidden><a href="/vote/${latestS.k}">${esc(latestS.question)}: ${esc(rcTitle(latestS))}</a>, ${date(latestS.date)}</p></figure>
+    </div>
+    <div class="ch-axis"><span>Most liberal</span><span>Most conservative</span></div>
+    <script type="application/json" id="vote-data">${JSON.stringify({ H: voteMap(latestH), S: voteMap(latestS) })}</script>
+  </div>
+</div></section>
+${comingUp()}
+
+<section class="band"><div class="wrap cols">
+  <div class="col-main">
+    <h2><a href="/votes">Latest roll calls</a></h2>
+    <ol class="rolls">${rolls.map(rollRow).join('')}</ol>
+  </div>
+  <aside class="col-side">
+    <h2><a href="/money">Most raised this cycle</a></h2>
+    <ol class="rank">${raisedTop.map(p => `<li>${personLink(p)}<b class="amt">${money(lastCycle(p).receipts)}</b></li>`).join('')}</ol>
+  </aside>
+</div></section>
+
+<section class="band alt"><div class="wrap">
+  <h2><a href="/incoming">The 120th Congress takes office January 3, 2027</a></h2>
+  <p class="sub">${elect.length + D.people.filter(p => p.elect).length} new members won seats on November 3. ${leaving.length} current members leave office.</p>
+  <ul class="faces">${elect.filter(p => p.chamber === 'S').concat(D.people.filter(p => p.elect && p.elect.chamber === 'S')).map(p => `<li>${electCard(p)}</li>`).join('')}</ul>
+  <p><a class="more" href="/incoming">See all ${elect.length + D.people.filter(p => p.elect).length} members-elect</a></p>
+</div></section>
+
+<section class="band"><div class="wrap cols">
+  <div class="col-main">
+    <h2>Find your delegation</h2>
+    ${tileMap()}
+  </div>
+  <aside class="col-side">
+    <h2><a href="/money#outside">Biggest outside spenders</a></h2>
+    <ol class="rank">${outside.map(f => `<li><a href="/f/${f.slug}"><b>${esc(nice(f.name))}</b><small>${esc(f.kind)}</small></a><b class="amt">${money(f.ie)}</b></li>`).join('')}</ol>
+  </aside>
+</div></section>`;
+  return layout({ body, path: '/', jsonld: { '@context': 'https://schema.org', '@type': 'WebSite', name: 'VoteDash', url: SITE, potentialAction: { '@type': 'SearchAction', target: SITE + '/search?q={q}', 'query-input': 'required name=q' } } });
+}
+
+function electCard(p) {
+  const e = p.status === 'elect' ? p : { ...p.elect, slug: p.slug, id: p.id };
+  return `<a class="elect" href="/m/${p.slug}"><b>${esc(p.name)}</b><small>${chip(e)} ${esc(e.chamber === 'S' ? D.STATES[e.state] : e.state + '-' + (e.district || 'AL'))}${e.pct ? ', ' + e.pct.toFixed(1) + '%' : ''}</small></a>`;
+}
+
+// what kind of vote: leadership, nomination, passage, amendment or procedural
+const KINDS = [['passage', 'Passage'], ['procedural', 'Procedural'], ['amendment', 'Amendments'], ['nomination', 'Nominations'], ['leadership', 'Leadership']];
+function rcKind(rc) {
+  if (rc._kind) return rc._kind;
+  const q = rc.question || '', d = (rc.desc || '') + ' ' + rcTitle(rc), b = rc.bill || '';
+  let k;
+  if (/Election of the Speaker|vacate/i.test(q + ' ' + d)) k = 'leadership';
+  else if (/Nomination/i.test(q) || /^PN/i.test(b)) k = 'nomination';
+  else if (/Cloture|Motion to Proceed|Recommit|Previous Question|Table|Adjourn|Refer|Commit|Point of Order|Decision of the Chair|Reconsider|Discharge|Consideration of the Resolution|Instruct|Retaining|^On the Motion$|Waive/i.test(q)) k = 'procedural';
+  else if (/Agreeing to the Resolution|On the Resolution/i.test(q) && /providing for (the )?consideration|waiving|providing for proceedings/i.test(d)) k = 'procedural';
+  else if (/Amendment/i.test(q) && !/Concur/i.test(q)) k = 'amendment';
+  else k = 'passage';
+  return (rc._kind = k);
+}
+const KIND_LABEL = Object.fromEntries(KINDS.map(([k, l]) => [k, l.replace(/s$/, '')]));
+function rollRow(rc) {
+  const t = rc.tally; const tot = rc.yea + rc.nay || 1;
+  return `<li><a href="/vote/${rc.k}">
+    <span class="rr-meta"><span class="vk vk-${rcKind(rc)}">${KIND_LABEL[rcKind(rc)]}</span> ${rc.chamber === 'H' ? 'House' : 'Senate'} roll call ${rc.clerk}, ${date(rc.date)}</span>
+    <b>${esc(rcTitle(rc))}</b>
+    <span class="rr-q">${esc(rc.question)}${rcBillKey(rc) ? ', ' + billLabel(rcBillKey(rc)) : ''}. <em class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</em> ${rc.yea}-${rc.nay}</span>
+    <span class="bar" aria-hidden="true"><i class="vY" style="width:${(rc.yea / tot * 100).toFixed(1)}%"></i><i class="vN" style="width:${(rc.nay / tot * 100).toFixed(1)}%"></i></span>
+    <span class="rr-p">D ${t.D.Y}-${t.D.N}, R ${t.R.Y}-${t.R.N}</span>
+  </a></li>`;
+}
+
+// US tile grid (row, col)
+const TILES = { AK: [0, 0], ME: [0, 11], VT: [1, 10], NH: [1, 11], WA: [2, 1], ID: [2, 2], MT: [2, 3], ND: [2, 4], MN: [2, 5], IL: [2, 6], WI: [2, 7], MI: [2, 8], NY: [2, 9], RI: [2, 10], MA: [2, 11], OR: [3, 1], NV: [3, 2], WY: [3, 3], SD: [3, 4], IA: [3, 5], IN: [3, 6], OH: [3, 7], PA: [3, 8], NJ: [3, 9], CT: [3, 10], CA: [4, 1], UT: [4, 2], CO: [4, 3], NE: [4, 4], MO: [4, 5], KY: [4, 6], WV: [4, 7], VA: [4, 8], MD: [4, 9], DE: [4, 10], AZ: [5, 2], NM: [5, 3], KS: [5, 4], AR: [5, 5], TN: [5, 6], NC: [5, 7], SC: [5, 8], DC: [5, 9], OK: [6, 4], LA: [6, 5], MS: [6, 6], AL: [6, 7], GA: [6, 8], HI: [7, 0], TX: [7, 4], FL: [7, 8] };
+function tileMap() {
+  return `<div class="tiles" role="list">${Object.entries(TILES).map(([st, [r, c]]) => {
+    const ms = (D.states[st] || []).filter(p => p.status !== 'elect');
+    const d = ms.filter(p => p.party === 'D' || p.caucus === 'D').length, rr = ms.filter(p => p.party === 'R').length;
+    const lean = d + rr ? (rr - d) / (d + rr) : 0;
+    return `<a role="listitem" href="/state/${st.toLowerCase()}" style="grid-row:${r + 1};grid-column:${c + 1};--lean:${lean.toFixed(2)}" class="tile ${lean > 0.2 ? 'tR' : lean < -0.2 ? 'tD' : 'tM'}" aria-label="${esc(D.STATES[st])}: ${rr} Republicans, ${d} Democrats"><b>${st}</b><small>${rr}R ${d}D</small></a>`;
+  }).join('')}</div>`;
+}
+const SMALL = new Set(['of', 'and', 'the', 'for', 'to', 'in', 'on', 'at', 'by', 'a', 'an', 'or']);
+const ACR = new Set(['pac', 'llc', 'llp', 'inc', 'usa', 'ii', 'iii', 'iv', 'nra', 'afl', 'cio', 'afscme', 'ibew', 'seiu', 'uaw', 'nea', 'aft', 'ups', 'ibm', 'cvs', 'hca', 'bnsf', 'csx', 'kbr', 'aipac', 'nrcc', 'nrsc', 'dccc', 'dscc', 'rnc', 'dnc', 'lgbtq', 'aflac', 'nar', 'ama', 'aba', 'ana', 'ncta', 'gop', 'us']);
+const nice = s => !s ? '' : s !== s.toUpperCase() ? s : s.toLowerCase().split(/(\s+|[-/(),.&'])/).map((w, i, a) => {
+  if (!/[a-z]/.test(w)) return w;
+  if (a[i - 1] === "'" && w === 's') return w;
+  if (i > 0 && SMALL.has(w)) return w;
+  if (ACR.has(w) || (!/[aeiouy]/.test(w) && w.length <= 5)) return w.toUpperCase();
+  return w[0].toUpperCase() + w.slice(1);
+}).join('').replace(/\bMc([a-z])/g, (_, c) => 'Mc' + c.toUpperCase()).replace(/\b\w{1,2}&\w{1,2}\b/g, m => m.toUpperCase());
+
+// ---------------- member ----------------
+function member(p) {
+  const chamberName = p.chamber === 'S' ? 'Senate' : 'House';
+  const role = p.status === 'elect' ? `${p.chamber === 'S' ? 'Senator-elect' : 'Representative-elect'}, ${seatLabel(p)}${p.chamber === 'H' && !p.delegate ? ' District' : ''}`
+    : `${p.chamber === 'S' ? (p.rank === 'senior' ? 'Senior senator' : p.rank === 'junior' ? 'Junior senator' : 'Senator') + ' from ' + D.STATES[p.state] : p.delegate ? 'Delegate from ' + D.STATES[p.state] : 'Representative, ' + seatLabel(p) + ' District'}`;
+  const cy = lastCycle(p);
+  const v = p.votes;
+  const status = statusLine(p);
+  const sections = [];
+  const nav = [];
+  const add = (id, label, html) => { if (!html) return; nav.push([id, label]); sections.push(`<section id="${id}" class="sec">${html}</section>`); };
+
+  add('overview', 'Overview', overview(p, cy));
+  add('coming-up', 'Coming up', comingFor(p));
+  add('votes', 'Votes', votesSec(p));
+  add('money', 'Money', moneySec(p));
+  add('elections', 'Elections', electionsSec(p));
+  add('bills', 'Bills', billsSec(p));
+  add('speeches', 'Speeches', speechesSec(p));
+  add('record', 'Record', recordSec(p));
+  add('connections', 'Connections', connectionsSec(p));
+
+  const body = `
+<article class="profile">
+<header class="ph"><div class="wrap ph-in">
+  ${portrait(p, 'w', 'ph-pt')}
+  <div class="ph-txt">
+    ${leaderRoles(p.id).length ? `<p class="ph-lead"><a href="/leadership">${esc(leaderRoles(p.id).map(c => c.title).join(', '))}</a></p>` : ''}
+    <p class="ph-role">${chip(p)} ${esc(PARTY[p.party] || p.partyName)}${p.caucus && p.caucus !== p.party ? `, caucuses with ${PARTY[p.caucus]}s` : ''}</p>
+    <h1>${esc(p.name)}</h1>
+    <p class="ph-seat">${esc(role)}${p.since && p.status !== 'elect' ? `. In the ${chamberName} since ${new Date(firstInChamber(p)).getUTCFullYear()}` : ''}${p.birthday ? `. Age ${age(p.birthday)}` : ''}.</p>
+    ${status ? `<p class="ph-status">${status}</p>` : ''}
+    <p class="ph-act">${p.url ? `<a class="btn" href="${esc(p.url)}" rel="noopener">Official website</a>` : ''}${p.contact ? `<a class="btn ghost" href="${esc(p.contact)}" rel="noopener">Contact their office</a>` : ''}${p.phone ? `<span class="ph-phone">${esc(p.phone)}</span>` : ''}</p>
+    ${(() => { const l = contactLinks(p).filter(([n]) => n !== 'Official website' && n !== 'Contact form'); return l.length ? `<p class="ph-links">${l.map(([n, u]) => `<a href="${esc(u)}" rel="noopener">${esc(n)}</a>`).join('')}</p>` : ''; })()}
+  </div>
+  ${p.status !== 'elect' && p.nominate != null && !p.delegate ? `<figure class="ph-seatmap">${seatChart(p.chamber, q => q.id === p.id ? 'f' + q.party : 'fx', { highlight: p.id, label: `${p.name}'s seat among ${chamberName} colleagues, ordered by voting record` })}<figcaption>${seatPhrase(p)}</figcaption></figure>` : ''}
+</div>
+<nav class="subnav" aria-label="On this page"><div class="wrap">${nav.map(([id, l]) => `<a href="#${id}">${l}</a>`).join('')}</div></nav>
+</header>
+<div class="wrap pb">
+  <div class="pb-main">${sections.join('')}</div>
+  <aside class="pb-rail">${rail(p)}</aside>
+</div>
+</article>`;
+  const desc = `${title(p)} ${p.name} (${short(p)}): ${v ? `votes with party ${pct(v.unity, 0)}, ` : ''}${cy ? `raised ${money(cy.receipts)} in ${cy.y} cycle, ` : ''}election history, speeches and record.`;
+  return layout({ title: `${p.name}, ${short(p)}`, desc, path: href(p), body, active: '/members', jsonld: { '@context': 'https://schema.org', '@type': 'Person', name: p.name, jobTitle: role, affiliation: PARTY[p.party], url: SITE + href(p), image: H.hasPortrait(p) ? `${SITE}/portraits/w/${p.id}.webp` : undefined, sameAs: [p.url, p.ids && p.ids.wikipedia ? 'https://en.wikipedia.org/wiki/' + encodeURIComponent(p.ids.wikipedia.replace(/ /g, '_')) : null].filter(Boolean) } });
+}
+function firstInChamber(p) { const t = p.terms.find(t => (t.type === 'sen') === (p.chamber === 'S')); return t.start; }
+function statusLine(p) {
+  if (p.status === 'elect') return `Won ${p.chamber === 'S' ? 'the Senate seat' : 'the seat'} on November 3, 2026${p.pct ? ` with ${p.pct.toFixed(1)}%` : ''}. Takes office January 3, 2027.`;
+  if (p.elect) return `Elected to the ${p.elect.chamber === 'S' ? 'Senate' : 'House'} from ${D.STATES[p.elect.state]} on November 3, 2026${p.elect.pct ? ` with ${p.elect.pct.toFixed(1)}%` : ''}. Takes that seat January 3, 2027.`;
+  if (p.newDistrict != null) return `Re-elected in the redrawn ${ord(p.newDistrict)} District on November 3, 2026${p.redrawnRace && p.redrawnRace.pct ? ` with ${p.redrawnRace.pct.toFixed(1)}%` : ''}.`;
+  if (p.status === 'leaving') return p.race2026 && p.race2026.ran ? `Lost re-election on November 3, 2026${p.race2026.pct != null ? ` with ${p.race2026.pct.toFixed(1)}%` : ''}. Leaves office January 3, 2027.` : `Did not seek re-election in 2026. Leaves office January 3, 2027.`;
+  if (p.race2026 && p.race2026.won) return `Re-elected November 3, 2026${p.race2026.pct != null ? ` with ${p.race2026.pct.toFixed(1)}%` : ''}.`;
+  if (p.chamber === 'S') return `Next up for election in ${new Date(p.termEnd).getUTCFullYear() - 1}.`;
+  return '';
+}
+function seatPhrase(p) {
+  const list = D.chambers[p.chamber]; const i = list.findIndex(q => q.id === p.id); if (i < 0) return '';
+  const n = list.length; const libRank = i + 1, conRank = n - i;
+  return libRank <= conRank ? `${ord(libRank)} most liberal of ${n}` : `${ord(conRank)} most conservative of ${n}`;
+}
+
+function overview(p, cy) {
+  const v = p.votes; const facts = [];
+  if (v && v.unity != null) facts.push([pct(v.unity, 1), 'votes with party', `On ${v.partyVotes} party-line roll calls`]);
+  if (v && v.missedPct != null) facts.push([pct(v.missedPct, 1), 'votes missed', `${v.missed} of ${v.eligible} roll calls`]);
+  if (cy) facts.push([money(cy.receipts), `raised, ${cy.y - 1}-${String(cy.y).slice(2)}`, cy.receipts ? `${pct(cy.pac / cy.receipts)} from PACs` : '']);
+  const bm = D.bills && D.bills.byMember[p.id]; if (bm) facts.push([String(bm.sponsored.length), 'bills sponsored', `${bm.cosponsored.length} cosponsored`]);
+  const sp = D.speeches && D.speeches.byMember[p.id]; if (sp) facts.push([String(sp.count), 'floor speeches', 'This Congress']);
+  const rec = D.record && D.record.byPerson[p.id]; if (rec) facts.push([String(rec.length), rec.length === 1 ? 'item on the record' : 'items on the record', 'Ethics, legal, censure']);
+  if (!facts.length) return '';
+  return `<h2 class="vh">Overview</h2><dl class="facts">${facts.map(([n, l, s]) => `<div><dt>${esc(l)}</dt><dd>${esc(n)}</dd>${s ? `<dd class="s">${esc(s)}</dd>` : ''}</div>`).join('')}</dl>`;
+}
+
+function votesSec(p) {
+  if (!p.votes || p.status === 'elect') return '';
+  const rolls = D.recentRolls[p.chamber];
+  const recent = []; for (const rc of rolls) { const c = codeFor(p, rc); if (c == null) continue; if (c === '0' && !wasIn(p, rc)) continue; recent.push([rc, c]); if (recent.length >= 12) break; }
+  const breaks = p.votes.breaks.slice(0, 8).map(k => D.rcByK.get(k));
+  return `<h2>Votes</h2>
+  <p class="sub">${p.votes.cast} votes cast in the 119th Congress. Party-line votes are roll calls where most Democrats and most Republicans voted on opposite sides.</p>
+  ${breaks.length ? `<h3>Broke with their party</h3><p class="sub">${times(p.votes.partyVotes - p.votes.withParty)} on party-line votes.</p><ul class="vlist">${breaks.map(rc => vrow(rc, codeFor(p, rc), true)).join('')}</ul>` : `<h3>Broke with their party</h3><p class="sub">Never on a party-line vote this Congress.</p>`}
+  <h3>Recent votes</h3><ul class="vlist">${recent.map(([rc, c]) => vrow(rc, c)).join('')}</ul>
+  <p><a class="more" href="${href(p)}/votes">All ${p.votes.eligible} votes</a></p>`;
+}
+const times = n => n === 1 ? 'Once' : n === 2 ? 'Twice' : `${n} times`;
+const wasIn = (p, rc) => p.terms.some(t => (t.type === 'sen') === (rc.chamber === 'S') && t.start <= rc.date && t.end >= rc.date);
+function vrow(rc, c, flag) {
+  return `<li class="${flag ? 'brk' : ''}"><span class="vc v${c}">${VOTE_WORD[c]}</span><a href="/vote/${rc.k}"><b>${esc(rcTitle(rc))}</b><small>${esc(rc.question)}, ${date(rc.date)}. ${esc(rc.result)} ${rc.yea}-${rc.nay}</small></a></li>`;
+}
+
+function moneySec(p) {
+  const m = p.money; if (!m) return '';
+  const cycles = Object.entries(m.cycles).sort((a, b) => b[0] - a[0]);
+  const max = Math.max(...cycles.map(([, c]) => c.receipts), 1);
+  const top = m.topPacs.slice(0, 12).map(x => ({ ...x, f: D.funders.get(x.id) })).filter(x => x.f);
+  const ind = (m.byIndustry || []).slice(0, 8);
+  const indMax = ind.length ? ind[0][1] : 1;
+  return `<h2>Money</h2>
+  <p class="sub">Campaign committee receipts reported to the FEC. Cycles run two years, ending on Election Day.</p>
+  <div class="cyc">${cycles.map(([y, c]) => `<div class="cy"><div class="cy-h"><b>${y - 1}-${String(y).slice(2)}</b><span>${money(c.receipts)} raised${c.through ? `, through ${date(c.through)}` : ''}</span></div>
+    <div class="stack" style="width:${Math.max(2, c.receipts / max * 100).toFixed(1)}%" aria-hidden="true">${[['indiv', 'Individuals'], ['pac', 'PACs'], ['party', 'Party'], ['self', 'Self']].map(([k]) => c[k] > 0 ? `<i class="m-${k}" style="flex:${c[k]}"></i>` : '').join('')}</div>
+    <p class="cy-k"><span><i class="m-indiv"></i>Individuals ${money(c.indiv)}</span><span><i class="m-pac"></i>PACs ${money(c.pac)}</span>${c.party ? `<span><i class="m-party"></i>Party ${money(c.party)}</span>` : ''}${c.self ? `<span><i class="m-self"></i>Self-funded ${money(c.self)}</span>` : ''}<span>Cash on hand ${money(c.cash)}</span></p></div>`).join('')}</div>
+  ${ind.length ? `<h3>Top industries</h3><p class="sub">PAC contributions since 2021, grouped by the industry behind each PAC.</p><ul class="hbars">${ind.map(([id, amt]) => `<li><a href="/industry/${id}">${esc(D.indName.get(id))}</a><span class="hb"><i style="width:${(amt / indMax * 100).toFixed(1)}%"></i></span><b>${money(amt)}</b></li>`).join('')}</ul>` : ''}
+  ${top.length ? `<h3>Top PAC donors</h3><p class="sub">${m.pacCount} PACs gave ${money(m.pacTotal)} since 2021.</p>
+  <div class="tbl"><table><thead><tr><th>PAC</th><th>Connected to</th><th class="n">Given</th></tr></thead><tbody>${top.map(x => `<tr><td><a href="/f/${x.f.slug}">${esc(nice(x.f.name))}</a></td><td>${esc(nice(x.f.org) || x.f.kind)}</td><td class="n">${money(x.amt, true)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+  ${m.ieFor.length || m.ieAgainst.length ? `<h3>Outside spending</h3><div class="two">
+    ${m.ieFor.length ? `<div><h4>Spent to help them</h4><ol class="rank sm">${m.ieFor.slice(0, 6).map(x => fundRow(x)).join('')}</ol></div>` : ''}
+    ${m.ieAgainst.length ? `<div><h4>Spent to defeat them</h4><ol class="rank sm">${m.ieAgainst.slice(0, 6).map(x => fundRow(x)).join('')}</ol></div>` : ''}</div>` : ''}`;
+}
+function fundRow(x) { const f = D.funders.get(x.id); return f ? `<li><a href="/f/${f.slug}"><b>${esc(nice(f.name))}</b><small>${esc(f.kind)}</small></a><b class="amt">${money(x.amt)}</b></li>` : ''; }
+
+function electionsSec(p) {
+  const e = p.elections; if (!e || !e.length) return '';
+  const pts = [...e].reverse().filter(x => x.pct != null);
+  const minY = Math.min(...pts.map(x => x.year)), maxY = Math.max(...pts.map(x => x.year));
+  const W = 640, Hh = 180, pad = 34;
+  const X = y => pad + (maxY === minY ? (W - 2 * pad) / 2 : (y - minY) / (maxY - minY) * (W - 2 * pad));
+  const Y = v => Hh - 24 - (v - 0.2) / 0.8 * (Hh - 44);
+  const chart = pts.length > 1 ? `<svg class="echart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Vote share by election year">
+    <line x1="${pad}" x2="${W - pad}" y1="${Y(0.5)}" y2="${Y(0.5)}" class="ln50"/><text x="${pad - 6}" y="${Y(0.5) + 4}" class="tk" text-anchor="end">50%</text>
+    <polyline points="${pts.map(x => `${X(x.year).toFixed(1)},${Y(Math.max(0.2, x.pct)).toFixed(1)}`).join(' ')}" class="lnp p${p.party}"/>
+    ${pts.map((x, i) => `<circle cx="${X(x.year).toFixed(1)}" cy="${Y(Math.max(0.2, x.pct)).toFixed(1)}" r="4.5" class="f${p.party}"/>${i % Math.ceil(pts.length / 9) === 0 || i === pts.length - 1 ? `<text x="${X(x.year).toFixed(1)}" y="${Hh - 6}" class="tk" text-anchor="middle">${x.year}</text>` : ''}`).join('')}
+  </svg>` : '';
+  return `<h2>Elections</h2>${chart}
+  <div class="tbl"><table><thead><tr><th>Year</th><th>Race</th><th class="n">Share</th><th>Opponent</th><th>Result</th></tr></thead><tbody>
+  ${e.map(x => `<tr><td>${x.year}</td><td>${x.chamber === 'S' ? 'Senate' + (x.special ? ' special' : '') : 'House ' + x.state + '-' + (x.district || 'AL')}</td><td class="n">${x.pct != null ? pct(x.pct, 1) : ''}</td><td>${x.uncontested ? 'Unopposed' : x.opponent ? `${esc(x.opponent.name)} (${esc(x.opponent.party || '')})${x.opponent.pct != null ? ', ' + pct(x.opponent.pct, 1) : ''}` : ''}</td><td>${x.won ? 'Won' : 'Lost'}${x.raceId && x.year === 2026 ? ` <a href="/2026/race/${x.raceId}/">results</a>` : ''}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+function billsSec(p) {
+  const bm = D.bills && D.bills.byMember[p.id]; if (!bm || !bm.sponsored.length) return '';
+  const list = bm.sponsored.map(k => [k, D.bills.bills[k]]).filter(([, b]) => b).sort((a, b) => (b[1].law - a[1].law) || (b[1].cosponsors - a[1].cosponsors)).slice(0, 10);
+  const areas = {}; for (const k of bm.sponsored) { const a = D.bills.bills[k] && D.bills.bills[k].policyArea; if (a) areas[a] = (areas[a] || 0) + 1; }
+  const topAreas = Object.entries(areas).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  return `<h2>Bills</h2><p class="sub">${bm.sponsored.length} sponsored and ${bm.cosponsored.length} cosponsored in the 119th Congress.</p>
+  ${topAreas.length ? `<p class="tags">${topAreas.map(([a, n]) => `<a href="/issue/${slugIssue(a)}">${esc(a)} <b>${n}</b></a>`).join('')}</p>` : ''}
+  <ul class="blist">${list.map(([k, b]) => `<li><a href="/bill/${k}"><span class="bl">${billLabel(k)}</span><b>${esc(b.short || b.title)}</b><small>${b.law ? 'Became law. ' : ''}${esc(b.latest ? b.latest.text : '')}${b.cosponsors ? ` ${b.cosponsors} cosponsors.` : ''}</small></a></li>`).join('')}</ul>`;
+}
+const slugIssue = a => a.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+function speechesSec(p) {
+  const sp = D.speeches && D.speeches.byMember[p.id]; if (!sp || !sp.count) return '';
+  return `<h2>Speeches</h2><p class="sub">${sp.count} floor speeches in the Congressional Record this Congress.</p>
+  <ul class="slist">${sp.items.slice(0, 8).map(s => `<li><a href="${esc(s.url)}" rel="noopener"><b>${esc(s.title)}</b><small>${esc(s.chamber)}, ${date(s.date)}</small>${s.excerpt ? `<q>${esc(s.excerpt)}</q>` : ''}</a></li>`).join('')}</ul>
+  ${sp.items.length > 8 ? `<p><a class="more" href="${href(p)}/speeches">All speeches</a></p>` : ''}`;
+}
+
+const KIND = { ethics: 'Ethics', legal: 'Legal', censure: 'Censure', investigation: 'Investigation', 'campaign-finance': 'Campaign finance', 'stock-trading': 'Stock trading', other: 'Other' };
+function recordSec(p) {
+  const r = D.record && D.record.byPerson[p.id]; if (!r || !r.length) return '';
+  return `<h2>Record</h2><ul class="rec">${r.map(x => `<li><p class="rec-k"><span class="kind">${esc(KIND[x.kind] || x.kind)}</span>${x.status ? `<span class="st">${esc(x.status)}</span>` : ''}<time>${esc(x.date)}</time></p><h3>${esc(x.title)}</h3><p>${esc(x.summary)}</p><p class="src">${x.sources.map(s => `<a href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>`).join(' ')}</p></li>`).join('')}</ul>`;
+}
+
+function connectionsSec(p) {
+  const like = (p.votesLike || []).map(x => [D.byId.get(x.id), x.agree]).filter(([q]) => q);
+  const cross = (p.crossParty || []).map(x => [D.byId.get(x.id), x.agree]).filter(([q]) => q);
+  const sd = (p.sharedDonors || []).map(x => [D.byId.get(x.id), x]).filter(([q]) => q);
+  if (!like.length && !sd.length) return '';
+  return `<h2>Connections</h2>
+  <div class="two">
+   ${like.length ? `<div><h3>Votes most like</h3><ol class="rank sm">${like.map(([q, a]) => `<li>${personLink(q)}<b class="amt">${pct(a, 1)}</b></li>`).join('')}</ol></div>` : ''}
+   ${sd.length ? `<div><h3>Shares the most donors with</h3><ol class="rank sm">${sd.map(([q, x]) => `<li>${personLink(q)}<b class="amt">${x.shared} PACs</b></li>`).join('')}</ol></div>` : ''}
+   ${cross.length ? `<div><h3>Closest across the aisle</h3><ol class="rank sm">${cross.map(([q, a]) => `<li>${personLink(q)}<b class="amt">${pct(a, 1)}</b></li>`).join('')}</ol></div>` : ''}
+  </div>
+  <p><a class="btn" href="${href(p)}/network">Open the money and votes network</a></p>`;
+}
+
+function rail(p) {
+  const out = [];
+  const facts = [];
+  if (p.birthday) facts.push(['Born', date(p.birthday, { month: 'long', day: 'numeric', year: 'numeric' })]);
+  if (p.office) facts.push(['Washington office', p.office]);
+  if (p.phone) facts.push(['Phone', p.phone]);
+  if (p.terms && p.terms.length && p.status !== 'elect') {
+    const h = p.terms.filter(t => t.type === 'rep'), s = p.terms.filter(t => t.type === 'sen');
+    if (s.length) facts.push(['Senate service', `${s[0].start.slice(0, 4)} to present`]);
+    if (h.length) facts.push(['House service', `${h[0].start.slice(0, 4)} to ${p.chamber === 'H' ? 'present' : h[h.length - 1].end.slice(0, 4)}`]);
+  }
+  if (facts.length) out.push(`<section><h2>Facts</h2><dl class="kv">${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></section>`);
+  const cm = (p.committees || []).filter(c => !c.parent);
+  if (cm.length) out.push(`<section><h2><a href="/committees">Committees</a></h2><ul class="plain">${cm.map(c => `<li><a href="/committee/${c.id.toLowerCase()}">${esc(c.name.replace(/^(House|Senate) Committee on /, '').replace(/^(Senate|House) /, ''))}</a>${c.title ? `, <b>${esc(c.title)}</b>` : ''}${(p.committees || []).filter(x => x.parent === c.id).length ? `<br><small>${(p.committees || []).filter(x => x.parent === c.id).map(x => `<a href="/committee/${x.id.toLowerCase()}">${esc(x.name)}</a>`).join(', ')}</small>` : ''}</li>`).join('')}</ul></section>`);
+  const links = [];
+  if (p.status !== 'elect') links.push(['Congress.gov', `https://www.congress.gov/member/${p.id}`]);
+  for (const f of (p.ids && p.ids.fec) || p.fec || []) links.push([`FEC ${f}`, `https://www.fec.gov/data/candidate/${f}/`]);
+  if (p.ids && p.ids.wikipedia) links.push(['Wikipedia', 'https://en.wikipedia.org/wiki/' + encodeURIComponent(p.ids.wikipedia.replace(/ /g, '_'))]);
+  if (p.ids && p.ids.ballotpedia) links.push(['Ballotpedia', 'https://ballotpedia.org/' + encodeURIComponent(p.ids.ballotpedia.replace(/ /g, '_'))]);
+  if (p.ids && p.ids.govtrack) links.push(['GovTrack', `https://www.govtrack.us/congress/members/${p.ids.govtrack}`]);
+  if (p.ids && p.ids.cspan) links.push(['C-SPAN', `https://www.c-span.org/person/?${p.ids.cspan}`]);
+  const so = p.social || {};
+  if (so.twitter) links.push(['X', `https://x.com/${so.twitter}`]);
+  if (so.facebook) links.push(['Facebook', `https://www.facebook.com/${so.facebook}`]);
+  if (so.instagram) links.push(['Instagram', `https://www.instagram.com/${so.instagram}`]);
+  if (so.youtube_id) links.push(['YouTube', `https://www.youtube.com/channel/${so.youtube_id}`]);
+  if (links.length) out.push(`<section><h2>Elsewhere</h2><ul class="plain links">${links.map(([l, u]) => `<li><a href="${esc(u)}" rel="noopener">${esc(l)}</a></li>`).join('')}</ul></section>`);
+  const off = p.districtOffices || [];
+  if (off.length) out.push(`<section><h2>Offices at home</h2><ul class="plain">${off.slice(0, 6).map(o => `<li><b>${esc(o.city)}</b><br>${esc(o.address)}${o.phone ? `<br>${esc(o.phone)}` : ''}</li>`).join('')}</ul></section>`);
+  const same = (D.states[p.state] || []).filter(q => q.id !== p.id && q.status !== 'elect' && (q.chamber === 'S' || p.chamber === 'S' || true)).sort((a, b) => (a.chamber === 'S' ? 0 : 1) - (b.chamber === 'S' ? 0 : 1)).slice(0, 6);
+  if (same.length) out.push(`<section><h2><a href="/state/${p.state.toLowerCase()}">${esc(D.STATES[p.state])} delegation</a></h2><ul class="plain ppl">${same.map(q => `<li>${personLink(q)}</li>`).join('')}</ul></section>`);
+  return out.join('');
+}
+
+// full vote history
+function memberVotes(p, page) {
+  const rolls = D.recentRolls[p.chamber].filter(rc => codeFor(p, rc) != null && (codeFor(p, rc) !== '0' || wasIn(p, rc)));
+  const per = 100, pages = Math.ceil(rolls.length / per); page = Math.min(Math.max(1, page), pages || 1);
+  const list = rolls.slice((page - 1) * per, page * per);
+  const party = p.party === 'I' ? (p.caucus || 'D') : p.party;
+  const body = `<div class="wrap narrow"><p class="crumb"><a href="${href(p)}">${esc(p.name)}</a></p><h1>Every vote by ${esc(p.name)}</h1>
+  <p class="sub">${rolls.length} roll calls in the 119th Congress, newest first. Amber marks a vote against the majority of their party on a party-line roll call.</p>
+  <ul class="vlist">${list.map(rc => { const c = codeFor(p, rc); return vrow(rc, c, rc.partyLine && (c === 'Y' || c === 'N') && c !== rc.partyPos[party]); }).join('')}</ul>
+  ${pager(`${href(p)}/votes`, page, pages)}</div>`;
+  return layout({ title: `Votes by ${p.name}`, path: `${href(p)}/votes${page > 1 ? '?page=' + page : ''}`, body, active: '/members' });
+}
+function memberSpeeches(p) {
+  const sp = D.speeches && D.speeches.byMember[p.id]; if (!sp) return null;
+  const body = `<div class="wrap narrow"><p class="crumb"><a href="${href(p)}">${esc(p.name)}</a></p><h1>Floor speeches by ${esc(p.name)}</h1><p class="sub">${sp.count} speeches in the Congressional Record this Congress${sp.items.length < sp.count ? `; the ${sp.items.length} most recent are listed` : ''}.</p>
+  <ul class="slist">${sp.items.map(s => `<li><a href="${esc(s.url)}" rel="noopener"><b>${esc(s.title)}</b><small>${esc(s.chamber)}, ${date(s.date)}</small>${s.excerpt ? `<q>${esc(s.excerpt)}</q>` : ''}</a></li>`).join('')}</ul></div>`;
+  return layout({ title: `Speeches by ${p.name}`, path: `${href(p)}/speeches`, body, active: '/members' });
+}
+function pager(base, page, pages) {
+  if (pages <= 1) return '';
+  const u = n => `${base}${base.includes('?') ? '&' : '?'}page=${n}`;
+  return `<nav class="pager" aria-label="Pages">${page > 1 ? `<a href="${u(page - 1)}">Newer</a>` : '<span></span>'}<span>Page ${page} of ${pages}</span>${page < pages ? `<a href="${u(page + 1)}">Older</a>` : '<span></span>'}</nav>`;
+}
+
+// network page (client renders the graph from /api/graph)
+function network(p) {
+  const body = `<div class="wrap"><p class="crumb"><a href="${href(p)}">${esc(p.name)}</a></p><h1>${esc(p.name)}: money and votes network</h1>
+  <p class="sub">PACs that fund ${esc(p.name)}, the colleagues those same PACs fund, and the members who vote most alike. Line weight follows dollars or vote agreement. Select any circle to open it.</p>
+  <div class="net-tools seg" role="group" aria-label="Show"><button type="button" aria-pressed="true" data-net="all">Money and votes</button><button type="button" aria-pressed="false" data-net="money">Money</button><button type="button" aria-pressed="false" data-net="votes">Votes</button></div>
+  <div class="net" id="net" data-id="${p.id}" role="img" aria-label="Network graph"></div>
+  <p class="ch-key"><span><i class="fD"></i>Democrat</span><span><i class="fR"></i>Republican</span><span><i class="fI"></i>Independent</span><span><i class="fPac"></i>PAC</span></p></div>`;
+  return layout({ title: `${p.name} network`, path: `${href(p)}/network`, body, active: '/members', scripts: '<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script><script src="/c/net.js?v=3" defer></script>' });
+}
+function graph(p) {
+  const nodes = new Map(); const links = [];
+  const addP = (q, center) => { if (!nodes.has(q.id)) nodes.set(q.id, { id: q.id, t: 'p', name: q.name, party: q.party, label: short(q), url: href(q), img: H.hasPortrait(q) ? `/portraits/s/${q.id}.webp` : null, center: !!center }); };
+  addP(p, true);
+  const pacs = (p.money ? p.money.topPacs.slice(0, 10) : []).map(x => D.funders.get(x.id)).filter(Boolean);
+  for (const f of pacs) {
+    nodes.set(f.id, { id: f.id, t: 'f', name: nice(f.name), label: f.kind, url: `/f/${f.slug}` });
+    links.push({ s: p.id, t: f.id, w: f.given[p.id], k: 'money' });
+  }
+  for (const x of (p.sharedDonors || []).slice(0, 6)) {
+    const q = D.byId.get(x.id); if (!q) continue; addP(q);
+    for (const f of pacs) if (f.given[q.id]) links.push({ s: q.id, t: f.id, w: f.given[q.id], k: 'money' });
+  }
+  for (const x of [...(p.votesLike || []).slice(0, 5), ...(p.crossParty || []).slice(0, 3)]) {
+    const q = D.byId.get(x.id); if (!q) continue; addP(q); links.push({ s: p.id, t: q.id, w: x.agree, k: 'votes' });
+  }
+  return { nodes: [...nodes.values()], links };
+}
+
+// ---------------- lists ----------------
+function members(q) {
+  const ch = q.get('chamber'), pty = q.get('party'), st = (q.get('state') || '').toUpperCase(), status = q.get('status');
+  let list = D.people.filter(p => p.status !== 'elect');
+  if (ch === 'H' || ch === 'S') list = list.filter(p => p.chamber === ch);
+  if (['D', 'R', 'I'].includes(pty)) list = list.filter(p => p.party === pty);
+  if (D.STATES[st]) list = list.filter(p => p.state === st);
+  if (status === 'leaving') list = list.filter(p => p.status === 'leaving');
+  const sort = q.get('sort') || 'name';
+  const sorters = {
+    name: (a, b) => a.last.localeCompare(b.last),
+    since: (a, b) => (a.since || '').localeCompare(b.since || ''),
+    state: (a, b) => a.state.localeCompare(b.state) || (a.chamber === 'S' ? -1 : 1) || (a.district || 0) - (b.district || 0),
+    unity: (a, b) => (a.votes?.unity ?? 2) - (b.votes?.unity ?? 2),
+    missed: (a, b) => (b.votes?.missedPct ?? -1) - (a.votes?.missedPct ?? -1),
+    raised: (a, b) => (lastCycle(b)?.receipts ?? -1) - (lastCycle(a)?.receipts ?? -1),
+    ideology: (a, b) => (a.nominate ?? 0) - (b.nominate ?? 0)
+  };
+  list.sort(sorters[sort] || sorters.name);
+  const qs = (k, v) => { const u = new URLSearchParams(q); if (v == null) u.delete(k); else u.set(k, v); u.delete('page'); const s = u.toString(); return '/members' + (s ? '?' + s : ''); };
+  const filt = (k, opts) => `<div class="seg sm" role="group" aria-label="${k}">${opts.map(([v, l]) => `<a href="${qs(k, v)}" aria-pressed="${(q.get(k) || null) === v}">${l}</a>`).join('')}</div>`;
+  const th = (k, l, n) => `<th${n ? ' class="n"' : ''}><a href="${qs('sort', k)}"${sort === k ? ' aria-current="true"' : ''}>${l}</a></th>`;
+  const body = `<div class="wrap"><h1>Members of the 119th Congress</h1>
+  <div class="filters">${filt('chamber', [[null, 'Both'], ['H', 'House'], ['S', 'Senate']])}${filt('party', [[null, 'All parties'], ['D', 'Democrats'], ['R', 'Republicans'], ['I', 'Independents']])}${filt('status', [[null, 'Everyone'], ['leaving', 'Leaving office']])}
+  <form class="stf" action="/members"><label for="st" class="vh">State</label><select id="st" name="state" data-autosubmit><option value="">All states</option>${Object.entries(D.STATES).map(([k, v]) => `<option value="${k}"${st === k ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>${['chamber', 'party', 'status', 'sort'].filter(k => q.get(k)).map(k => `<input type="hidden" name="${k}" value="${esc(q.get(k))}">`).join('')}<noscript><button>Show</button></noscript></form></div>
+  <p class="sub">${list.length} members</p>
+  <div class="tbl"><table class="mtable"><thead><tr>${th('name', 'Member')}${th('since', 'Since')}${th('ideology', 'Voting score', 1)}${th('unity', 'With party', 1)}${th('missed', 'Missed', 1)}${th('raised', 'Raised this cycle', 1)}</tr></thead><tbody>
+  ${list.map(p => `<tr><td>${personLink(p, p.status === 'leaving' ? ', leaving' : '')}</td><td>${p.since ? p.since.slice(0, 4) : ''}</td><td class="n">${p.nominate != null ? p.nominate.toFixed(2) : ''}</td><td class="n">${pct(p.votes?.unity, 1)}</td><td class="n">${pct(p.votes?.missedPct, 1)}</td><td class="n">${money(lastCycle(p)?.receipts)}</td></tr>`).join('')}
+  </tbody></table></div><p class="sub">Voting score is DW-NOMINATE from Voteview, from -1 (most liberal) to +1 (most conservative).</p></div>`;
+  return layout({ title: 'Members of Congress', desc: 'Every senator and representative with voting record, party loyalty, attendance and fundraising.', path: '/members', body, active: '/members' });
+}
+
+function stateP(st) {
+  const ms = (D.states[st] || []); if (!ms.length) return null;
+  const cur = ms.filter(p => p.status !== 'elect');
+  const sen = cur.filter(p => p.chamber === 'S'), rep = cur.filter(p => p.chamber === 'H').sort((a, b) => a.district - b.district);
+  const inc = [...ms.filter(p => p.status === 'elect'), ...D.people.filter(p => p.elect && p.elect.state === st)];
+  const body = `<div class="wrap"><h1>${esc(D.STATES[st])} in Congress</h1>
+  <h2>Senators</h2><ul class="cards">${sen.map(p => `<li>${personLink(p, statusTag(p))}</li>`).join('')}</ul>
+  <h2>Representatives</h2><ul class="cards">${rep.map(p => `<li>${personLink(p, statusTag(p))}</li>`).join('')}</ul>
+  ${inc.length ? `<h2>Members-elect</h2><ul class="faces">${inc.map(p => `<li>${electCard(p)}</li>`).join('')}</ul>` : ''}</div>`;
+  return layout({ title: `${D.STATES[st]} congressional delegation`, path: `/state/${st.toLowerCase()}`, body, active: '/members' });
+}
+const statusTag = p => p.status === 'leaving' ? ', leaving' : p.elect ? `, ${p.elect.chamber === 'S' ? 'senator' : 'rep.'}-elect` : '';
+
+function incoming() {
+  const el = [...D.people.filter(p => p.status === 'elect'), ...D.people.filter(p => p.elect)];
+  const S = el.filter(p => (p.elect || p).chamber === 'S'), Hh = el.filter(p => (p.elect || p).chamber === 'H').sort((a, b) => (a.elect || a).state.localeCompare((b.elect || b).state));
+  const leaving = D.people.filter(p => p.status === 'leaving');
+  const lost = leaving.filter(p => p.race2026 && p.race2026.ran), retiring = leaving.filter(p => !(p.race2026 && p.race2026.ran));
+  const cnt = (l, pt) => l.filter(p => (p.elect || p).party === pt).length;
+  const body = `<div class="wrap"><h1>The incoming 120th Congress</h1>
+  <p class="lede">Members-elect won on November 3, 2026 and take office January 3, 2027.</p>
+  <h2>New senators <span class="cnt">${S.length}: ${cnt(S, 'D')} D, ${cnt(S, 'R')} R${cnt(S, 'I') ? `, ${cnt(S, 'I')} I` : ''}</span></h2><ul class="faces">${S.map(p => `<li>${electCard(p)}</li>`).join('')}</ul>
+  <h2>New representatives <span class="cnt">${Hh.length}: ${cnt(Hh, 'D')} D, ${cnt(Hh, 'R')} R</span></h2><ul class="faces">${Hh.map(p => `<li>${electCard(p)}</li>`).join('')}</ul>
+  <div class="two"><div><h2>Lost re-election <span class="cnt">${lost.length}</span></h2><ul class="plain ppl">${lost.map(p => `<li>${personLink(p)}</li>`).join('')}</ul></div>
+  <div><h2>Retiring or ran for another office <span class="cnt">${retiring.length}</span></h2><ul class="plain ppl">${retiring.map(p => `<li>${personLink(p)}</li>`).join('')}</ul></div></div></div>`;
+  return layout({ title: 'The incoming 120th Congress', desc: 'Every senator-elect and representative-elect from the 2026 midterms, and the members leaving office.', path: '/incoming', body, active: '/incoming' });
+}
+
+// ---------------- votes ----------------
+function votes(q) {
+  const ch = q.get('chamber'); const page = +q.get('page') || 1;
+  let list = D.allRolls; if (ch === 'H' || ch === 'S') list = list.filter(r => r.chamber === ch);
+  if (q.get('partyline') === '0') list = list.filter(r => !r.partyLine);
+  const kind = q.get('kind'); if (KINDS.some(([k]) => k === kind)) list = list.filter(r => rcKind(r) === kind);
+  const per = 40, pages = Math.ceil(list.length / per);
+  const qs = (k, v) => { const u = new URLSearchParams(q); if (v == null) u.delete(k); else u.set(k, v); u.delete('page'); const s = u.toString(); return '/votes' + (s ? '?' + s : ''); };
+  const body = `<div class="wrap narrow"><h1>Roll call votes</h1>
+  <div class="filters"><div class="seg sm" role="group" aria-label="Chamber">${[[null, 'Both'], ['H', 'House'], ['S', 'Senate']].map(([v, l]) => `<a href="${qs('chamber', v)}" aria-pressed="${(q.get('chamber') || null) === v}">${l}</a>`).join('')}</div>
+  <div class="seg sm" role="group" aria-label="Type of vote">${[[null, 'All types'], ...KINDS].map(([v, l]) => `<a href="${qs('kind', v)}" aria-pressed="${(q.get('kind') || null) === v}">${l}</a>`).join('')}</div>
+  <div class="seg sm" role="group" aria-label="Partisanship">${[[null, 'All votes'], ['0', 'Bipartisan']].map(([v, l]) => `<a href="${qs('partyline', v)}" aria-pressed="${(q.get('partyline') || null) === v}">${l}</a>`).join('')}</div></div>
+  <p class="sub">${list.length} roll calls in the 119th Congress.</p>
+  <ol class="rolls">${list.slice((page - 1) * per, page * per).map(rollRow).join('')}</ol>${pager(qs('page', null), page, pages)}</div>`;
+  return layout({ title: 'Roll call votes', path: '/votes', body, active: '/votes' });
+}
+function vote(rc) {
+  const ids = D.order[rc.chamber]; const map = Object.fromEntries(ids.map((id, i) => [id, rc.codes[i]]));
+  const bk = rcBillKey(rc); const b = bk && D.bills && D.bills.bills[bk];
+  const groups = { Y: [], N: [], P: [], 0: [] };
+  for (const [id, c] of Object.entries(map)) { const p = D.byId.get(id); if (!p || (c === '0' && !wasIn(p, rc))) continue; groups[c].push(p); }
+  const byParty = pt => ['Y', 'N', 'P', '0'].map(c => groups[c].filter(p => p.party === pt).length);
+  const defectors = [...groups.Y, ...groups.N].filter(p => { const pt = p.party === 'I' ? (p.caucus || 'D') : p.party; return rc.partyLine && rc.partyPos[pt] && map[p.id] !== rc.partyPos[pt]; });
+  const ch = rc.chamber === 'H' ? 'House' : 'Senate';
+  const body = `<div class="wrap"><p class="crumb"><a href="/votes?chamber=${rc.chamber}">${ch} votes</a></p>
+  <h1>${esc(rcTitle(rc))}</h1>
+  <p class="lede">${esc(rc.question)}${bk ? `, <a href="/bill/${bk}">${billLabel(bk)}</a>` : ''}. ${ch} roll call ${rc.clerk}, ${date(rc.date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. <span class="vk vk-${rcKind(rc)}">${KIND_LABEL[rcKind(rc)]} vote</span></p>
+  <p class="verdict"><b class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</b> <span>${rc.yea} yea, ${rc.nay} nay${groups.P.length ? `, ${groups.P.length} present` : ''}, ${groups[0].length} not voting. Required: ${esc(rc.req)}.</span></p>
+  ${qHelp(rc.question) ? `<p class="qhelp">${esc(qHelp(rc.question))}</p>` : ''}
+  <div class="cols"><div class="col-main"><figure class="vote-seats">${seatChart(rc.chamber, p => 'v' + (map[p.id] || '0'), { label: `${ch} seats colored by vote` })}<figcaption class="ch-key"><span><i class="vY"></i>Yea</span><span><i class="vN"></i>Nay</span><span><i class="vP"></i>Present</span><span><i class="v0"></i>Not voting</span></figcaption></figure></div>
+  <aside class="col-side"><div class="tbl"><table><thead><tr><th>Party</th><th class="n">Yea</th><th class="n">Nay</th><th class="n"><abbr title="Present">Pres.</abbr></th><th class="n"><abbr title="Not voting">NV</abbr></th></tr></thead><tbody>
+  ${['D', 'R', 'I'].filter(pt => byParty(pt).some(Boolean)).map(pt => `<tr><td>${chip({ party: pt })} ${PARTY[pt]}s</td>${byParty(pt).map(n => `<td class="n">${n}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+  ${b ? `<h2>The bill</h2><p>${esc(b.title)}</p><p class="sub">${b.policyArea ? `<a href="/issue/${slugIssue(b.policyArea)}">${esc(b.policyArea)}</a>. ` : ''}${b.latest ? `Latest action ${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</p><p><a href="${esc(b.url)}" rel="noopener">${billLabel(bk)} on Congress.gov</a></p>` : ''}</aside></div>
+  ${defectors.length ? `<h2>Voted against their party <span class="cnt">${defectors.length}</span></h2><ul class="cards">${defectors.map(p => `<li>${personLink(p, ', ' + VOTE_WORD[map[p.id]].toLowerCase())}</li>`).join('')}</ul>` : ''}
+  <h2>How every member voted</h2><div class="vgroups">${['Y', 'N', 'P', '0'].filter(c => groups[c].length).map(c => `<details${c === 'Y' || c === 'N' ? '' : ''}><summary>${VOTE_WORD[c]} <span class="cnt">${groups[c].length}</span></summary><ul class="names">${groups[c].sort((a, b) => a.state.localeCompare(b.state) || a.last.localeCompare(b.last)).map(p => `<li><a href="${href(p)}">${esc(p.name)}</a> <small>${short(p)}</small></li>`).join('')}</ul></details>`).join('')}</div></div>`;
+  return layout({ title: `${rcTitle(rc)}: ${ch} vote ${rc.roll}`, desc: `${ch} roll call ${rc.roll} on ${date(rc.date)}: ${rc.question}, ${rc.result} ${rc.yea}-${rc.nay}. How every member voted.`, path: `/vote/${rc.k}`, body, active: '/votes' });
+}
+// ---------------- bill tracker ----------------
+const STAGE_ORDER = ['introduced', 'committee', 'reported', 'passed-house', 'passed-senate', 'passed-both', 'to-president', 'law'];
+function stageOf(k, b) {
+  if (b.stage) return b.stage;
+  const t = (b.latest && b.latest.text) || '';
+  if (b.law || /Became Public Law|Signed by President/i.test(t)) return 'law';
+  if (/Vetoed/i.test(t)) return 'vetoed';
+  if (/Presented to President/i.test(t)) return 'to-president';
+  if (/Resolving differences|Message on Senate action sent to the House|Message on House action received in Senate/i.test(t)) return 'passed-both';
+  if (/Passed Senate|Agreed to in Senate|passed Senate/i.test(t)) return 'passed-senate';
+  if (/Passed House|Agreed to in House|On passage Passed|passed House/i.test(t)) return 'passed-house';
+  if (/Reported|Ordered to be Reported|Placed on (the )?(Union|House|Senate Legislative) Calendar/i.test(t)) return 'reported';
+  if (/Referred to/i.test(t)) return 'committee';
+  return 'introduced';
+}
+const isRes = k => /^(hres|sres)/.test(k);
+const isCon = k => /^(hconres|sconres)/.test(k);
+const fromSenate = k => /^s/.test(k);
+function steps(k) {
+  const first = fromSenate(k) ? 'Senate' : 'House', second = fromSenate(k) ? 'House' : 'Senate';
+  if (isRes(k)) return [['introduced', 'Introduced'], ['committee', 'In committee'], ['reported', 'Reported'], [`passed-${first.toLowerCase()}`, `Agreed to in the ${first}`]];
+  const s = [['introduced', 'Introduced'], ['committee', 'In committee'], ['reported', 'Reported'], [`passed-${first.toLowerCase()}`, `Passed the ${first}`], [`passed-${second.toLowerCase()}`, `Passed the ${second}`]];
+  if (isCon(k)) return s;
+  return s.concat([['to-president', 'To the President'], ['law', 'Became law']]);
+}
+function stageIndex(k, st) {
+  const sx = steps(k).map(x => x[0]);
+  if (st === 'passed-both') return sx.length > 5 ? 4 : sx.length - 1;
+  if (st === 'vetoed') return 5;
+  const i = sx.indexOf(st);
+  if (i >= 0) return i;
+  // the other chamber passed it first (e.g. a House bill the Senate passed): count the first-chamber step as done
+  if (st === 'passed-house' || st === 'passed-senate') return 3;
+  if (st === 'failed') return 2;
+  return 0;
+}
+function track(k, b) {
+  const st = stageOf(k, b); const sx = steps(k); const at = stageIndex(k, st);
+  return `<ol class="track" aria-label="Progress of ${esc(billLabel(k))}">${sx.map(([id, l], i) => `<li class="${i < at ? 'done' : i === at ? (st === 'vetoed' ? 'stop' : st === 'failed' ? 'stop' : 'now') : ''}"><span>${esc(i === at && st === 'vetoed' ? 'Vetoed' : i === at && st === 'failed' ? 'Failed' : l)}</span></li>`).join('')}</ol>`;
+}
+function bill(k) {
+  const b = D.bills && D.bills.bills[k]; if (!b) return null;
+  const sp = D.byId.get(b.sponsor);
+  const rcs = D.allRolls.filter(r => rcBillKey(r) === k);
+  const acts = (b.actions || []).slice().reverse();
+  const cms = (b.committees || []);
+  const body = `<div class="wrap narrow"><p class="crumb"><a href="/tracker">Bill tracker</a>, ${billLabel(k)}${b.policyArea ? `, <a href="/issue/${slugIssue(b.policyArea)}">${esc(b.policyArea)}</a>` : ''}</p><h1>${esc(b.short || b.title)}</h1>
+  ${b.short && b.short !== b.title ? `<p class="lede">${esc(b.title)}</p>` : ''}
+  ${track(k, b)}
+  <p>${b.lawNumber ? `<b>${esc(b.lawNumber)}.</b> ` : b.law ? '<b>Became law.</b> ' : ''}Introduced ${date(b.introduced)}${b.cosponsors ? ` with ${b.cosponsors} cosponsors` : ''}. ${b.latest ? `Latest action ${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</p>
+  ${schedNote(k)}
+  ${sp ? `<h2>Sponsor</h2><div class="cards one">${personLink(sp)}</div>` : ''}
+  ${cms.length ? `<h2>Committees</h2><ul class="plain">${cms.map(c => { const id = (c.systemCode || '').toUpperCase().replace(/00$/, ''); const has = D.meta.committees[id]; return `<li>${has ? `<a href="/committee/${id.toLowerCase()}">${esc(c.name)}</a>` : esc(c.name)}${(c.activities || []).length ? `<br><small>${esc(c.activities.map(a => `${a.name} ${date((a.date || '').slice(0, 10))}`).join(', '))}</small>` : ''}</li>`; }).join('')}</ul>` : ''}
+  ${rcs.length ? `<h2>Roll call votes</h2><ol class="rolls">${rcs.map(rollRow).join('')}</ol>` : ''}
+  ${acts.length ? `<h2>Every action</h2><ol class="acts">${acts.map(a => `<li><time>${date(a.date)}</time><span>${a.chamber ? `<b>${esc(a.chamber)}.</b> ` : ''}${esc(a.text)}</span></li>`).join('')}</ol>` : ''}
+  ${b.subjects && b.subjects.length ? `<h2>Subjects</h2><p class="tags">${b.subjects.slice(0, 20).map(s => `<span>${esc(s)}</span>`).join('')}</p>` : ''}
+  <p><a class="btn" href="${esc(b.url)}" rel="noopener">Read the bill on Congress.gov</a></p></div>`;
+  return layout({ title: `${billLabel(k)}: ${b.short || b.title}`, path: `/bill/${k}`, body, active: '/issues' });
+}
+
+// ---------------- money ----------------
+function moneyP() {
+  const cur = D.people.filter(p => p.status !== 'elect');
+  const raised = cur.filter(p => lastCycle(p)).sort((a, b) => lastCycle(b).receipts - lastCycle(a).receipts).slice(0, 15);
+  const pacs = [...D.funders.values()].filter(f => f.total > 0).sort((a, b) => b.total - a.total).slice(0, 20);
+  const ie = [...D.funders.values()].sort((a, b) => b.ie - a.ie).slice(0, 15);
+  const inds = [...D.industryTotals.values()].sort((a, b) => b.total - a.total).slice(0, 20);
+  const im = inds.length ? inds[0].total : 1;
+  const body = `<div class="wrap"><h1>Money in Congress</h1><p class="lede">Who funds the members of Congress, from FEC filings for the 2022, 2024 and 2026 cycles.</p>
+  ${inds.length ? `<h2>Industries</h2><p class="sub">PAC contributions to current members and members-elect since 2021, by industry. Bar color shows the split between Democrats and Republicans.</p><ul class="hbars ind">${inds.map(t => `<li><a href="/industry/${t.id}">${esc(D.indName.get(t.id))}</a><span class="hb split" style="width:${(t.total / im * 100).toFixed(1)}%"><i class="fD" style="flex:${t.D || 0}"></i><i class="fI" style="flex:${t.I || 0}"></i><i class="fR" style="flex:${t.R || 0}"></i></span><b>${money(t.total)}</b></li>`).join('')}</ul>` : ''}
+  <div class="cols"><div class="col-main"><h2>Biggest PAC givers</h2><div class="tbl"><table><thead><tr><th>PAC</th><th>Kind</th><th class="n">To members</th><th>Split</th></tr></thead><tbody>
+  ${pacs.map(f => { const s = split(f.given); return `<tr><td><a href="/f/${f.slug}">${esc(nice(f.name))}</a></td><td>${esc(f.kind)}</td><td class="n">${money(f.total)}</td><td>${splitBar(s)}</td></tr>`; }).join('')}</tbody></table></div></div>
+  <aside class="col-side"><h2>Most raised this cycle</h2><ol class="rank">${raised.map(p => `<li>${personLink(p)}<b class="amt">${money(lastCycle(p).receipts)}</b></li>`).join('')}</ol></aside></div>
+  <h2 id="outside">Biggest outside spenders</h2><p class="sub">Independent expenditures for or against current members and members-elect.</p>
+  <div class="tbl"><table><thead><tr><th>Group</th><th>Kind</th><th class="n">Spent</th><th>Biggest target</th></tr></thead><tbody>
+  ${ie.map(f => { const t = Object.entries({ ...f.ieFor, ...prefix(f.ieAgainst) }).sort((a, b) => b[1] - a[1])[0]; const tp = t && D.byId.get(t[0].replace(/^-/, '')); return `<tr><td><a href="/f/${f.slug}">${esc(nice(f.name))}</a></td><td>${esc(f.kind)}</td><td class="n">${money(f.ie)}</td><td>${tp ? `${t[0].startsWith('-') ? 'Against' : 'For'} <a href="${href(tp)}">${esc(tp.name)}</a>` : ''}</td></tr>`; }).join('')}</tbody></table></div></div>`;
+  return layout({ title: 'Money in Congress', path: '/money', body, active: '/money' });
+}
+const prefix = o => Object.fromEntries(Object.entries(o).map(([k, v]) => ['-' + k, v]));
+function split(given) { const s = { D: 0, R: 0, I: 0 }; for (const [id, amt] of Object.entries(given)) { const p = D.byId.get(id); if (p) s[p.party === 'R' ? 'R' : p.party === 'D' ? 'D' : 'I'] += amt; } return s; }
+function splitBar(s) { const t = s.D + s.R + s.I || 1; return `<span class="split mini" title="${pct(s.D / t)} to Democrats, ${pct(s.R / t)} to Republicans"><i class="fD" style="flex:${s.D}"></i><i class="fI" style="flex:${s.I}"></i><i class="fR" style="flex:${s.R}"></i></span><small>${pct(s.D / t)} D</small>`; }
+
+function funder(f) {
+  const s = split(f.given); const t = s.D + s.R + s.I;
+  const rec = Object.entries(f.given).map(([id, amt]) => [D.byId.get(id), amt]).filter(([p]) => p).sort((a, b) => b[1] - a[1]);
+  const ind = D.industryOf(f.id); const lob = D.lobbying && D.lobbying.byCommittee[f.id];
+  const iel = (o, l) => { const e = Object.entries(o).map(([id, amt]) => [D.byId.get(id), amt]).filter(([p]) => p).sort((a, b) => b[1] - a[1]); return e.length ? `<div><h3>${l}</h3><ol class="rank sm">${e.slice(0, 12).map(([p, a]) => `<li>${personLink(p)}<b class="amt">${money(a)}</b></li>`).join('')}</ol></div>` : ''; };
+  const body = `<div class="wrap"><p class="crumb"><a href="/money">Money</a>${ind ? `, <a href="/industry/${ind}">${esc(D.indName.get(ind))}</a>` : ''}</p>
+  <h1>${esc(nice(f.name))}</h1>
+  <p class="lede">${esc(f.kind)}${f.org ? ` connected to ${esc(nice(f.org))}` : ''}${f.city ? `, ${esc(nice(f.city))}, ${esc(f.state)}` : ''}. FEC committee <a href="https://www.fec.gov/data/committee/${f.id}/" rel="noopener">${f.id}</a>.</p>
+  <dl class="facts">${t ? `<div><dt>Given to members</dt><dd>${money(f.total)}</dd><dd class="s">${rec.length} recipients since 2021</dd></div><div><dt>To Democrats</dt><dd>${pct(s.D / t)}</dd><dd class="s">${money(s.D)}</dd></div><div><dt>To Republicans</dt><dd>${pct(s.R / t)}</dd><dd class="s">${money(s.R)}</dd></div>` : ''}${f.ie ? `<div><dt>Outside spending</dt><dd>${money(f.ie)}</dd><dd class="s">For and against members</dd></div>` : ''}${lob ? `<div><dt>Lobbying, 2025-26</dt><dd>${money((lob.spend['2025'] || 0) + (lob.spend['2026'] || 0))}</dd><dd class="s">Lobbying Disclosure Act filings</dd></div>` : ''}</dl>
+  ${rec.length ? `<h2>Recipients</h2><div class="tbl"><table><thead><tr><th>Member</th><th class="n">Given</th></tr></thead><tbody>${rec.slice(0, 60).map(([p, a]) => `<tr><td>${personLink(p)}</td><td class="n">${money(a, true)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+  ${Object.keys(f.ieFor).length || Object.keys(f.ieAgainst).length ? `<h2>Outside spending</h2><div class="two">${iel(f.ieFor, 'To help')}${iel(f.ieAgainst, 'To defeat')}</div>` : ''}
+  ${lob ? `<h2>What ${esc(nice(lob.client))} lobbies on</h2><p class="tags">${lob.issues.slice(0, 20).map(i => `<span>${esc(i.name)} <b>${i.filings}</b></span>`).join('')}</p>${lob.bills && lob.bills.length ? `<p class="sub">Bills named in filings: ${lob.bills.slice(0, 20).map(esc).join(', ')}.</p>` : ''}<p><a href="${esc(lob.url)}" rel="noopener">Lobbying filings on LDA.gov</a></p>` : ''}</div>`;
+  return layout({ title: nice(f.name), desc: `${nice(f.name)} (${f.kind}): ${money(f.total)} to members of Congress, ${t ? pct(s.R / t) + ' to Republicans' : ''}.`, path: `/f/${f.slug}`, body, active: '/money' });
+}
+function industry(id) {
+  const t = D.industryTotals.get(id); if (!t) return null;
+  const sec = D.sectorOf.get(id);
+  const rec = Object.entries(t.recipients).map(([pid, a]) => [D.byId.get(pid), a]).filter(([p]) => p).sort((a, b) => b[1] - a[1]);
+  const pacs = [...D.funders.values()].filter(f => D.industryOf(f.id) === id && f.total > 0).sort((a, b) => b.total - a.total);
+  const body = `<div class="wrap"><p class="crumb"><a href="/money">Money</a>${sec ? `, ${esc(sec.name)}` : ''}</p><h1>${esc(D.indName.get(id))}</h1>
+  <dl class="facts"><div><dt>Given to members</dt><dd>${money(t.total)}</dd><dd class="s">PAC contributions since 2021</dd></div><div><dt>To Democrats</dt><dd>${pct(t.D / t.total)}</dd></div><div><dt>To Republicans</dt><dd>${pct(t.R / t.total)}</dd></div></dl>
+  <div class="cols"><div class="col-main"><h2>Top recipients</h2><ol class="rank">${rec.slice(0, 20).map(([p, a]) => `<li>${personLink(p)}<b class="amt">${money(a)}</b></li>`).join('')}</ol></div>
+  <aside class="col-side"><h2>PACs in this industry</h2><ol class="rank sm">${pacs.slice(0, 25).map(f => `<li><a href="/f/${f.slug}"><b>${esc(nice(f.name))}</b><small>${esc(nice(f.org) || f.kind)}</small></a><b class="amt">${money(f.total)}</b></li>`).join('')}</ol></aside></div></div>`;
+  return layout({ title: `${D.indName.get(id)} money in Congress`, path: `/industry/${id}`, body, active: '/money' });
+}
+
+// ---------------- issues ----------------
+function issues() {
+  if (!D.bills) return null;
+  const list = Object.entries(D.bills.issues).sort((a, b) => b[1].bills - a[1].bills);
+  const body = `<div class="wrap"><h1>Issues</h1><p class="lede">Every bill in the 119th Congress sorted into its Congress.gov policy area, with the roll calls taken on each.</p>
+  <ul class="issues">${list.map(([a, x]) => `<li><a href="/issue/${slugIssue(a)}"><b>${esc(a)}</b><small>${x.bills} bills${x.rollcalls.length ? `, ${x.rollcalls.length} roll calls` : ''}</small></a></li>`).join('')}</ul></div>`;
+  return layout({ title: 'Issues before Congress', path: '/issues', body, active: '/issues' });
+}
+function issue(slug) {
+  if (!D.bills) return null;
+  const e = Object.entries(D.bills.issues).find(([a]) => slugIssue(a) === slug); if (!e) return null;
+  const [name, x] = e;
+  const bl = Object.entries(D.bills.bills).filter(([, b]) => b.policyArea === name).sort((a, b) => (b[1].law - a[1].law) || (b[1].cosponsors - a[1].cosponsors));
+  const sponsors = {}; for (const [, b] of bl) if (b.sponsor) sponsors[b.sponsor] = (sponsors[b.sponsor] || 0) + 1;
+  const topS = Object.entries(sponsors).map(([id, n]) => [D.byId.get(id), n]).filter(([p]) => p).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const rcs = x.rollcalls.map(k => D.rcByK.get(k)).filter(Boolean).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15);
+  const body = `<div class="wrap"><p class="crumb"><a href="/issues">Issues</a></p><h1>${esc(name)}</h1>
+  <p class="lede">${bl.length} bills in the 119th Congress${bl.filter(([, b]) => b.law).length ? `, ${bl.filter(([, b]) => b.law).length} signed into law` : ''}.</p>
+  <div class="cols"><div class="col-main">${rcs.length ? `<h2>Roll call votes</h2><ol class="rolls">${rcs.map(rollRow).join('')}</ol>` : ''}
+  <h2>Bills with the most support</h2><ul class="blist">${bl.slice(0, 25).map(([k, b]) => `<li><a href="/bill/${k}"><span class="bl">${billLabel(k)}</span><b>${esc(b.short || b.title)}</b><small>${b.law ? 'Became law. ' : ''}${b.cosponsors} cosponsors.</small></a></li>`).join('')}</ul></div>
+  <aside class="col-side"><h2>Most active sponsors</h2><ol class="rank sm">${topS.map(([p, n]) => `<li>${personLink(p)}<b class="amt">${n} bills</b></li>`).join('')}</ol></aside></div></div>`;
+  return layout({ title: `${name} in Congress`, path: `/issue/${slug}`, body, active: '/issues' });
+}
+
+// ---------------- search ----------------
+function searchRun(q, limit = 40) {
+  const n = D.norm(q); if (!n) return [];
+  const terms = n.split(' ');
+  const billish = /^(h ?r|s|h ?res|s ?res|h ?j ?res|s ?j ?res)\s*\d+$/.test(n) ? n.replace(/\s+/g, '') : null;
+  const out = [];
+  for (const it of D.search) {
+    if (billish && it.t === 'bill' && it.k === billish) { out.push([0, it]); continue; }
+    if (!terms.every(t => it.key.includes(t))) continue;
+    let score = it.t === 'person' ? 1 : it.t === 'funder' ? 2 : 3;
+    if (it.t === 'person' && D.norm(it.p.last) === n) score = 0.5;
+    if (it.t === 'person' && it.p.state.toLowerCase() === n) score = 0.8;
+    out.push([score, it]);
+  }
+  out.sort((a, b) => a[0] - b[0] || (b[1].f ? b[1].f.total : 0) - (a[1].f ? a[1].f.total : 0));
+  return out.slice(0, limit).map(x => x[1]);
+}
+function search(q) {
+  const qq = (q.get('q') || '').trim();
+  if (/^\d{5}(-\d{4})?$/.test(qq)) return { redirect: '/find?q=' + qq.slice(0, 5) };
+  const st = Object.entries(D.STATES).find(([k, v]) => D.norm(v) === D.norm(qq) || k.toLowerCase() === qq.toLowerCase());
+  const res = searchRun(qq);
+  const ppl = res.filter(r => r.t === 'person'), fs = res.filter(r => r.t === 'funder'), bs = res.filter(r => r.t === 'bill');
+  const body = `<div class="wrap narrow"><h1>${qq ? `Results for “${esc(qq)}”` : 'Search'}</h1>
+  <form class="bigsearch" action="/search" role="search"><label for="sq" class="vh">Search</label><input id="sq" name="q" type="search" value="${esc(qq)}" autocomplete="off" data-suggest><button type="submit">Search</button></form>
+  ${st ? `<p class="hit"><a class="btn" href="/state/${st[0].toLowerCase()}">${esc(st[1])} delegation</a></p>` : ''}
+  ${ppl.length ? `<h2>Members</h2><ul class="cards">${ppl.map(r => `<li>${personLink(r.p, statusTag(r.p))}</li>`).join('')}</ul>` : ''}
+  ${fs.length ? `<h2>PACs and groups</h2><ol class="rank sm">${fs.map(r => `<li><a href="/f/${r.f.slug}"><b>${esc(nice(r.f.name))}</b><small>${esc(r.f.kind)}${r.f.org ? ', ' + esc(nice(r.f.org)) : ''}</small></a><b class="amt">${money(r.f.total || r.f.ie)}</b></li>`).join('')}</ol>` : ''}
+  ${bs.length ? `<h2>Bills</h2><ul class="blist">${bs.map(r => `<li><a href="/bill/${r.k}"><span class="bl">${billLabel(r.k)}</span><b>${esc(r.b.short || r.b.title)}</b></a></li>`).join('')}</ul>` : ''}
+  ${qq && !res.length && !st ? `<p>Nothing matches “${esc(qq)}”. Try a last name, a state, a company or a bill number such as H.R. 1.</p>` : ''}</div>`;
+  return layout({ title: qq ? `Search: ${qq}` : 'Search', path: '/search', body, noindex: true });
+}
+function suggest(q) {
+  if (/^\d{5}$/.test(q.trim()) && F.ZIPS[q.trim()]) { const z = F.ZIPS[q.trim()]; return [{ t: 'ZIP code', l: `Your representatives for ${q.trim()}`, s: D.STATES[z.d[0][0]], u: '/find?q=' + q.trim() }]; }
+  const st = Object.entries(D.STATES).find(([k, v]) => D.states[k] && (D.norm(v) === D.norm(q) || (q.length === 2 && k === q.toUpperCase()) || (q.length > 2 && D.norm(v).startsWith(D.norm(q)))));
+  const head = st ? [{ t: 'State', l: `${st[1]} delegation`, s: `${D.states[st[0]].filter(p => p.status !== 'elect').length} members`, u: `/state/${st[0].toLowerCase()}` }] : [];
+  return head.concat(searchRun(q, 8 - head.length).map(r => r.t === 'person' ? { t: 'Member', l: `${title(r.p)} ${r.p.name}`, s: short(r.p), u: href(r.p), img: H.hasPortrait(r.p) ? `/portraits/s/${r.p.id}.webp` : null }
+    : r.t === 'funder' ? { t: r.f.kind, l: nice(r.f.name), s: money(r.f.total || r.f.ie), u: `/f/${r.f.slug}` }
+      : { t: 'Bill', l: r.b.short || r.b.title, s: billLabel(r.k), u: `/bill/${r.k}` }));
+}
+
+// ---------------- schedule ----------------
+const LV = require('./live');
+const ET = { timeZone: 'America/New_York' };
+const dayLabel = iso => new Date(iso).toLocaleDateString('en-US', { ...ET, weekday: 'long', month: 'long', day: 'numeric' });
+const timeLabel = iso => new Date(iso).toLocaleTimeString('en-US', { ...ET, hour: 'numeric', minute: '2-digit' }) + ' ET';
+const weekLabel = wd => `Week of ${date(wd, { month: 'long', day: 'numeric' })}`;
+function billInline(text) {
+  return esc(text).replace(LV.BILL_RE, m => { const k = LV.billKey(m); return k && D.bills && D.bills.bills[k] ? `<a href="/bill/${k}">${m}</a>` : m; });
+}
+function votesOnBill(k, since) { return D.allRolls.filter(r => rcBillKey(r) === k && (!since || r.date >= since)); }
+function floorItem(i, since) {
+  const b = i.key && D.bills && D.bills.bills[i.key]; const sp = b && D.byId.get(b.sponsor);
+  const done = i.key ? votesOnBill(i.key, since) : [];
+  return `<li><div class="fi"><span class="bl">${esc(i.num || '')}</span>${i.key && b ? `<a href="/bill/${i.key}"><b>${esc(b.short || i.text)}</b></a>` : `<b>${esc(i.text)}</b>`}
+    ${sp ? `<small>Sponsor: <a href="${href(sp)}">${esc(title(sp) + ' ' + sp.name)}</a> ${chip(sp)}</small>` : ''}</div>
+    ${done.length ? `<a class="fi-done" href="/vote/${done[0].k}"><em class="res ${/pass|agreed|confirmed|adopted/i.test(done[0].result) ? 'ok' : 'no'}">${esc(done[0].result)}</em> ${done[0].yea}-${done[0].nay}</a>` : '<span class="fi-wait">No roll call yet</span>'}</li>`;
+}
+function meetingRow(m) {
+  const bills = m.bills.map(k => D.bills && D.bills.bills[k] ? `<a href="/bill/${k}">${billLabel(k)}</a>` : billLabel(k));
+  return `<li class="mt"><time>${timeLabel(m.date)}</time><div><b><a href="${esc(m.url)}" rel="noopener">${esc(m.title)}</a></b>
+    <small>${esc(m.committees.map(c => c.name).join(', '))}${m.where ? `. ${esc(m.where)}` : ''}${m.status && m.status !== 'Scheduled' ? `. <span class="st-flag">${esc(m.status)}</span>` : ''}</small>
+    ${bills.length ? `<small>Bills: ${bills.join(', ')}</small>` : ''}</div></li>`;
+}
+function byDay(list) { const g = new Map(); for (const m of list) { const d = m.date.slice(0, 10) && dayLabel(m.date); if (!g.has(d)) g.set(d, []); g.get(d).push(m); } return g; }
+function schedule() {
+  const L = LV.L; const meet = LV.upcomingMeetings(14);
+  const recent = D.allRolls.slice(0, 10);
+  const hs = L.house.map(w => `<div class="wk"><h3>${weekLabel(w.week)} <a class="src" href="${esc(w.url)}" rel="noopener">Majority Leader floor schedule</a></h3>${w.cats.map(c => `<h4>${esc(c.name)}</h4><ul class="floor">${c.items.map(i => floorItem(i, w.week)).join('')}</ul>`).join('')}</div>`).join('');
+  const ss = L.senate.map(s => `<div class="sday"><h3>${s.date ? dayLabel(s.date + 'T17:00:00Z') : esc(s.title)} <a class="src" href="${esc(s.url)}" rel="noopener">Senate floor schedule</a></h3>${s.paras.map(p => `<p>${billInline(p)}</p>`).join('')}</div>`).join('');
+  const ms = [...byDay(meet)].map(([d, list]) => `<h3>${esc(d)}</h3><ul class="mts">${list.map(meetingRow).join('')}</ul>`).join('');
+  const body = `<div class="wrap"><h1>This week in Congress</h1>
+  <p class="lede">What the House and Senate plan to take up, the committee hearings ahead and the latest roll calls. Updated every 10 minutes from the House Majority Leader, the Senate floor schedule, Congress.gov and the House and Senate clerks.</p>
+  <div class="cols"><div class="col-main">
+    ${hs ? `<section class="sched"><h2>House floor</h2>${hs}</section>` : ''}
+    ${ss ? `<section class="sched"><h2>Senate floor</h2>${ss}</section>` : ''}
+    ${ms ? `<section class="sched"><h2>Committee hearings and markups</h2>${ms}</section>` : ''}
+  </div>
+  <aside class="col-side"><h2><a href="/votes">Latest roll calls</a></h2><ol class="rolls compact">${recent.map(rollRow).join('')}</ol></aside></div></div>`;
+  return layout({ title: 'This week in Congress', desc: 'The House and Senate floor schedules, upcoming committee hearings and the latest roll call votes.', path: '/schedule', body, active: '/schedule' });
+}
+function comingUp() {
+  const items = LV.floorItems(); const meet = LV.upcomingMeetings(7); const s = LV.L.senate[0];
+  if (!items.length && !meet.length && !s) return '';
+  const thisWeek = LV.L.house[0];
+  const open = items.filter(i => i.week === (thisWeek && thisWeek.week) && !(i.key && votesOnBill(i.key, i.week).length)).slice(0, 5);
+  return `<section class="band"><div class="wrap cols"><div class="col-main"><h2><a href="/schedule">Coming up in Congress</a></h2>
+  ${s ? `<div class="sday"><h3>Senate, ${s.date ? dayLabel(s.date + 'T17:00:00Z') : ''}</h3><p>${billInline(s.paras.slice(0, 2).join(' '))}</p></div>` : ''}
+  ${open.length ? `<h3>Still to come on the House floor this week</h3><ul class="floor">${open.map(i => floorItem(i, i.week)).join('')}</ul>` : ''}
+  <p><a class="more" href="/schedule">Full schedule</a></p></div>
+  <aside class="col-side">${meet.length ? `<h2>Next hearings</h2><ul class="mts">${meet.slice(0, 5).map(m => meetingRow(m).replace('<time>', `<time>${esc(new Date(m.date).toLocaleDateString('en-US', { ...ET, weekday: 'short' }))} `)).join('')}</ul>` : ''}</aside></div></section>`;
+}
+function comingFor(p) {
+  if (p.status === 'elect') return '';
+  const bm = D.bills && D.bills.byMember[p.id]; const mine = new Set(bm ? [...bm.sponsored, ...bm.cosponsored] : []);
+  const floor = LV.floorItems().filter(i => i.key && mine.has(i.key) && !votesOnBill(i.key, i.week).length);
+  const sen = []; for (const s of LV.L.senate) for (const b of (s.paras.join(' ').match(LV.BILL_RE) || [])) { const k = LV.billKey(b); if (k && mine.has(k) && !sen.includes(k)) sen.push(k); }
+  const meet = LV.meetingsFor(p, 21);
+  if (!floor.length && !sen.length && !meet.length) return '';
+  const role = k => bm && bm.sponsored.includes(k) ? 'Sponsor' : 'Cosponsor';
+  return `<h2>Coming up</h2>
+  ${floor.length ? `<h3>On the House floor</h3><ul class="floor">${floor.map(i => floorItem(i, i.week).replace('<span class="bl">', `<span class="bl">${role(i.key)}, `)).join('')}</ul>` : ''}
+  ${sen.length ? `<h3>On the Senate floor</h3><ul class="blist">${sen.map(k => { const b = D.bills.bills[k]; return `<li><a href="/bill/${k}"><span class="bl">${role(k)}, ${billLabel(k)}</span><b>${esc(b ? b.short || b.title : billLabel(k))}</b></a></li>`; }).join('')}</ul>` : ''}
+  ${meet.length ? `<h3>Their committees meet</h3><ul class="mts">${meet.slice(0, 6).map(m => meetingRow(m).replace('<time>', `<time>${esc(new Date(m.date).toLocaleDateString('en-US', { ...ET, month: 'short', day: 'numeric' }))}, `)).join('')}</ul>` : ''}
+  <p><a class="more" href="/schedule">Full schedule</a></p>`;
+}
+function schedNote(k) {
+  const s = LV.scheduledBills().get(k); if (!s) return '';
+  const when = s.week ? weekLabel(s.week).toLowerCase() : s.date ? dayLabel(s.date + 'T17:00:00Z') : '';
+  return `<p class="ph-status">Scheduled: ${esc(s.where)}${when ? `, ${esc(when)}` : ''}. <a href="/schedule">See the schedule</a></p>`;
+}
+
+// ---------------- tracker page ----------------
+const STAGE_HELP = [
+  ['Introduced', 'A member of the House or Senate files the bill and it gets a number: H.R. for House bills, S. for Senate bills. Any member can introduce one; others sign on as cosponsors.'],
+  ['In committee', 'The Speaker or the Senate presiding officer refers the bill to the committees that cover its subject. Committees hold hearings, then a markup where members amend the text and vote on whether to report it. Most bills never leave committee.'],
+  ['Reported', 'The committee sends the bill to the full chamber with a written report, and it goes on the calendar. Party leaders decide whether and when it reaches the floor.'],
+  ['First chamber vote', 'In the House, the Rules Committee writes a rule setting debate time and allowed amendments, and the House votes on that rule before the bill. Less contested bills come up under suspension of the rules, which needs a two-thirds vote. In the Senate, most bills need 60 votes for cloture to end debate before a final simple-majority vote.'],
+  ['Second chamber vote', 'The other chamber has to pass the same text. It can take up the bill as passed, amend it, or pass its own version.'],
+  ['Resolving differences', 'When the two versions differ, the chambers send amendments back and forth until they agree, or appoint a conference committee to write one version that both chambers then vote on.'],
+  ['The President', 'The President has 10 days, not counting Sundays, to sign or veto. Congress can override a veto with two-thirds of both chambers. A bill left unsigned becomes law after 10 days unless Congress has adjourned, which makes it a pocket veto.'],
+  ['Law', 'A signed bill becomes a public law with a number such as Public Law 119-21.']
+];
+function tracker(q) {
+  const all = D.bills ? Object.entries(D.bills.bills).filter(([k]) => !isRes(k)) : [];
+  const st = Object.fromEntries(all.map(([k, b]) => [k, stageOf(k, b)]));
+  const count = f => all.filter(([k]) => f(st[k])).length;
+  const reachedCommittee = count(s => s !== 'introduced'); const reported = count(s => STAGE_ORDER.indexOf(s) >= 2 || s === 'vetoed');
+  const passedOne = count(s => STAGE_ORDER.indexOf(s) >= 3 || s === 'vetoed'); const passedBoth = count(s => STAGE_ORDER.indexOf(s) >= 5 || s === 'vetoed');
+  const laws = count(s => s === 'law');
+  const nums = [all.length, reachedCommittee, reported, passedOne, passedBoth, null, count(s => s === 'to-president' || s === 'law' || s === 'vetoed'), laws];
+  const lastDate = b => (b.stageDate || (b.latest && b.latest.date) || '');
+  const pick = f => all.filter(([k, b]) => f(st[k], b)).sort((a, b) => lastDate(b[1]).localeCompare(lastDate(a[1])));
+  const lists = [
+    ['Signed into law', pick(s => s === 'law')],
+    ['Waiting on the President', pick(s => s === 'to-president')],
+    ['Passed both chambers', pick(s => s === 'passed-both')],
+    ['Passed one chamber', pick(s => s === 'passed-house' || s === 'passed-senate')],
+    ['Vetoed', pick(s => s === 'vetoed')],
+    ['Reported by committee', pick(s => s === 'reported')]
+  ].filter(([, l]) => l.length);
+  const max = nums[0] || 1;
+  const body = `<div class="wrap"><h1>Bill tracker</h1>
+  <p class="lede">How a bill becomes law, and where every bill in the 119th Congress stands.</p>
+  <ol class="process">${STAGE_HELP.map(([h, t], i) => `<li><div class="pr-n">${D.bills && nums[i] != null ? `<b>${nums[i].toLocaleString('en-US')}</b><span class="pr-bar" style="width:${Math.max(1.5, nums[i] / max * 100).toFixed(1)}%"></span>` : ''}</div><div><h2>${esc(h)}</h2><p>${esc(t)}</p></div></li>`).join('')}</ol>
+  ${D.bills ? `<p class="sub">Counts are House and Senate bills and joint and concurrent resolutions of the 119th Congress that reached each step.</p>` : ''}
+  ${lists.map(([h, l]) => `<h2>${esc(h)} <span class="cnt">${l.length}</span></h2><ul class="blist">${l.slice(0, 12).map(([k, b]) => `<li><a href="/bill/${k}"><span class="bl">${billLabel(k)}</span><b>${esc(b.short || b.title)}</b><small>${esc(b.latest ? `${date(b.latest.date)}: ${b.latest.text}` : '')}</small></a></li>`).join('')}</ul>`).join('')}
+  ${D.bills ? `<h2>Bills by issue</h2><p><a href="/issues">Browse every bill by policy area</a>, from agriculture to taxation.</p>` : ''}
+  <h2>Votes along the way</h2><p>Many roll calls are procedural: they decide whether and how a bill is debated rather than whether it passes. <a href="/votes?kind=procedural">See procedural votes</a>, <a href="/votes?kind=passage">passage votes</a>, <a href="/votes?kind=nomination">nominations</a> and <a href="/votes?kind=leadership">leadership votes</a>.</p></div>`;
+  return layout({ title: 'Bill tracker', desc: 'How a bill becomes law, step by step, and where every bill in the 119th Congress stands.', path: '/tracker', body, active: '/tracker' });
+}
+// plain-language help for the vote question
+const QHELP = [
+  [/Cloture/i, 'Cloture ends debate in the Senate. It takes three-fifths of senators, usually 60, for legislation, and a simple majority for nominations. Without it, a filibuster can block a final vote.'],
+  [/Motion to Proceed/i, 'A vote on whether the Senate will begin debating the measure.'],
+  [/Recommit|Commit/i, 'A motion to send the bill back to committee, usually offered by the minority as a last chance to change it. Voting no keeps the bill moving.'],
+  [/Previous Question/i, 'A vote to end debate on a House rule and move to adopt it. The minority votes no to try to offer its own amendment; it almost always follows party lines.'],
+  [/Suspend the Rules/i, 'A fast-track used for less contested bills: debate is limited, no amendments are allowed and passage takes two-thirds of those voting.'],
+  [/Table/i, 'A motion to table sets a measure or motion aside, which usually kills it.'],
+  [/Discharge/i, 'A motion to pull a measure out of committee and bring it to the floor without the committee acting.'],
+  [/Concur/i, 'A vote to accept the other chamber\'s changes. If it passes, both chambers have agreed on the same text.'],
+  [/Objections of the President/i, 'A vote to override a presidential veto. It needs two-thirds of both chambers.'],
+  [/Election of the Speaker/i, 'Members vote aloud by name for Speaker. Winning takes a majority of those voting for a person by name.'],
+  [/Nomination/i, 'A Senate vote to confirm the President\'s nominee. Confirmation takes a simple majority.'],
+  [/Point of Order|Decision of the Chair/i, 'A challenge to a ruling by the presiding officer on whether something follows the chamber\'s rules.'],
+  [/Agreeing to the Resolution/i, 'In the House this is often the vote on a rule, which sets the terms of debate for a bill before the bill itself comes up.']
+];
+const qHelp = q => { const h = QHELP.find(([re]) => re.test(q || '')); return h ? h[1] : ''; };
+
+// ---------------- leadership ----------------
+const leaderRoles = id => D.leadership ? D.leadership.current.filter(c => c.person === id) : [];
+function leadership() {
+  const Ld = D.leadership; if (!Ld) return null;
+  const card = c => { const p = D.byId.get(c.person); return p ? `<li><span class="lt">${esc(c.title)}</span>${personLink(p)}</li>` : ''; };
+  const grp = (ch, pt) => Ld.current.filter(c => c.chamber === ch && (pt === undefined || c.party === pt));
+  const sec = ch => { const top = Ld.current.filter(c => c.chamber === ch && !c.party); const R = grp(ch, 'R'), Dm = grp(ch, 'D');
+    return `<h2>${ch}</h2>${top.length ? `<ul class="leaders top">${top.map(card).join('')}</ul>` : ''}<div class="two">${R.length ? `<div><h3>Republicans</h3><ul class="leaders">${R.map(card).join('')}</ul></div>` : ''}${Dm.length ? `<div><h3>Democrats</h3><ul class="leaders">${Dm.map(card).join('')}</ul></div>` : ''}</div>`; };
+  const els = [...Ld.elections].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const by = c => els.filter(e => e.congress === c);
+  const elRow = e => `<li class="el"><p class="rec-k"><span class="kind">${esc(e.body)}</span><time>${date(e.date)}</time>${e.method ? `<span>${esc(e.method)}</span>` : ''}</p>
+    <h3><a href="/leadership/${esc(e.id)}">${esc(e.office)}${e.result.length ? `: ${esc((e.result.find(r => r.won) || {}).name || '')}` : ''}</a></h3><p>${esc(e.summary)}</p>
+    ${e.result.length ? `<p class="tally">${e.result.map(r => `${r.won ? '<b>' : ''}${esc(r.name)}${r.votes != null ? ` ${r.votes}` : ''}${r.won ? '</b>' : ''}`).join(', ')}</p>` : ''}</li>`;
+  const body = `<div class="wrap"><h1>Congressional leadership</h1><p class="lede">Who runs the House and Senate and each party's caucus, and how they were chosen. Party leaders are picked in closed caucus and conference votes; the Speaker is then elected on the House floor by name.</p>
+  <div class="cols"><div class="col-main">${sec('House')}${sec('Senate')}</div>
+  <aside class="col-side">${by(120).length ? `<h2>Leadership elections for the 120th Congress</h2><ul class="els">${by(120).map(elRow).join('')}</ul>` : ''}
+  ${by(119).length ? `<h2>119th Congress</h2><ul class="els">${by(119).map(elRow).join('')}</ul>` : ''}</aside></div></div>`;
+  return layout({ title: 'Congressional leadership', desc: 'The Speaker, party leaders and whips of the House and Senate, and every leadership election, including caucus nominations and the Speaker vote.', path: '/leadership', body, active: '/leadership' });
+}
+function leaderElection(id) {
+  const e = D.leadership && D.leadership.elections.find(x => x.id === id); if (!e) return null;
+  const rv = e.rollcall && e.rollcall.votes;
+  let chart = '';
+  if (rv) {
+    const names = {}; for (const v of Object.values(rv)) names[v] = (names[v] || 0) + 1;
+    const ranked = Object.entries(names).sort((a, b) => b[1] - a[1]);
+    const partyOfName = n => { const r = e.result.find(x => x.name === n || (x.name && n.startsWith(x.name.split(' ').pop()))); const p = r && r.person && D.byId.get(r.person); return p ? p.party : null; };
+    const cls = {}; ranked.forEach(([n]) => { const pt = partyOfName(n); cls[n] = /^(present|not voting)$/i.test(n) ? 'v0' : pt ? 'f' + pt : 'cC'; });
+    chart = `<figure class="vote-seats">${seatChart('H', p => rv[p.id] ? cls[rv[p.id]] : 'v0', { label: 'House seats colored by vote for Speaker' })}<figcaption class="ch-key">${ranked.map(([n, c]) => `<span><i class="${cls[n]}"></i>${esc(n)} ${c}</span>`).join('')}</figcaption></figure>
+    <h2>How each member voted</h2><div class="vgroups">${ranked.map(([n]) => `<details><summary>${esc(n)} <span class="cnt">${names[n]}</span></summary><ul class="names">${Object.entries(rv).filter(([, v]) => v === n).map(([pid]) => D.byId.get(pid)).filter(Boolean).sort((a, b) => a.state.localeCompare(b.state) || a.last.localeCompare(b.last)).map(p => `<li><a href="${href(p)}">${esc(p.name)}</a> <small>${short(p)}</small></li>`).join('')}</ul></details>`).join('')}</div>`;
+  }
+  const body = `<div class="wrap"><p class="crumb"><a href="/leadership">Leadership</a></p><h1>${esc(e.office)}</h1>
+  <p class="lede">${esc(e.body)}, ${date(e.date, { month: 'long', day: 'numeric', year: 'numeric' })}${e.method ? `, ${esc(e.method)}` : ''}.</p>
+  <p>${esc(e.summary)}</p>
+  ${e.result.length ? `<div class="tbl"><table><thead><tr><th>Candidate</th><th class="n">Votes</th><th>Result</th></tr></thead><tbody>${e.result.map(r => { const p = r.person && D.byId.get(r.person); return `<tr><td>${p ? personLink(p) : esc(r.name)}</td><td class="n">${r.votes ?? ''}</td><td>${r.won ? 'Elected' : ''}</td></tr>`; }).join('')}</tbody></table></div>` : ''}
+  ${chart}
+  <p class="src">${e.sources.map(s => `<a href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>`).join(' ')}</p></div>`;
+  return layout({ title: `${e.office}, ${e.body}`, path: `/leadership/${e.id}`, body, active: '/leadership' });
+}
+
+// ---------------- committees ----------------
+const CM = () => D.meta.committees;
+const cmSlug = id => id.toLowerCase();
+const cmShort = n => n.replace(/^(House|Senate|Joint) (Committee|Select Committee|Permanent Select Committee) on /, '').replace(/^(House|Senate) /, '');
+function cmMembers(id) {
+  const out = [];
+  for (const p of D.people) { if (p.status === 'elect') continue; const c = (p.committees || []).find(c => c.id === id); if (c) out.push({ p, title: c.title, rank: c.rank }); }
+  return out.sort((a, b) => (a.rank || 99) - (b.rank || 99));
+}
+function cmLeaders(list) {
+  const chair = list.find(m => /^chair/i.test(m.title || ''));
+  const rank = list.find(m => /ranking/i.test(m.title || ''));
+  return { chair, rank };
+}
+function committees() {
+  const all = Object.entries(CM()).filter(([, c]) => !c.parent);
+  const group = ch => all.filter(([, c]) => c.chamber === ch).sort((a, b) => cmShort(a[1].name).localeCompare(cmShort(b[1].name)));
+  const meet = LV.upcomingMeetings(14);
+  const row = ([id, c]) => {
+    const ms = cmMembers(id); const { chair, rank } = cmLeaders(ms);
+    const next = meet.find(m => m.committees.some(x => x.code.replace(/00$/, '') === id));
+    return `<li><a href="/committee/${cmSlug(id)}"><b>${esc(cmShort(c.name))}</b><small>${ms.length} members${chair ? `. Chair: ${esc(chair.p.name)} (${chair.p.party})` : ''}${rank ? `. Ranking member: ${esc(rank.p.name)} (${rank.p.party})` : ''}</small>${next ? `<small class="nx">Meets ${esc(new Date(next.date).toLocaleDateString('en-US', { ...ET, weekday: 'short', month: 'short', day: 'numeric' }))}</small>` : ''}</a></li>`;
+  };
+  const body = `<div class="wrap"><h1>Committees</h1><p class="lede">Most of the work on a bill happens in committee: hearings, amendments and the vote to send it to the floor. Open a committee for its members, subcommittees, upcoming hearings and the industries that fund its members.</p>
+  <div class="two"><div><h2>House</h2><ul class="cmlist">${group('house').map(row).join('')}</ul></div><div><h2>Senate</h2><ul class="cmlist">${group('senate').map(row).join('')}</ul>
+  ${group('joint').length ? `<h2>Joint</h2><ul class="cmlist">${group('joint').map(row).join('')}</ul>` : ''}</div></div></div>`;
+  return layout({ title: 'Congressional committees', desc: 'Every House, Senate and joint committee: members, leaders, subcommittees, hearings and the money behind its members.', path: '/committees', body, active: '/committees' });
+}
+function committee(slug) {
+  const id = slug.toUpperCase(); const c = CM()[id]; if (!c) return null;
+  const parent = c.parent ? CM()[c.parent] : null;
+  const ms = cmMembers(id); const { chair, rank } = cmLeaders(ms);
+  const subs = Object.entries(CM()).filter(([, x]) => x.parent === id);
+  const meet = LV.upcomingMeetings(21).filter(m => m.committees.some(x => x.code === id || x.code.replace(/00$/, '') === id));
+  // money behind the members
+  const ind = {}, pacs = {};
+  for (const { p } of ms) {
+    for (const [k, v] of (p.money && p.money.byIndustry) || []) ind[k] = (ind[k] || 0) + v;
+    for (const [cm, amt] of Object.entries(D.givenTo.get(p.id) || {})) pacs[cm] = (pacs[cm] || 0) + amt;
+  }
+  const topInd = Object.entries(ind).filter(([k]) => k !== 'leadership-pacs').sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const topPacs = Object.entries(pacs).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([k, v]) => [D.funders.get(k), v]).filter(([f]) => f && !/leadership|party committee/i.test(f.kind));
+  const im = topInd.length ? topInd[0][1] : 1;
+  const sides = ['R', 'D', 'I'].map(pt => [pt, ms.filter(m => m.p.party === pt)]).filter(([, l]) => l.length);
+  const bl = D.bills ? Object.entries(D.bills.bills).filter(([, b]) => (b.committees || []).some(x => (x.systemCode || '').toUpperCase().replace(/00$/, '') === id || (x.systemCode || '').toUpperCase() === id)) : [];
+  const reported = bl.filter(([, b]) => (b.committees || []).some(x => (x.activities || []).some(a => /reported|markup/i.test(a.name)))).sort((a, b) => (b[1].latest?.date || '').localeCompare(a[1].latest?.date || ''));
+  const body = `<div class="wrap"><p class="crumb"><a href="/committees">Committees</a>${parent ? `, <a href="/committee/${cmSlug(c.parent)}">${esc(cmShort(parent.name))}</a>` : ''}</p>
+  <h1>${esc(parent ? `${cmShort(parent.name)}: ${c.name}` : c.name)}</h1>
+  ${c.jurisdiction ? `<p class="lede">${esc(c.jurisdiction.length > 420 ? c.jurisdiction.slice(0, c.jurisdiction.lastIndexOf('.', 420) + 1) || c.jurisdiction.slice(0, 420) : c.jurisdiction)}</p>` : ''}
+  <dl class="facts">${chair ? `<div><dt>Chair</dt><dd class="nm"><a href="${href(chair.p)}">${esc(chair.p.name)}</a></dd><dd class="s">${short(chair.p)}</dd></div>` : ''}${rank ? `<div><dt>Ranking member</dt><dd class="nm"><a href="${href(rank.p)}">${esc(rank.p.name)}</a></dd><dd class="s">${short(rank.p)}</dd></div>` : ''}<div><dt>Members</dt><dd>${ms.length}</dd><dd class="s">${sides.map(([pt, l]) => `${l.length} ${pt}`).join(', ')}</dd></div>${bl.length ? `<div><dt>Bills referred</dt><dd>${bl.length}</dd><dd class="s">${reported.length} acted on</dd></div>` : ''}</dl>
+  <div class="cols"><div class="col-main">
+  ${meet.length ? `<h2>Upcoming hearings and markups</h2><ul class="mts">${meet.map(m => meetingRow(m).replace('<time>', `<time>${esc(new Date(m.date).toLocaleDateString('en-US', { ...ET, month: 'short', day: 'numeric' }))}, `)).join('')}</ul>` : ''}
+  <h2>Members</h2><div class="two">${sides.map(([pt, l]) => `<div><h3>${PARTY[pt]}s</h3><ol class="rank sm">${l.map(m => `<li>${personLink(m.p, m.title ? `, ${esc(m.title)}` : '')}</li>`).join('')}</ol></div>`).join('')}</div>
+  ${topInd.length ? `<h2>Industries funding its members</h2><p class="sub">PAC contributions since 2021 to the members who sit on this committee.</p><ul class="hbars">${topInd.map(([k, v]) => `<li><a href="/industry/${k}">${esc(D.indName.get(k))}</a><span class="hb"><i style="width:${(v / im * 100).toFixed(1)}%"></i></span><b>${money(v)}</b></li>`).join('')}</ul>` : ''}
+  ${reported.length ? `<h2>Bills it has acted on</h2><ul class="blist">${reported.slice(0, 15).map(([k, b]) => `<li><a href="/bill/${k}"><span class="bl">${billLabel(k)}</span><b>${esc(b.short || b.title)}</b><small>${esc(b.latest ? b.latest.text : '')}</small></a></li>`).join('')}</ul>` : ''}
+  </div><aside class="col-side">
+  ${subs.length ? `<h2>Subcommittees</h2><ul class="plain">${subs.map(([sid, x]) => `<li><a href="/committee/${cmSlug(sid)}">${esc(x.name)}</a></li>`).join('')}</ul>` : ''}
+  ${topPacs.length ? `<h2>Top PAC donors to its members</h2><ol class="rank sm">${topPacs.map(([f, v]) => `<li><a href="/f/${f.slug}"><b>${esc(nice(f.name))}</b><small>${esc(nice(f.org) || f.kind)}</small></a><b class="amt">${money(v)}</b></li>`).join('')}</ol>` : ''}
+  ${c.url || c.phone ? `<h2>Contact</h2><ul class="plain">${c.url ? `<li><a href="${esc(c.url)}" rel="noopener">Committee website</a></li>` : ''}${c.minorityUrl ? `<li><a href="${esc(c.minorityUrl)}" rel="noopener">Minority website</a></li>` : ''}${c.phone ? `<li>${esc(c.phone)}</li>` : ''}${c.address ? `<li>${esc(c.address)}</li>` : ''}</ul>` : ''}
+  </aside></div></div>`;
+  return layout({ title: c.name, desc: `${c.name}: members, chair and ranking member, subcommittees, hearings and the industries that fund its members.`, path: `/committee/${slug}`, body, active: '/committees' });
+}
+
+// ---------------- find your representatives ----------------
+const F = require('./find');
+function contactLinks(p) {
+  const l = [];
+  if (p.url) l.push(['Official website', p.url]);
+  if (p.contact) l.push(['Contact form', p.contact]);
+  if (p.ids && p.ids.wikipedia) l.push(['Wikipedia', 'https://en.wikipedia.org/wiki/' + encodeURIComponent(p.ids.wikipedia.replace(/ /g, '_'))]);
+  const so = p.social || {};
+  if (so.twitter) l.push(['X', `https://x.com/${so.twitter}`]);
+  if (so.facebook) l.push(['Facebook', `https://www.facebook.com/${so.facebook}`]);
+  if (so.instagram) l.push(['Instagram', `https://www.instagram.com/${so.instagram}`]);
+  if (so.youtube_id) l.push(['YouTube', `https://www.youtube.com/channel/${so.youtube_id}`]);
+  return l;
+}
+function repCard(p, note, extra) {
+  const links = contactLinks(p);
+  return `<article class="rep">${portrait(p, 'w', 'rep-pt')}<div class="rep-b">
+    <p class="rep-r">${chip(p.status === 'elect' ? p : (note === 'next' && p.elect ? p.elect : p))} ${esc(note === 'next' && p.elect ? (p.elect.chamber === 'S' ? 'Senator-elect' : 'Representative-elect') : p.status === 'elect' ? (p.chamber === 'S' ? 'Senator-elect' : 'Representative-elect') : p.chamber === 'S' ? 'Senator' : p.delegate ? 'Delegate' : 'Representative')}${p.status === 'elect' || (note === 'next' && p.elect) ? ', takes office January 3, 2027' : ''}</p>
+    <h3><a href="${href(p)}">${esc(p.name)}</a></h3>
+    <p class="rep-s">${esc(PARTY[p.party] || p.partyName || '')}${p.chamber === 'H' || (p.elect && p.elect.chamber === 'H') ? `, ${esc(seatLabel(note === 'next' && p.elect ? p.elect : p.newDistrict != null && note === 'next' ? { ...p, district: p.newDistrict } : p))}${(p.chamber === 'H' && !p.delegate) || (p.elect && p.elect.chamber === 'H') ? ' District' : ''}` : ''}${p.status === 'leaving' && note !== 'next' ? '. Leaves office January 3, 2027' : ''}</p>
+    ${p.phone && note !== 'next' ? `<p class="rep-ph">${esc(p.phone)}</p>` : ''}
+    ${extra ? `<p class="rep-x">${esc(extra)}</p>` : ''}
+    ${links.length ? `<p class="rep-l">${links.map(([l, u]) => `<a href="${esc(u)}" rel="noopener">${esc(l)}</a>`).join('')}</p>` : ''}
+    <p><a class="btn ghost" href="${href(p)}">Votes, money and record</a></p></div></article>`;
+}
+async function find(q) {
+  const raw = (q.get('q') || q.get('zip') || q.get('address') || '').trim();
+  let r = null;
+  if (/^\d{5}(-\d{4})?$/.test(raw)) r = await F.byZip(raw.slice(0, 5));
+  else if (raw.length > 6) r = await F.byAddress(raw);
+  let res = '';
+  if (r && r.error) res = `<p class="err">${r.error === 'zip' ? `${esc(raw)} is not a residential ZIP code in the Census map. Enter your street address instead, for example 100 Main St, Springfield, IL 62701.` : `The Census address finder could not match “${esc(raw)}”. Check the street number and add the city, state and ZIP code.`}</p>`;
+  else if (r) {
+    const st = D.STATES[r.state];
+    const nowH = r.now.flatMap(x => F.house(x.st, x.d).map(p => ({ p, x })));
+    const sen = F.senate(r.state);
+    const nh = r.next ? F.house2027(r.next[0], r.next[1]) : null;
+    const sen27 = F.senate2027(r.state);
+    const changes = (nh && !nowH.some(h => h.p.id === nh.id)) || sen27.some(p => !sen.some(s => s.id === p.id));
+    res = `<p class="found">${r.kind === 'zip' ? `ZIP code ${esc(r.zip)}, ${esc(st)}` : esc(r.matched)}${r.split ? `. This ZIP code is split between ${r.now.length} House districts; your street address decides which is yours.` : ''}</p>
+    ${r.split ? `<form class="bigsearch" action="/find"><label for="fa" class="vh">Street address</label><input id="fa" name="q" type="search" placeholder="Street address, city, state" autocomplete="street-address"><button type="submit">Find my district</button></form>` : ''}
+    <h2>Representing you now</h2>
+    <div class="reps">${nowH.map(({ p, x }) => repCard(p, null, r.split ? `${pct(x.share)} of this ZIP code's land area is in this district.` : '')).join('')}${sen.map(p => repCard(p)).join('')}</div>
+    ${changes ? `<h2>From January 3, 2027</h2><p class="sub">The 120th Congress, elected November 3, 2026${r.next && r.next[1] !== (r.now[0] || {}).d ? `. Your House district becomes the ${esc(seatLabel({ chamber: 'H', state: r.next[0], district: r.next[1] }))} District under the new map` : ''}.</p>
+    <div class="reps">${nh ? repCard(nh, 'next') : ''}${sen27.map(p => repCard(p, 'next')).join('')}</div>` : ''}`;
+  }
+  const body = `<div class="wrap"><h1>Find your representatives</h1>
+  <p class="lede">Enter a ZIP code or street address to see your House member and senators, how to reach them, and who takes those seats in January.</p>
+  <form class="bigsearch" action="/find" role="search"><label for="fq" class="vh">ZIP code or street address</label><input id="fq" name="q" type="search" value="${esc(raw)}" placeholder="ZIP code or street address" autocomplete="postal-code"><button type="submit">Find</button></form>
+  ${res}</div>`;
+  return layout({ title: 'Find your representatives', desc: 'Look up your U.S. representative and senators by ZIP code or address, with contact details, websites and social accounts.', path: '/find', body, active: '/find', noindex: !!raw });
+}
+
+function about() {
+  const body = `<div class="wrap narrow prose"><h1>How VoteDash works</h1>
+  <p>VoteDash collects public records on every member of the U.S. House and Senate and the members-elect of the 120th Congress, and puts them on one page per person.</p>
+  <h2>Votes</h2><p>Every roll call of the 119th Congress comes from Voteview at UCLA, which also publishes DW-NOMINATE, the standard measure of where each member's voting record falls from liberal (-1) to conservative (+1). Seat charts order members by that score. A party-line vote is a roll call where a majority of Democrats and a majority of Republicans voted on opposite sides; party loyalty is the share of those votes cast with the member's party majority. Independents are counted with the party they caucus with.</p>
+  <h2>Money</h2><p>Fundraising totals come from the Federal Election Commission's candidate summary files for the 2022, 2024 and 2026 cycles. PAC donors are direct contributions from political committees to the member's campaign. Outside spending is independent expenditures reported for or against the member. Industries are assigned from each PAC's connected organization.</p>
+  <h2>Connections</h2><p>"Votes most like" is the share of roll calls where two members of the same chamber cast the same yea or nay, over at least 50 shared votes. "Shares the most donors" compares the PACs funding each member, weighted by dollars.</p>
+  <h2>Elections</h2><p>Results through 2024 come from the MIT Election Data and Science Lab. 2026 results come from the VoteDash election-night count, archived at <a href="/2026/">votedash.net/2026</a>.</p>
+  <h2>Bills, speeches and lobbying</h2><p>Bills, cosponsors and policy areas come from the Congress.gov API. Floor speeches come from the Congressional Record on GovInfo. Lobbying comes from Lobbying Disclosure Act filings on LDA.gov.</p>
+  <h2>Record</h2><p>Each item on a member's record links to the official document or news report it is drawn from: House and Senate ethics committees, court and Justice Department records, censure resolutions and major news organizations.</p></div>`;
+  return layout({ title: 'How VoteDash works', path: '/about', body });
+}
+function notFound() { return layout({ title: 'Page not found', body: `<div class="wrap narrow"><h1>That page isn't here</h1><p>Search for a member, state, PAC or bill.</p><form class="bigsearch" action="/search"><label for="nq" class="vh">Search</label><input id="nq" name="q" type="search" data-suggest><button>Search</button></form></div>`, noindex: true }); }
+
+function sitemap() {
+  const u = [...'/ /leadership /tracker /find /committees /schedule /members /votes /money /issues /incoming /about'.split(' '), ...D.people.map(href), ...Object.keys(D.STATES).filter(s => D.states[s]).map(s => `/state/${s.toLowerCase()}`), ...Object.keys(D.meta.committees).map(c => `/committee/${c.toLowerCase()}`), ...D.rollcalls.map(r => `/vote/${r.k}`), ...[...D.funders.values()].filter(f => f.total + f.ie >= 25000).map(f => `/f/${f.slug}`), ...[...D.industryTotals.keys()].map(i => `/industry/${i}`), ...(D.bills ? Object.keys(D.bills.issues).map(a => `/issue/${slugIssue(a)}`) : [])];
+  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${u.map(x => `<url><loc>${SITE}${x}</loc></url>`).join('')}</urlset>`;
+}
+
+module.exports = { leadership, leaderElection, tracker, committees, committee, find, contactLinks, schedule, home, member, memberVotes, memberSpeeches, network, graph, members, stateP, incoming, votes, vote, bill, moneyP, funder, industry, issues, issue, search, suggest, about, notFound, sitemap };

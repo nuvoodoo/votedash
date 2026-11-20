@@ -1,0 +1,358 @@
+// Builds server/congress/data/*.json from the raw public files in data/raw.
+// Sources: unitedstates/congress-legislators, Voteview (HS119), FEC bulk (2022-2026),
+// MIT Election Lab (Senate, House when present), VoteDash 2026 results snapshot.
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const RAW = path.join(__dirname, '../../data/raw');
+const OUT = path.join(__dirname, '../../server/congress/data');
+fs.mkdirSync(OUT, { recursive: true });
+const J = f => JSON.parse(fs.readFileSync(path.join(RAW, f), 'utf8'));
+const exists = f => fs.existsSync(path.join(RAW, f));
+
+function csv(file, sep = ',') {
+  const txt = fs.readFileSync(path.join(RAW, file), 'utf8').replace(/\r/g, '');
+  const lines = txt.split('\n').filter(Boolean);
+  const parse = line => {
+    if (sep !== ',') return line.split(sep).map(s => s.replace(/^"|"$/g, ''));
+    const out = []; let cur = '', q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q; continue; }
+      if (ch === ',' && !q) { out.push(cur); cur = ''; continue; }
+      cur += ch;
+    }
+    out.push(cur); return out;
+  };
+  const head = parse(lines[0]);
+  return lines.slice(1).map(l => { const c = parse(l); const o = {}; head.forEach((h, i) => o[h] = c[i]); return o; });
+}
+function pipe(file, cols) {
+  const txt = fs.readFileSync(path.join(RAW, file), 'latin1');
+  return txt.split('\n').filter(Boolean).map(l => { const c = l.replace(/\r$/, '').split('|'); const o = {}; cols.forEach((h, i) => o[h] = c[i]); return o; });
+}
+const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  .replace(/\b(jr|sr|ii|iii|iv)\b\.?/g, '').replace(/[^a-z\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+const lastOf = s => { const p = norm(s).split(' ').filter(Boolean); return p[p.length - 1] || ''; };
+const slugify = s => norm(s).replace(/[\s]+/g, '-').replace(/-+/g, '-');
+const PARTY = { Democrat: 'D', Republican: 'R', Independent: 'I', Libertarian: 'L' };
+
+// ---------- members ----------
+const leg = J('legislators-current.json');
+const social = Object.fromEntries(J('legislators-social-media.json').map(s => [s.id.bioguide, s.social]));
+const offices = Object.fromEntries(J('legislators-district-offices.json').map(o => [o.id.bioguide, o.offices]));
+const committees = J('committees-current.json');
+const cmName = {};
+for (const c of committees) {
+  cmName[c.thomas_id] = { name: c.name, chamber: c.type, parent: null, url: c.url || null, minorityUrl: c.minority_url || null, jurisdiction: c.jurisdiction || null, phone: c.phone || null, address: c.address || null, youtube: c.youtube_id || null };
+  for (const s of c.subcommittees || []) cmName[c.thomas_id + s.thomas_id] = { name: s.name, chamber: c.type, parent: c.thomas_id, phone: s.phone || null, address: s.address || null };
+}
+const memberships = {};
+for (const [cid, list] of Object.entries(J('committee-membership-current.json'))) {
+  for (const m of list) {
+    if (!cmName[cid]) continue;
+    (memberships[m.bioguide] ||= []).push({ id: cid, title: m.title || null, rank: m.rank, side: m.party });
+  }
+}
+
+const members = leg.map(m => {
+  const t = m.terms[m.terms.length - 1];
+  const chamber = t.type === 'sen' ? 'S' : 'H';
+  const first = m.terms.find(x => x.type === t.type);
+  const name = m.name.official_full || `${m.name.nickname || m.name.first} ${m.name.last}`;
+  return {
+    id: m.id.bioguide, name, first: m.name.nickname || m.name.first, last: m.name.last,
+    chamber, state: t.state, district: chamber === 'H' ? t.district : null,
+    sclass: t.class || null, rank: t.state_rank || null,
+    party: PARTY[t.party] || t.party[0], partyName: t.party, caucus: t.caucus ? PARTY[t.caucus] : null,
+    delegate: chamber === 'H' && ['AS', 'GU', 'MP', 'PR', 'VI', 'DC'].includes(t.state),
+    since: first.start, termEnd: t.end, birthday: m.bio.birthday || null, gender: m.bio.gender,
+    url: t.url || null, contact: t.contact_form || null, office: t.address || null, phone: t.phone || null,
+    terms: m.terms.map(x => ({ type: x.type, start: x.start, end: x.end, state: x.state, district: x.district ?? null, party: x.party })),
+    social: social[m.id.bioguide] || {},
+    districtOffices: (offices[m.id.bioguide] || []).map(o => ({ city: o.city, state: o.state, address: [o.address, o.suite].filter(Boolean).join(', '), zip: o.zip, phone: o.phone || null })),
+    committees: (memberships[m.id.bioguide] || []).map(c => ({ id: c.id, name: cmName[c.id].name, parent: cmName[c.id].parent, title: c.title, rank: c.rank })),
+    ids: { lis: m.id.lis || null, fec: m.id.fec || [], icpsr: m.id.icpsr || null, govtrack: m.id.govtrack || null, wikipedia: m.id.wikipedia || null, ballotpedia: m.id.ballotpedia || null, wikidata: m.id.wikidata || null, cspan: m.id.cspan || null },
+    status: 'serving'
+  };
+});
+const byId = Object.fromEntries(members.map(m => [m.id, m]));
+
+// ---------- 2026 results: who returns, who leaves, who arrives ----------
+const snap = J('snapshot.json');
+const fedRaces = snap.races.filter(r => ['house', 'senate', 'delegate'].includes(r.cat) && r.scope === 'General');
+const elect = [];
+const words = s => norm(s).split(/[\s-]+/);
+const firstOk = (a, b) => { const x = words(a)[0], y = words(b)[0]; return x === y || x[0] === y[0] && (x.startsWith(y) || y.startsWith(x)); };
+const NICK = [['william', 'bill', 'will', 'billy'], ['robert', 'bob', 'rob', 'bobby'], ['gregory', 'greg'], ['luis', 'lou'], ['charles', 'chuck', 'charlie'], ['james', 'jim', 'jimmy', 'jamie'], ['michael', 'mike'], ['thomas', 'tom', 'tommy'], ['daniel', 'dan', 'danny'], ['david', 'dave'], ['edward', 'ed', 'ted', 'eddie'], ['joseph', 'joe'], ['anthony', 'tony'], ['richard', 'rick', 'dick', 'rich'], ['ronald', 'ron'], ['christopher', 'chris'], ['nicholas', 'nick'], ['patrick', 'pat'], ['steven', 'steve', 'stephen'], ['jeffrey', 'jeff'], ['andrew', 'andy', 'drew'], ['benjamin', 'ben'], ['samuel', 'sam'], ['timothy', 'tim'], ['matthew', 'matt'], ['donald', 'don'], ['john', 'jack', 'johnny'], ['katherine', 'kate', 'kathy', 'katie'], ['elizabeth', 'liz', 'beth', 'betsy'], ['susan', 'sue'], ['kenneth', 'ken'], ['gerald', 'jerry'], ['frederick', 'fred'], ['raymond', 'ray'], ['lawrence', 'larry'], ['zachary', 'zach'], ['alexander', 'alex'], ['jennifer', 'jen', 'jenn'], ['margaret', 'maggie', 'peggy'], ['abraham', 'abe'], ['douglas', 'doug'], ['bradley', 'brad'], ['randall', 'randy'], ['gabriel', 'gabe'], ['earl', 'buddy'], ['harold', 'hal'], ['henry', 'hank'], ['augustus', 'gus'], ['frank', 'francis']];
+const nickEq = (x, y) => NICK.some(g => g.includes(x) && g.includes(y));
+const samePerson = (a, b) => {
+  if (lastOf(a) !== lastOf(b)) return false;
+  const fa = words(a)[0], fb = words(b)[0], wa = words(a), wb = words(b);
+  return firstOk(a, b) || nickEq(fa, fb) || (fa.length > 1 && wb.includes(fa)) || (fb.length > 1 && wa.includes(fb)) || wa.some(x => x.length > 1 && wb.some(y => nickEq(x, y)));
+};
+const sameName = (a, b) => lastOf(a) === lastOf(b) || words(a).includes(lastOf(b)) || words(b).includes(lastOf(a));
+for (const r of fedRaces) {
+  const chamber = r.cat === 'senate' ? 'S' : 'H';
+  const dist = chamber === 'H' ? (r.district && /-(\d+)$/.test(r.district) ? +r.district.split('-')[1] : 0) : null;
+  const incumbents = members.filter(m => m.chamber === chamber && m.state === r.state && (chamber === 'S' ? m.termEnd.startsWith('2027') : m.district === dist));
+  const w = r.called ? r.winner : null;
+  for (const inc of incumbents) {
+    const kept = w && samePerson(w.n, inc.name);
+    inc.race2026 = { id: r.id, won: !!kept, decided: !!w, pct: (r.cands.find(c => samePerson(c.n, inc.name)) || {}).pc ?? null, ran: r.cands.some(c => samePerson(c.n, inc.name)) };
+    if (w && !kept) inc.status = 'leaving';
+  }
+  if (!w) continue;
+  if (incumbents.some(i => samePerson(w.n, i.name))) continue;
+  // a House member re-elected in a redrawn district keeps one file
+  const redrawn = chamber === 'H' && members.find(m => m.chamber === 'H' && m.state === r.state && m.district !== dist && samePerson(w.n, m.name));
+  if (redrawn) { redrawn.newDistrict = dist; redrawn.redrawnRace = { id: r.id, pct: w.pc }; continue; }
+  // a sitting member moving chambers keeps one file
+  const mover = members.find(m => m.state === r.state && m.chamber !== chamber && samePerson(w.n, m.name));
+  const rec = { chamber, state: r.state, district: dist, party: w.p, partyName: w.pf, name: w.n, raceId: r.id, pct: w.pc, votes: w.v };
+  if (mover) { mover.elect = rec; continue; }
+  elect.push(rec);
+}
+// House members who did not run for their seat and are not moving up are leaving
+for (const m of members) {
+  if (m.chamber === 'H' && m.race2026 && !m.race2026.ran && !m.elect) m.status = 'leaving';
+  if (m.chamber === 'S' && m.race2026 && !m.race2026.ran) m.status = 'leaving';
+  if (m.newDistrict != null) m.status = 'serving';
+}
+
+// ---------- FEC ----------
+const WEB = ['CAND_ID', 'CAND_NAME', 'CAND_ICI', 'PTY_CD', 'PTY', 'TTL_RECEIPTS', 'TRANS_FROM_AUTH', 'TTL_DISB', 'TRANS_TO_AUTH', 'COH_BOP', 'COH_COP', 'CAND_CONTRIB', 'CAND_LOANS', 'OTHER_LOANS', 'CAND_LOAN_REPAY', 'OTHER_LOAN_REPAY', 'DEBTS', 'INDIV', 'ST', 'DIST', 'SPEC', 'PRIM', 'RUN', 'GEN', 'GEN_PCT', 'OTHER_CMTE', 'PARTY_CMTE', 'CVG_END', 'INDIV_REF', 'CMTE_REF'];
+const CM = ['CMTE_ID', 'CMTE_NM', 'TRES', 'ST1', 'ST2', 'CITY', 'ST', 'ZIP', 'DSGN', 'TP', 'PTY', 'FREQ', 'ORG_TP', 'CONNECTED_ORG', 'CAND_ID'];
+const PAS = ['CMTE_ID', 'AMNDT', 'RPT_TP', 'PGI', 'IMAGE', 'TP', 'ENTITY', 'NAME', 'CITY', 'ST', 'ZIP', 'EMPLOYER', 'OCC', 'DT', 'AMT', 'OTHER_ID', 'CAND_ID', 'TRAN_ID', 'FILE', 'MEMO_CD', 'MEMO_TEXT', 'SUB_ID'];
+const CN = ['CAND_ID', 'NAME', 'PTY', 'YR', 'ST', 'OFFICE', 'DIST', 'ICI', 'STATUS', 'PCC'];
+const cycles = [{ y: 2026, dir: '', web: 'weball26.txt' }, { y: 2024, dir: 'y24/', web: 'y24/weball24.txt' }, { y: 2022, dir: 'y22/', web: 'y22/weball22.txt' }];
+
+// candidate ids for members-elect, matched on state, office, district and last name
+const cn = pipe('cn.txt', CN);
+for (const e of elect) {
+  const c = cn.find(c => c.OFFICE === e.chamber && c.ST === e.state && (e.chamber === 'S' || +c.DIST === (e.district || 0)) && lastOf(c.NAME.split(',')[0]) === lastOf(e.name));
+  e.fec = c ? [c.CAND_ID] : [];
+}
+
+const candOwner = {};
+for (const m of members) for (const f of m.ids.fec) candOwner[f] = m.id;
+elect.forEach((e, i) => { e.id = `elect-${e.state}${e.chamber === 'S' ? 'S' : e.district}`; for (const f of e.fec) candOwner[f] = e.id; });
+
+const ORG = { C: 'Corporation', L: 'Labor union', M: 'Membership group', T: 'Trade association', V: 'Cooperative', W: 'Corporation' };
+const committeesInfo = {};
+for (const cy of [...cycles].reverse()) {
+  for (const c of pipe(cy.dir + 'cm.txt', CM)) {
+    committeesInfo[c.CMTE_ID] = {
+      id: c.CMTE_ID, name: c.CMTE_NM, city: c.CITY, state: c.ST, org: c.CONNECTED_ORG && !/^(NONE|N\/?A|NO|UNKNOWN|\.|-)$/i.test(c.CONNECTED_ORG.trim()) ? c.CONNECTED_ORG.trim() : null,
+      kind: c.DSGN === 'D' ? 'Leadership PAC' : c.TP === 'O' ? 'Super PAC' : c.TP === 'X' || c.TP === 'Y' || c.TP === 'Z' ? 'Party committee' : c.TP === 'V' || c.TP === 'W' ? 'Hybrid PAC' : (ORG[c.ORG_TP] || (c.TP === 'N' || c.TP === 'Q' ? 'PAC' : 'Committee')),
+      party: c.PTY || null, sponsor: c.CAND_ID || null
+    };
+  }
+}
+
+const money = {}; // owner -> {cycles:{}, pacs:{cmte:amt}, ieFor:{}, ieAgainst:{}}
+const M$ = id => (money[id] ||= { cycles: {}, pacs: {}, ieFor: {}, ieAgainst: {} });
+for (const cy of cycles) {
+  for (const w of pipe(cy.web, WEB)) {
+    const owner = candOwner[w.CAND_ID]; if (!owner) continue;
+    const c = (M$(owner).cycles[cy.y] ||= { receipts: 0, indiv: 0, pac: 0, party: 0, self: 0, spent: 0, cash: 0, debt: 0, through: null });
+    c.receipts += +w.TTL_RECEIPTS; c.indiv += +w.INDIV; c.pac += +w.OTHER_CMTE; c.party += +w.PARTY_CMTE;
+    c.self += +w.CAND_CONTRIB + +w.CAND_LOANS; c.spent += +w.TTL_DISB; c.cash += +w.COH_COP; c.debt += +w.DEBTS;
+    if (w.CVG_END) { const [mo, d, y] = w.CVG_END.split('/'); const iso = `${y}-${mo}-${d}`; if (!c.through || iso > c.through) c.through = iso; }
+  }
+  const txt = fs.readFileSync(path.join(RAW, cy.dir + 'itpas2.txt'), 'latin1');
+  let start = 0;
+  while (start < txt.length) {
+    let end = txt.indexOf('\n', start); if (end < 0) end = txt.length;
+    const line = txt.slice(start, end); start = end + 1;
+    const c = line.split('|');
+    const owner = candOwner[c[16]]; if (!owner) continue;
+    if (c[19] === 'X') continue;
+    const tp = c[5], amt = +c[14], cm = c[0];
+    if (!amt) continue;
+    const mm = M$(owner);
+    if (tp === '24K' || tp === '24Z') mm.pacs[cm] = (mm.pacs[cm] || 0) + amt;
+    else if (tp === '24E') mm.ieFor[cm] = (mm.ieFor[cm] || 0) + amt;
+    else if (tp === '24A') mm.ieAgainst[cm] = (mm.ieAgainst[cm] || 0) + amt;
+  }
+}
+// funders: who each committee pays
+const funders = {};
+for (const [owner, mm] of Object.entries(money)) {
+  for (const [cm, amt] of Object.entries(mm.pacs)) { const f = (funders[cm] ||= { given: {}, ieFor: {}, ieAgainst: {} }); f.given[owner] = amt; }
+  for (const [cm, amt] of Object.entries(mm.ieFor)) { const f = (funders[cm] ||= { given: {}, ieFor: {}, ieAgainst: {} }); f.ieFor[owner] = amt; }
+  for (const [cm, amt] of Object.entries(mm.ieAgainst)) { const f = (funders[cm] ||= { given: {}, ieFor: {}, ieAgainst: {} }); f.ieAgainst[owner] = amt; }
+}
+
+// ---------- votes ----------
+const vvMembers = csv('HS119_members.csv').filter(r => r.chamber !== 'President');
+const icpsrTo = {};
+for (const r of vvMembers) {
+  if (r.bioguide_id) icpsrTo[r.chamber[0] + r.icpsr] = r.bioguide_id;
+  const m = byId[r.bioguide_id]; if (!m) continue;
+  if (r.chamber[0] === m.chamber) { m.nominate = r.nominate_dim1 === '' ? null : +r.nominate_dim1; m.nominate2 = r.nominate_dim2 === '' ? null : +r.nominate_dim2; }
+}
+const rolls = csv('HS119_rollcalls.csv');
+const order = { H: members.filter(m => m.chamber === 'H').map(m => m.id), S: members.filter(m => m.chamber === 'S').map(m => m.id) };
+const pos = { H: Object.fromEntries(order.H.map((id, i) => [id, i])), S: Object.fromEntries(order.S.map((id, i) => [id, i])) };
+const rcIndex = {};
+const rollcalls = rolls.map(r => {
+  const ch = r.chamber[0];
+  const k = `${ch}${r.rollnumber}`;
+  const codes = Array(order[ch].length).fill('0');
+  rcIndex[k] = { r: null, codes };
+  return { k, chamber: ch, roll: +r.rollnumber, clerk: +r.clerk_rollnumber, session: +r.session, date: r.date, bill: r.bill_number || null, result: r.vote_result, question: r.vote_question, desc: r.vote_desc || r.dtl_desc || '', req: r.majority_requirement, yea: +r.yea_count, nay: +r.nay_count, codes };
+});
+const rcByK = Object.fromEntries(rollcalls.map(r => [r.k, r]));
+{
+  const txt = fs.readFileSync(path.join(RAW, 'HS119_votes.csv'), 'utf8');
+  for (const line of txt.split('\n').slice(1)) {
+    if (!line) continue;
+    const [, chamber, roll, icpsr, code] = line.split(',');
+    const ch = chamber[0];
+    const bio = icpsrTo[ch + icpsr]; if (!bio) continue;
+    const i = pos[ch][bio]; if (i == null) continue;
+    const rc = rcByK[ch + roll]; if (!rc) continue;
+    const c = +code; rc.codes[i] = c >= 1 && c <= 3 ? 'Y' : c >= 4 && c <= 6 ? 'N' : c >= 7 && c <= 9 ? 'P' : '0';
+  }
+}
+// party position per roll call and per-member stats
+for (const rc of rollcalls) {
+  const ids = order[rc.chamber]; const tally = { D: { Y: 0, N: 0 }, R: { Y: 0, N: 0 } };
+  rc.codes.forEach((c, i) => { const m = byId[ids[i]]; const p = m.party === 'I' ? (m.caucus || 'D') : m.party; if ((c === 'Y' || c === 'N') && tally[p]) tally[p][c]++; });
+  rc.tally = tally;
+  rc.partyPos = { D: tally.D.Y > tally.D.N ? 'Y' : tally.D.N > tally.D.Y ? 'N' : null, R: tally.R.Y > tally.R.N ? 'Y' : tally.R.N > tally.R.Y ? 'N' : null };
+  rc.partyLine = rc.partyPos.D && rc.partyPos.R && rc.partyPos.D !== rc.partyPos.R;
+  rc.codes = rc.codes.join('');
+}
+for (const ch of ['H', 'S']) {
+  const ids = order[ch];
+  const rcs = rollcalls.filter(r => r.chamber === ch);
+  ids.forEach((id, i) => {
+    const m = byId[id]; const p = m.party === 'I' ? (m.caucus || 'D') : m.party;
+    let eligible = 0, cast = 0, missed = 0, withParty = 0, partyVotes = 0; const breaks = [];
+    for (const rc of rcs) {
+      const c = rc.codes[i]; if (c === '0' && !rcWasMember(m, rc)) continue;
+      eligible++;
+      if (c === 'Y' || c === 'N') {
+        cast++;
+        if (rc.partyLine) { partyVotes++; if (c === rc.partyPos[p]) withParty++; else breaks.push(rc.k); }
+      } else missed++;
+    }
+    m.votes = { eligible, cast, missed, partyVotes, withParty, unity: partyVotes ? withParty / partyVotes : null, missedPct: eligible ? missed / eligible : null, breaks: breaks.reverse() };
+  });
+  // agreement with every colleague of the chamber
+  const n = ids.length; const codes = rcs.map(r => r.codes);
+  for (let a = 0; a < n; a++) {
+    const scores = [];
+    for (let b = 0; b < n; b++) {
+      if (a === b) continue; let both = 0, same = 0;
+      for (const s of codes) { const x = s[a], y = s[b]; if ((x === 'Y' || x === 'N') && (y === 'Y' || y === 'N')) { both++; if (x === y) same++; } }
+      if (both >= 50) scores.push([ids[b], same / both]);
+    }
+    scores.sort((p, q) => q[1] - p[1]);
+    const m = byId[ids[a]]; const p = m.party;
+    m.votesLike = scores.slice(0, 6).map(([id, s]) => ({ id, agree: +s.toFixed(3) }));
+    m.crossParty = scores.filter(([id]) => byId[id].party !== p && byId[id].party !== 'I').slice(0, 4).map(([id, s]) => ({ id, agree: +s.toFixed(3) }));
+  }
+}
+function rcWasMember(m, rc) { return m.terms.some(t => (t.type === 'sen') === (rc.chamber === 'S') && t.start <= rc.date && t.end >= rc.date); }
+
+// ---------- shared donors ----------
+const owners = [...members.map(m => m.id), ...elect.map(e => e.id)];
+const vec = {};
+for (const id of owners) { const p = money[id]?.pacs || {}; const norm2 = Math.sqrt(Object.values(p).reduce((s, v) => s + v * v, 0)); if (norm2) vec[id] = { p, n: norm2 }; }
+const vecIds = Object.keys(vec);
+const sharedDonors = {};
+for (const a of vecIds) {
+  const res = [];
+  for (const b of vecIds) {
+    if (a === b) continue; let dot = 0, shared = 0;
+    for (const [k, v] of Object.entries(vec[a].p)) if (vec[b].p[k]) { dot += v * vec[b].p[k]; shared++; }
+    if (shared >= 5) res.push([b, dot / (vec[a].n * vec[b].n), shared]);
+  }
+  res.sort((x, y) => y[1] - x[1]);
+  sharedDonors[a] = res.slice(0, 6).map(([id, s, n]) => ({ id, score: +s.toFixed(3), shared: n }));
+}
+
+// ---------- election history ----------
+const history = {};
+const pushH = (id, rec) => (history[id] ||= []).push(rec);
+const sen = csv('senate-1976-2024.tab', '\t');
+const house = exists('house-1976-2024.tab') && fs.statSync(path.join(RAW, 'house-1976-2024.tab')).size > 10000 ? csv('house-1976-2024.tab', fs.readFileSync(path.join(RAW, 'house-1976-2024.tab'), 'utf8').slice(0, 300).includes('\t') ? '\t' : ',') : [];
+function addMedsl(rows, chamber) {
+  const races = {};
+  for (const r of rows) {
+    if ((r.stage || '').toLowerCase() !== 'gen' || (r.mode && r.mode.toLowerCase() !== 'total')) continue;
+    if ((r.runoff || '').toUpperCase() === 'TRUE') continue;
+    if (!r.candidate || /^(other|writein|scattering|blank|void|over ?votes|under ?votes)$/i.test(r.candidate)) continue;
+    const k = `${r.year}|${r.state_po}|${chamber === 'H' ? +r.district + ((r.special || '').toUpperCase() === 'TRUE' ? 's' : '') : (r.special || '').toLowerCase()}`;
+    (races[k] ||= []).push(r);
+  }
+  for (const [k, cands] of Object.entries(races)) {
+    const [year, st, d] = k.split('|');
+    // combine fusion lines for the same candidate
+    const by = {};
+    for (const c of cands) { if (!c.candidate || c.writein === 'TRUE' && false) continue; const n = c.candidate; (by[n] ||= { name: n, votes: 0, party: c.party_simplified || c.party_detailed || c.party }).votes += +c.candidatevotes; const ps = c.party_simplified || c.party; if (ps === 'DEMOCRAT' || ps === 'REPUBLICAN') by[n].party = ps; }
+    const total = +cands[0].totalvotes || Object.values(by).reduce((s, c) => s + c.votes, 0);
+    const list = Object.values(by).sort((a, b) => b.votes - a.votes);
+    for (const m of members) {
+      if (m.state !== st) continue;
+      const served = m.terms.some(t => (t.type === 'sen') === (chamber === 'S') && t.state === st && (chamber === 'S' || +t.district === +d || (+d === 0 && t.district === 0)));
+      if (!served && !(m.chamber === chamber)) continue;
+      const me = list.find(c => lastOf(c.name) === lastOf(m.last) && norm(c.name).split(' ')[0][0] === norm(m.first)[0]) || list.find(c => lastOf(c.name) === lastOf(m.last) && norm(c.name).includes(norm(m.first))) || list.find(c => samePerson(c.name, m.name));
+      if (!me) continue;
+      const opp = list.find(c => c !== me);
+      pushH(m.id, { year: +year, chamber, state: st, district: chamber === 'H' ? +d : null, special: chamber === 'S' && d === 'true', pct: total ? me.votes / total : null, votes: me.votes, won: list[0] === me, opponent: opp ? { name: titleCase(opp.name), party: (opp.party || '')[0], pct: total ? opp.votes / total : null } : null, uncontested: !opp });
+    }
+  }
+}
+function titleCase(s) { return s.toLowerCase().replace(/\b([a-z])/g, c => c.toUpperCase()).replace(/\bMc([a-z])/g, (_, c) => 'Mc' + c.toUpperCase()); }
+addMedsl(sen, 'S');
+if (house.length) addMedsl(house, 'H');
+for (const r of fedRaces) {
+  if (!r.called) continue;
+  const chamber = r.cat === 'senate' ? 'S' : 'H';
+  const dist = chamber === 'H' ? (/-(\d+)$/.test(r.district || '') ? +r.district.split('-')[1] : 0) : null;
+  const total = r.cands.reduce((s, c) => s + (c.v || 0), 0);
+  const ownersHere = [...members.filter(m => m.state === r.state), ...elect.filter(e => e.state === r.state && e.chamber === chamber && e.district === dist)];
+  for (const o of ownersHere) {
+    const nm = o.name;
+    const me = r.cands.find(c => samePerson(c.n, nm)); if (!me) continue;
+    if (o.chamber && o.chamber !== chamber && !(o.elect && o.elect.chamber === chamber)) continue;
+    const opp = r.cands.find(c => c !== me);
+    pushH(o.id, { year: 2026, chamber, state: r.state, district: dist, pct: total ? me.v / total : me.pc / 100, votes: me.v, won: !!me.w, opponent: opp ? { name: opp.n, party: opp.p, pct: total ? opp.v / total : opp.pc / 100 } : null, uncontested: !opp, raceId: r.id });
+  }
+}
+for (const h of Object.values(history)) h.sort((a, b) => b.year - a.year);
+
+// ---------- write ----------
+const slugs = {};
+const allPeople = [...members, ...elect.map(e => ({ ...e, status: 'elect', first: e.name.split(' ')[0], last: e.name.split(' ').slice(-1)[0] }))];
+for (const p of allPeople) {
+  let s = slugify(p.name); if (slugs[s]) s = `${s}-${p.state.toLowerCase()}`; slugs[s] = p.id; p.slug = s;
+}
+const top = (obj, n) => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n).map(([id, amt]) => ({ id, amt: Math.round(amt) }));
+for (const p of allPeople) {
+  const mm = money[p.id];
+  p.money = mm ? { cycles: mm.cycles, pacTotal: Math.round(Object.values(mm.pacs).reduce((s, v) => s + v, 0)), pacCount: Object.keys(mm.pacs).length, topPacs: top(mm.pacs, 25), ieFor: top(mm.ieFor, 10), ieAgainst: top(mm.ieAgainst, 10) } : null;
+  p.sharedDonors = sharedDonors[p.id] || [];
+  p.elections = history[p.id] || [];
+}
+const usedCm = new Set();
+for (const p of allPeople) if (p.money) for (const l of ['topPacs', 'ieFor', 'ieAgainst']) p.money[l].forEach(x => usedCm.add(x.id));
+const funderOut = {};
+for (const [cm, f] of Object.entries(funders)) {
+  const info = committeesInfo[cm] || { id: cm, name: cm, kind: 'Committee' };
+  const total = Object.values(f.given).reduce((s, v) => s + v, 0);
+  const ie = Object.values(f.ieFor).reduce((s, v) => s + v, 0) + Object.values(f.ieAgainst).reduce((s, v) => s + v, 0);
+  if (total < 1000 && ie < 1000) continue;
+  funderOut[cm] = { ...info, slug: slugify(info.name).slice(0, 80) + '-' + cm.toLowerCase(), total: Math.round(total), ie: Math.round(ie), given: f.given, ieFor: f.ieFor, ieAgainst: f.ieAgainst };
+}
+fs.writeFileSync(path.join(OUT, 'people.json'), JSON.stringify(allPeople));
+fs.writeFileSync(path.join(OUT, 'rollcalls.json'), JSON.stringify({ order, rollcalls }));
+fs.writeFileSync(path.join(OUT, 'funders.json'), JSON.stringify(funderOut));
+fs.writeFileSync(path.join(OUT, 'meta.json'), JSON.stringify({ built: new Date().toISOString(), congress: 119, committees: cmName, fecThrough: Object.fromEntries(cycles.map(c => [c.y, null])) }));
+console.log('people', allPeople.length, 'serving', members.filter(m => m.status === 'serving').length, 'leaving', members.filter(m => m.status === 'leaving').length, 'elect', elect.length, 'movers', members.filter(m => m.elect).length);
+console.log('rollcalls', rollcalls.length, 'funders', Object.keys(funderOut).length, 'with money', allPeople.filter(p => p.money).length, 'with history', allPeople.filter(p => p.elections.length).length);
+for (const f of ['people', 'rollcalls', 'funders']) console.log(f, (fs.statSync(path.join(OUT, f + '.json')).size / 1e6).toFixed(1) + 'MB');

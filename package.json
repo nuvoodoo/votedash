@@ -2,14 +2,15 @@
   "name": "votedash",
   "version": "1.0.0",
   "private": true,
-  "description": "VoteDash.net live midterm results dashboard",
-  "main": "server/index.js",
+  "description": "VoteDash.net: every member of Congress, how they vote and who funds them",
+  "main": "server/app.js",
   "type": "commonjs",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "start": "node server/index.js"
+    "start": "node server/app.js",
+    "build:congress": "node tools/congress/build.js"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2"
