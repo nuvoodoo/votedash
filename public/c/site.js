@@ -46,7 +46,7 @@
         ch.querySelectorAll('[data-vote-cap]').forEach(function (k) { k.hidden = mode !== 'vote'; });
         ch.querySelectorAll('svg.seats').forEach(function (svg) {
           var c = svg.classList.contains('sH') ? 'H' : 'S';
-          svg.querySelectorAll('circle').forEach(function (cir) {
+          svg.querySelectorAll('circle[data-id]').forEach(function (cir) {
             if (!cir.dataset.party) cir.dataset.party = (cir.getAttribute('class') || '').replace(' tip-on', '');
             cir.setAttribute('class', mode === 'vote' ? 'v' + (data[c][cir.dataset.id] || '0') : mode === 'caucus' ? 'c' + (cir.dataset.c || 'none' + cir.dataset.p) : cir.dataset.party);
           });
@@ -77,10 +77,10 @@
   }
   document.addEventListener('pointerdown', function (e) { lastPointer = e.pointerType; }, true);
   document.querySelectorAll('svg.seats').forEach(function (svg) {
-    svg.addEventListener('pointermove', function (e) { if (e.pointerType !== 'mouse') return; var c = e.target.closest('circle'); if (!c) return hideTip(); if (c !== tipFor) showTip(c, e.clientX, e.clientY, false); });
+    svg.addEventListener('pointermove', function (e) { if (e.pointerType !== 'mouse') return; var c = e.target.closest('circle[data-id]'); if (!c) return hideTip(); if (c !== tipFor) showTip(c, e.clientX, e.clientY, false); });
     svg.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') hideTip(); });
     svg.addEventListener('click', function (e) {
-      var c = e.target.closest('circle'); if (!c || lastPointer === 'mouse') return;
+      var c = e.target.closest('circle[data-id]'); if (!c || lastPointer === 'mouse') return;
       if (tipFor !== c) { e.preventDefault(); var r = c.getBoundingClientRect(); showTip(c, r.left + r.width / 2, r.top, true); }
     });
   });

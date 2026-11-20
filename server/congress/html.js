@@ -58,13 +58,15 @@ function seatChart(ch, fill, { highlight, label, linked = true } = {}) {
   const list = D.chambers[ch];
   const pts = posCache[ch + list.length] ||= seatPositions(list.length, ch);
   const r = ch === 'S' ? 10.5 : 7.4;
+  // one unbroken party field behind the seats: oversized discs that merge across rows and neighbors
+  const fr = ch === 'S' ? 23 : 11.5;
+  const field = list.map((p, i) => `<circle class="fld" data-p="${p.party}" cx="${pts[i].x.toFixed(1)}" cy="${pts[i].y.toFixed(1)}" r="${fr}"/>`).join('');
   const dots = list.map((p, i) => {
     const c = fill(p); const hl = highlight && highlight === p.id;
-    const sq = r * 2 + 1.4, cx = pts[i].x, cy = pts[i].y;
-    const dot = `<rect class="sq" data-p="${p.party}" x="${(cx - sq / 2).toFixed(1)}" y="${(cy - sq / 2).toFixed(1)}" width="${sq.toFixed(1)}" height="${sq.toFixed(1)}" rx="1.5"/><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${hl ? r + 2 : r - 1.6}" class="${c}${hl ? ' hl' : ''}" data-id="${p.id}" data-p="${p.party}" data-n="${esc(title(p) + ' ' + p.name)}" data-s="${esc(PARTY[p.party] + ', ' + seatLabel(p))}"${hasPortrait(p) ? ' data-i="1"' : ''}${caucusAttr(p)}></circle>`;
+    const dot = `<circle cx="${pts[i].x.toFixed(1)}" cy="${pts[i].y.toFixed(1)}" r="${hl ? r + 2 : r - 0.8}" class="${c}${hl ? ' hl' : ''}" data-id="${p.id}" data-p="${p.party}" data-n="${esc(title(p) + ' ' + p.name)}" data-s="${esc(PARTY[p.party] + ', ' + seatLabel(p))}"${hasPortrait(p) ? ' data-i="1"' : ''}${caucusAttr(p)}></circle>`;
     return linked ? `<a href="${href(p)}" tabindex="-1">${dot}</a>` : dot;
   }).join('');
-  return `<svg class="seats s${ch}" viewBox="0 0 600 304" role="img" aria-label="${esc(label || (ch === 'S' ? 'Senate' : 'House') + ' seat chart')}">${dots}</svg>`;
+  return `<svg class="seats s${ch}" viewBox="0 0 600 304" role="img" aria-label="${esc(label || (ch === 'S' ? 'Senate' : 'House') + ' seat chart')}"><g class="field">${field}</g>${dots}</svg>`;
 }
 const partyFill = p => 'f' + p.party;
 // ideological caucus for shading and tooltips (caucuses.json, optional)

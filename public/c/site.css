@@ -476,3 +476,13 @@ svg.seats rect.sq{pointer-events:none}
 svg.seats rect.sq[data-p=D]{fill:var(--ring-D)}svg.seats rect.sq[data-p=R]{fill:var(--ring-R)}svg.seats rect.sq[data-p=I],svg.seats rect.sq[data-p=L]{fill:var(--ring-I)}
 svg.seats circle,svg.sS circle{stroke:none;stroke-width:0}
 svg.seats circle.tip-on,svg.seats a:hover circle,svg.seats circle.hl{stroke:var(--bronze);stroke-width:2.2}
+.cau.cfreedom{background:#7A1F17;color:#fff}.cau.crsc{background:#BF3A30;color:#fff}.cau.cmainstreet{background:#E58A80;color:#17232C}
+.cau.cprogressive{background:#173E7A;color:#fff}.cau.cnewdem{background:#2B5CA6;color:#fff}.cau.cbluedog{background:#86A7DE;color:#17232C}.cau.cproblemsolvers{background:#8C7BB0;color:#17232C}
+
+/* unbroken party field behind the seats (replaces square tiles) */
+svg.seats .field{pointer-events:none}
+svg.seats circle.fld{stroke:none}
+svg.seats circle.fld[data-p=D]{fill:var(--ring-D)}svg.seats circle.fld[data-p=R]{fill:var(--ring-R)}svg.seats circle.fld[data-p=I],svg.seats circle.fld[data-p=L]{fill:var(--ring-I)}
+svg.seats a circle{stroke:var(--paper);stroke-width:1}
+:root{--ring-D:#C9D8F2;--ring-R:#F5CBC6;--ring-I:#DDE4BE}
+@media (prefers-color-scheme:dark){:root{--ring-D:#22344F;--ring-R:#4A2522;--ring-I:#363D22}}
