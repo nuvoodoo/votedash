@@ -150,7 +150,8 @@ for (const cy of [...cycles].reverse()) {
   }
 }
 
-const money = {}; // owner -> {cycles:{}, pacs:{cmte:amt}, ieFor:{}, ieAgainst:{}}
+const money = {};
+const pacHist = {}; // 'person|committee' -> [[date, amount, cycle]] // owner -> {cycles:{}, pacs:{cmte:amt}, ieFor:{}, ieAgainst:{}}
 const M$ = id => (money[id] ||= { cycles: {}, pacs: {}, ieFor: {}, ieAgainst: {} });
 for (const cy of cycles) {
   for (const w of pipe(cy.web, WEB)) {
@@ -171,7 +172,11 @@ for (const cy of cycles) {
     const tp = c[5], amt = +c[14], cm = c[0];
     if (!amt) continue;
     const mm = M$(owner);
-    if (tp === '24K' || tp === '24Z') mm.pacs[cm] = (mm.pacs[cm] || 0) + amt;
+    if (tp === '24K' || tp === '24Z') {
+      mm.pacs[cm] = (mm.pacs[cm] || 0) + amt;
+      const dt = c[13] && c[13].length === 8 ? `${c[13].slice(4)}-${c[13].slice(0, 2)}-${c[13].slice(2, 4)}` : null;
+      (pacHist[owner + '|' + cm] ||= []).push([dt, Math.round(amt), cy.y]);
+    }
     else if (tp === '24E') mm.ieFor[cm] = (mm.ieFor[cm] || 0) + amt;
     else if (tp === '24A') mm.ieAgainst[cm] = (mm.ieAgainst[cm] || 0) + amt;
   }
@@ -352,6 +357,14 @@ for (const [cm, f] of Object.entries(funders)) {
 fs.writeFileSync(path.join(OUT, 'people.json'), JSON.stringify(allPeople));
 fs.writeFileSync(path.join(OUT, 'rollcalls.json'), JSON.stringify({ order, rollcalls }));
 fs.writeFileSync(path.join(OUT, 'funders.json'), JSON.stringify(funderOut));
+// compact: { person: { committee: [yyyymmdd, amount, yyyymmdd, amount, ...] } }, oldest first
+const histOut = {};
+for (const [k, v] of Object.entries(pacHist)) {
+  v.sort((x, y) => (x[0] || '').localeCompare(y[0] || ''));
+  const [pid, cm] = k.split('|');
+  (histOut[pid] ||= {})[cm] = v.flatMap(([d, a]) => [d ? +d.replace(/-/g, '') : 0, a]);
+}
+fs.writeFileSync(path.join(OUT, 'pachistory.json'), JSON.stringify(histOut));
 fs.writeFileSync(path.join(OUT, 'meta.json'), JSON.stringify({ built: new Date().toISOString(), congress: 119, committees: cmName, fecThrough: Object.fromEntries(cycles.map(c => [c.y, null])) }));
 console.log('people', allPeople.length, 'serving', members.filter(m => m.status === 'serving').length, 'leaving', members.filter(m => m.status === 'leaving').length, 'elect', elect.length, 'movers', members.filter(m => m.elect).length);
 console.log('rollcalls', rollcalls.length, 'funders', Object.keys(funderOut).length, 'with money', allPeople.filter(p => p.money).length, 'with history', allPeople.filter(p => p.elections.length).length);

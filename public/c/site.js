@@ -47,13 +47,46 @@
         ch.querySelectorAll('svg.seats').forEach(function (svg) {
           var c = svg.classList.contains('sH') ? 'H' : 'S';
           svg.querySelectorAll('circle').forEach(function (cir) {
-            if (!cir.dataset.party) cir.dataset.party = cir.getAttribute('class');
-            cir.setAttribute('class', mode === 'vote' ? 'v' + (data[c][cir.dataset.id] || '0') : cir.dataset.party);
+            if (!cir.dataset.party) cir.dataset.party = (cir.getAttribute('class') || '').replace(' tip-on', '');
+            cir.setAttribute('class', mode === 'vote' ? 'v' + (data[c][cir.dataset.id] || '0') : mode === 'caucus' ? 'c' + (cir.dataset.c || 'none' + cir.dataset.p) : cir.dataset.party);
           });
         });
       });
     });
   }
+
+  // seat tooltips: hover with a mouse, tap on touch (a second tap or the link opens the file)
+  var VOTE = { vY: 'Voted yea', vN: 'Voted nay', vP: 'Voted present', v0: 'Did not vote' };
+  var tip = null, tipFor = null, lastPointer = 'mouse';
+  function hideTip() { if (tip) tip.remove(); tip = null; if (tipFor) tipFor.classList.remove('tip-on'); tipFor = null; }
+  function showTip(c, x, y, touch) {
+    hideTip(); tipFor = c; c.classList.add('tip-on');
+    tip = document.createElement('div'); tip.className = 'seat-tip' + (touch ? '' : ' mouse'); tip.setAttribute('role', 'tooltip');
+    var cls = c.getAttribute('class') || '', vote = (cls.match(/\bv[YNP0]\b/) || [])[0];
+    var html = (c.dataset.i ? '<img src="/portraits/s/' + c.dataset.id + '.webp" alt="">' : '<span></span>') + '<div><b></b><small class="ts"></small>' + (c.dataset.cn ? '<small class="tc"></small>' : '') + (vote ? '<small class="tv"></small>' : '') + '</div>';
+    var a = c.closest('a'); if (a) html += '<a href="' + a.getAttribute('href') + '">Open their file</a>';
+    tip.innerHTML = html;
+    tip.querySelector('b').textContent = c.dataset.n || '';
+    tip.querySelector('.ts').textContent = c.dataset.s || '';
+    if (c.dataset.cn) tip.querySelector('.tc').textContent = c.dataset.cn;
+    if (vote) tip.querySelector('.tv').textContent = VOTE[vote];
+    document.body.appendChild(tip);
+    var w = tip.offsetWidth, h = tip.offsetHeight, sx = window.scrollX, sy = window.scrollY;
+    var left = Math.min(Math.max(8, x + 14), document.documentElement.clientWidth - w - 8), top = y - h - 12; if (top < 8) top = y + 18;
+    tip.style.left = (left + sx) + 'px'; tip.style.top = (top + sy) + 'px';
+  }
+  document.addEventListener('pointerdown', function (e) { lastPointer = e.pointerType; }, true);
+  document.querySelectorAll('svg.seats').forEach(function (svg) {
+    svg.addEventListener('pointermove', function (e) { if (e.pointerType !== 'mouse') return; var c = e.target.closest('circle'); if (!c) return hideTip(); if (c !== tipFor) showTip(c, e.clientX, e.clientY, false); });
+    svg.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') hideTip(); });
+    svg.addEventListener('click', function (e) {
+      var c = e.target.closest('circle'); if (!c || lastPointer === 'mouse') return;
+      if (tipFor !== c) { e.preventDefault(); var r = c.getBoundingClientRect(); showTip(c, r.left + r.width / 2, r.top, true); }
+    });
+  });
+  document.addEventListener('click', function (e) { if (tip && !e.target.closest('.seat-tip') && !e.target.closest('svg.seats')) hideTip(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hideTip(); });
+  window.addEventListener('scroll', function () { if (tip && tip.classList.contains('mouse')) hideTip(); }, { passive: true });
 
   // state picker submits on change
   document.querySelectorAll('select[data-autosubmit]').forEach(function (s) { s.addEventListener('change', function () { s.form.submit(); }); });
