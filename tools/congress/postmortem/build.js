@@ -203,7 +203,7 @@ const outcome = (pgi, c) => { // true = won that contest, false = lost, null = n
   return null;
 };
 const isr = new Map(); const isrCand = new Map(); let allCmte = 0, allIe = 0, allPrimIe = 0;
-const outMemo = new Map(), funderScores = {};
+const outMemo = new Map(), funderScores = {}, indAll = new Map();
 for (const c of lines('itpas2.txt')) {
   if (c[19] === 'X') continue;
   const tp = c[5], amt = +c[14], cd = cnById.get(c[16]);
@@ -215,6 +215,8 @@ for (const c of lines('itpas2.txt')) {
   // every committee's 2026 score, for the funder pages
   const fs0 = funderScores[c[0]] || (funderScores[c[0]] = { win: 0, lose: 0, open: 0, _r: new Map() });
   fs0[good == null ? 'open' : good ? 'win' : 'lose'] += amt;
+  fs0[tp === '24K' || tp === '24Z' ? 'contrib' : 'ie'] = (fs0[tp === '24K' || tp === '24Z' ? 'contrib' : 'ie'] || 0) + amt;
+  if ((tp === '24K' || tp === '24Z') && good != null) { const io = ind.committees[c[0]]; if (io) { const t = indAll.get(io.industry) || { win: 0, lose: 0 }; indAll.set(io.industry, t); t[good ? 'win' : 'lose'] += amt; } }
   if (good != null) fs0._r.set(cd[0] + '|' + pgi + '|' + (against ? 'A' : 'F'), good);
   if (!ISRAEL.has(c[0])) continue;
   const g = ISRAEL_GROUP[c[0]] || c[0];
@@ -239,6 +241,11 @@ for (const e of EARM) {
   const ck = cd[0] + '|' + pgi; const t = isrCand.get(ck) || { id: cd[0], name: pName(cd[1].split(',').reverse().join(' ').trim().toLowerCase()), p: pt, seat: cd[5] === 'S' ? `${cd[4]} Senate` : `${cd[4]}-${+cd[6] || 'AL'}`, stage: pgi === 'G' ? 'General' : pgi === 'S' ? 'Special' : 'Primary', forAmt: 0, againstAmt: 0, won }; isrCand.set(ck, t);
   t.forAmt += amt; t.bundled = (t.bundled || 0) + amt;
 }
+// biggest spenders and industries over every 2026 contest, each dollar judged by the contest it was spent on
+const spendersAll = Object.entries(funderScores).map(([id, s]) => ({ id, name: (fundById[id] && fundById[id].name) || cmName.get(id) || id, slug: fundById[id] ? fundById[id].slug : null,
+  total: Math.round(s.win + s.lose), contrib: Math.round(s.contrib || 0), ie: Math.round(s.ie || 0), win: Math.round(s.win), lose: Math.round(s.lose) })).sort((a, b) => b.total - a.total);
+const industriesAll = [...indAll.entries()].map(([id, t]) => ({ id, name: indName.get(id) || id, win: Math.round(t.win), lose: Math.round(t.lose) })).filter(x => x.win + x.lose >= 250000).sort((a, b) => (b.win + b.lose) - (a.win + a.lose));
+const losingAll = spendersAll.filter(s => s.lose >= 1e6).sort((a, b) => b.lose - a.lose).slice(0, 15);
 for (const [k, v] of Object.entries(funderScores)) { const r = [...v._r.values()]; funderScores[k] = { win: Math.round(v.win), lose: Math.round(v.lose), open: Math.round(v.open), races: r.length, won: r.filter(Boolean).length }; }
 const R0 = o =>Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'number' ? Math.round(v) : v]));
 const israelRows = [...isr.entries()].map(([g, s]) => R0({ name: ISRAEL_NAMES[g] || (fundById[g] && fundById[g].name) || cmName.get(g) || g, label: true, slug: (fundById[g === 'AIPAC' ? 'C00799031' : g] || {}).slug || null, ...s, ids: undefined }))
@@ -313,7 +320,7 @@ const out = { built: new Date().toISOString(), electionDate: '2026-11-03',
   counts: { flips: flips.length, defeated: defeated.length, primaryLosers: primaryLosers.filter(x => x.sameSeat).length, newcomers },
   flips, defeated, primaryLosers, close, caucuses, ballot, ballotMoney,
   votes: { summary: voteSummary, splits, keyLaws },
-  money: { totals, spenders: spenders.slice(0, 25), industries: industries.slice(0, 20), costly, outspent, losingSpenders },
+  money: { totals, spenders: spendersAll.slice(0, 25), industries: industriesAll.slice(0, 20), costly, outspent, losingSpenders: losingAll },
   israel, progressive, funderScores,
 };
 fs.writeFileSync(path.join(OUT, 'postmortem.json'), JSON.stringify(out));
