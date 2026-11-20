@@ -53,7 +53,7 @@ http.createServer((req, res) => {
     if ((m = p.match(/^\/leadership\/([\w-]+)$/))) { const b = P.leaderElection(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if (p === '/tracker') return html(req, res, P.tracker(url.searchParams));
     if (p === '/committees') return html(req, res, P.committees());
-    if ((m = p.match(/^\/committee\/([a-z0-9]+)$/))) { const b = P.committee(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
+    if ((m = p.match(/^\/committee\/([a-z0-9]+)$/))) { const b = P.committee(m[1], url.searchParams); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if (p === '/members') return html(req, res, P.members(url.searchParams));
     if (p === '/incoming') return html(req, res, P.incoming());
     if (p === '/votes') return html(req, res, P.votes(url.searchParams));
