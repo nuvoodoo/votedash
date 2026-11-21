@@ -726,3 +726,22 @@ dl.facts dd.mt{margin:6px 0 2px}
 .pm-track .fW{background:var(--yea)}.pm-track .fL{background:var(--nay)}
 .pm-out>div{grid-template-columns:minmax(0,230px) 1fr auto}
 @media (max-width:560px){.pm-out>div{grid-template-columns:1fr auto}.pm-out .mt-bar{grid-column:1/-1;grid-row:2}}
+
+/* stat boxes: label above the number everywhere */
+dl.facts dt{order:-1;margin-bottom:4px}
+.mt-one{display:block;height:6px;border-radius:3px;background:var(--soft);overflow:hidden}
+.mt-one i{display:block;height:100%;background:var(--treasury);border-radius:3px}
+/* candidates: head-to-head vote share bars, margins, flips */
+.pm-h2h td:nth-child(3){min-width:200px}
+.h2h{position:relative;display:flex;justify-content:space-between;height:12px;border-radius:3px;background:var(--soft);overflow:hidden}
+.h2h i{display:block;height:100%}
+.h2h .dm,.mgn .dm,.pm-pairs .dm{background:var(--dem)}.h2h .rp,.mgn .rp,.pm-pairs .rp{background:var(--rep)}.h2h .ns,.mgn .ns,.pm-pairs .ns{background:var(--muted)}
+.h2h .w{opacity:.55}
+.h50{position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:var(--bronze)}
+.h2h-n{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:2px}
+.mgn{display:block;height:12px;border-radius:3px;background:var(--soft);overflow:hidden}
+.mgn i{display:block;height:100%}
+.flip{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;color:var(--treasury);white-space:nowrap}
+.flip .ic{color:var(--treasury);width:13px;height:13px}
+.pm-pairs{margin:6px 0 10px}
+@media (max-width:560px){.pm-h2h td:nth-child(3){min-width:130px}}

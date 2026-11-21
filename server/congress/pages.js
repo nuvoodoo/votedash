@@ -125,18 +125,29 @@ function tileMap() {
   }).join('')}</div>`;
 }
 const SMALL = new Set(['of', 'and', 'the', 'for', 'to', 'in', 'on', 'at', 'by', 'a', 'an', 'or']);
-const ACR = new Set(['pac', 'llc', 'llp', 'inc', 'usa', 'ii', 'iii', 'iv', 'nra', 'afl', 'cio', 'afscme', 'ibew', 'seiu', 'uaw', 'nea', 'aft', 'ups', 'ibm', 'cvs', 'hca', 'bnsf', 'csx', 'kbr', 'aipac', 'nrcc', 'nrsc', 'dccc', 'dscc', 'rnc', 'dnc', 'lgbtq', 'aflac', 'nar', 'ama', 'aba', 'ana', 'ncta', 'gop', 'us']);
-const nice = s => !s ? '' : s !== s.toUpperCase() ? s : s.toLowerCase().split(/(\s+|[-/(),.&'])/).map((w, i, a) => {
-  if (!/[a-z]/.test(w)) return w;
+const ACR = new Set(['pac', 'llc', 'llp', 'usa', 'ii', 'iii', 'iv', 'nra', 'afl', 'cio', 'afscme', 'ibew', 'seiu', 'uaw', 'nea', 'aft', 'ups', 'ibm', 'cvs', 'hca', 'bnsf', 'csx', 'kbr', 'aipac', 'nrcc', 'nrsc', 'dccc', 'dscc', 'rnc', 'dnc', 'lgbtq', 'aflac', 'nar', 'ama', 'aba', 'ana', 'ncta', 'gop', 'us',
+  'udp', 'afp', 'cva', 'usi', 'dmfi', 'rjc', 'norpac', 'jacpac', 'fipac', 'naacp', 'aarp', 'ahip', 'phrma', 'aclu', 'nfib', 'nab', 'aia', 'bae', 'ge', 'gm', 'hmp', 'slf', 'clf', 'smp', 'emily', 'nrdc', 'lcv', 'afge', 'nnu', 'cwa', 'iam', 'ufcw', 'usw', 'iuoe', 'nalc', 'apwu', 'nfl', 'nba', 'mlb', 'nhl', 'ncaa', 'nyc', 'dc', 'pa', 'ny', 'nj', 'tx', 'fl', 'nc', 'va', 'az', 'wi', 'mn', 'nv', 'nh',
+  'ai', 'ipac', 'aapc', 'acec', 'agc', 'nahb', 'ncba', 'nmha', 'npga', 'nrf', 'nrecaa', 'nrhc', 'abc', 'cbs', 'nbc', 'att', 'kpmg', 'pwc', 'ey', 'jpmorgan', 'bny', 'ubs', 'td', 'hsbc', 'tiaa', 'usaa', 'bp', 'fmc', 'ppg', 'adm', 'cme', 'ice', 'nasdaq', 'nyse', 'cpa', 'aicpa', 'aha', 'acp', 'aoa', 'apa', 'ada', 'asa', 'acs', 'nfu', 'afbf', 'eaa', 'aopa', 'nbaa', 'lpa', 'alpa', 'afa', 'twu', 'atu', 'iatse', 'sag', 'aftra', 'wga', 'mpa', 'riaa', 'nmpa', 'ncpa', 'nacds', 'pcma', 'bio', 'advamed', 'gpha', 'ama-pac']);
+// consonant pairs that start English words; a short word starting with any other pair is read as an acronym (DMFI, JSTREET is not short)
+const ONSET = new Set(['bl', 'br', 'ch', 'cl', 'cr', 'dr', 'dw', 'fl', 'fr', 'gl', 'gn', 'gr', 'kn', 'ph', 'pl', 'pr', 'ps', 'sc', 'sh', 'sk', 'sl', 'sm', 'sn', 'sp', 'st', 'sw', 'th', 'tr', 'tw', 'wh', 'wr', 'qu', 'kr', 'sch', 'scr', 'shr', 'spl', 'spr', 'str', 'thr']);
+const NOT_ACR = new Set(['dr', 'mr', 'mrs', 'ms', 'jr', 'sr', 'st', 'mt', 'ft', 'the', 'and', 'of', 'for', 'first', 'state', 'gold', 'multi', 'fire', 'pace', 'fed', 'rheem', 'cmte', 'fund', 'party', 'joint', 'great', 'new', 'old', 'west', 'east', 'north', 'south', 'one', 'free', 'tulip', 'wood', 'elbit', 'or']);
+['maga', 'pseg', 'ak', 'ar', 'az', 'ct', 'dc', 'fl', 'ga', 'ia', 'ks', 'ky', 'md', 'mi', 'mn', 'mo', 'ms', 'mt', 'nc', 'nd', 'nh', 'nj', 'nm', 'nv', 'ny', 'pa', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'va', 'vt', 'wa', 'wi', 'wv', 'wy'].forEach(w => ACR.add(w));
+const looksAcronym = w => w.length <= 5 && (!/[aeiouy]/.test(w) || (/^[^aeiouy]{2}/.test(w) && !ONSET.has(w.slice(0, 2)) && !ONSET.has(w.slice(0, 3))));
+const FIX = [[/\bJstreetpac\b/g, 'JStreetPAC'], [/\bJ Street PAC\b/g, 'J Street PAC'], [/\bEmily's List\b/gi, "EMILY's List"], [/\bAt&t\b/gi, 'AT&T'], [/\bInc\b\.?/g, 'Inc.'], [/\bCo\b\.?(?=$|[\s,])/g, 'Co.'], [/\bCorp\b\.?/g, 'Corp.'], [/\bLtd\b\.?/g, 'Ltd.']];
+const nice = s => !s ? '' : s !== s.toUpperCase() ? s : FIX.reduce((t, [re, r]) => t.replace(re, r), s.toLowerCase().split(/(\s+|[-/(),.&'"])/).map((w, i, a) => {
+  if (!/[a-z]/.test(w) || /\d/.test(w)) return w;
   if (a[i - 1] === "'" && w === 's') return w;
+  if (NOT_ACR.has(w) && !ACR.has(w)) return i > 0 && a[i - 1] !== '(' && SMALL.has(w) ? w : w[0].toUpperCase() + w.slice(1);
+  // the abbreviation a group puts in parentheses or quotes after its name: (UDP), ('RJC')
+  if ((a[i - 1] === '(' || ((a[i - 1] === "'" || a[i - 1] === '"') && a[i - 2] === '(')) && w.length <= 6) return w.toUpperCase();
   if (i > 0 && SMALL.has(w)) return w;
-  if (ACR.has(w) || (!/[aeiouy]/.test(w) && w.length <= 5)) return w.toUpperCase();
+  if (ACR.has(w) || looksAcronym(w)) return w.toUpperCase();
   return w[0].toUpperCase() + w.slice(1);
-}).join('').replace(/\bMc([a-z])/g, (_, c) => 'Mc' + c.toUpperCase()).replace(/\b\w{1,2}&\w{1,2}\b/g, m => m.toUpperCase());
+}).join('').replace(/\bMc([a-z])/g, (_, c) => 'Mc' + c.toUpperCase()).replace(/\b\w{1,2}&\w{1,2}\b/g, m => m.toUpperCase()));
 
 // ---------------- member ----------------
 // profile tabs: each has its own URL, /m/{slug}/{tab}; the profile itself (/m/{slug}) shows every section
-const TABS = [['elections', 'Elections'], ['coming-up', 'Coming up'], ['markets', 'Prediction markets'], ['polling', 'Polling'], ['votes', 'Votes'], ['money', 'Money'], ['bills', 'Bills'], ['speeches', 'Speeches'], ['record', 'Record'], ['connections', 'Connections']];
+const TABS = [['elections', 'Elections'], ['coming-up', 'Coming Up'], ['markets', 'Prediction Markets'], ['polling', 'Polling'], ['votes', 'Votes'], ['money', 'Money'], ['bills', 'Bills'], ['speeches', 'Speeches'], ['record', 'Record'], ['connections', 'Connections']];
 const TAB_IDS = new Set(TABS.map(t => t[0]));
 function tabHtml(p, id, q, full) {
   switch (id) {
@@ -281,7 +292,7 @@ const cycleOf = y => y + (y % 2);
 const cyLabel = cy => `${cy - 1}-${String(cy).slice(2)}`;
 const yearOf = q => { const y = q && +q.get('year'); return YEARS.includes(y) ? y : null; };
 function yearNav(base, y, anchor = '') {
-  return `<nav class="seg sm years" aria-label="Year">${[[null, 'All years'], ...YEARS.map(v => [v, String(v)])].map(([v, l]) => `<a href="${base}${v ? (base.includes('?') ? '&' : '?') + 'year=' + v : ''}${anchor}" aria-pressed="${y === v}">${l}</a>`).join('')}</nav>`;
+  return `<nav class="seg sm years" aria-label="Year">${[[null, 'All Years'], ...YEARS.map(v => [v, String(v)])].map(([v, l]) => `<a href="${base}${v ? (base.includes('?') ? '&' : '?') + 'year=' + v : ''}${anchor}" aria-pressed="${y === v}">${l}</a>`).join('')}</nav>`;
 }
 // per-year indexes built from the dated contribution files, cached per data build
 const viewCache = new Map();
@@ -507,7 +518,7 @@ function pager(base, page, pages) {
 function network(p) {
   const body = `<div class="wrap"><p class="crumb"><a href="${href(p)}">${esc(p.name)}</a></p><h1>${esc(p.name)}: money and votes network</h1>
   <p class="sub">PACs that fund ${esc(p.name)}, the colleagues those same PACs fund, and the members who vote most alike. Line weight follows dollars or vote agreement. Select any circle to open it.</p>
-  <div class="net-tools seg" role="group" aria-label="Show"><button type="button" aria-pressed="true" data-net="all">Money and votes</button><button type="button" aria-pressed="false" data-net="money">Money</button><button type="button" aria-pressed="false" data-net="votes">Votes</button></div>
+  <div class="net-tools seg" role="group" aria-label="Show"><button type="button" aria-pressed="true" data-net="all">Money and Votes</button><button type="button" aria-pressed="false" data-net="money">Money</button><button type="button" aria-pressed="false" data-net="votes">Votes</button></div>
   <div class="net" id="net" data-id="${p.id}" role="img" aria-label="Network graph"></div>
   <p class="ch-key"><span><i class="fD"></i>Democrat</span><span><i class="fR"></i>Republican</span><span><i class="fI"></i>Independent</span><span><i class="fPac"></i>PAC</span></p></div>`;
   return layout({ title: `${title(p)} ${p.name}: money and votes network`, desc: `The PACs that fund ${p.name} (${short(p)}), the other members those PACs fund, and the colleagues who vote most like them, as an interactive network.`, path: `${href(p)}/network`, body, active: '/members', scripts: '<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script><script src="/c/net.js?v=4" defer></script>' });
@@ -554,7 +565,7 @@ function members(q) {
   const filt = (k, opts) => `<div class="seg sm" role="group" aria-label="${k}">${opts.map(([v, l]) => `<a href="${qs(k, v)}" aria-pressed="${(q.get(k) || null) === v}">${l}</a>`).join('')}</div>`;
   const th = (k, l, n) => `<th${n ? ' class="n"' : ''}><a href="${qs('sort', k)}"${sort === k ? ' aria-current="true"' : ''}>${l}</a></th>`;
   const body = `<div class="wrap"><h1>Members of the 119th Congress</h1>
-  <div class="filters">${filt('chamber', [[null, 'Both'], ['H', 'House'], ['S', 'Senate']])}${filt('party', [[null, 'All parties'], ['D', 'Democrats'], ['R', 'Republicans'], ['I', 'Independents']])}${filt('status', [[null, 'Everyone'], ['leaving', 'Leaving office']])}
+  <div class="filters">${filt('chamber', [[null, 'Both'], ['H', 'House'], ['S', 'Senate']])}${filt('party', [[null, 'All Parties'], ['D', 'Democrats'], ['R', 'Republicans'], ['I', 'Independents']])}${filt('status', [[null, 'Everyone'], ['leaving', 'Leaving office']])}
   <form class="stf" action="/members"><label for="st" class="vh">State</label><select id="st" name="state" data-autosubmit><option value="">All states</option>${Object.entries(D.STATES).map(([k, v]) => `<option value="${k}"${st === k ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>${['chamber', 'party', 'status', 'sort'].filter(k => q.get(k)).map(k => `<input type="hidden" name="${k}" value="${esc(q.get(k))}">`).join('')}<noscript><button>Show</button></noscript></form></div>
   <p class="sub">${list.length} members</p>
   <div class="tbl"><table class="mtable"><thead><tr>${th('name', 'Member')}${th('since', 'Since')}${th('ideology', 'Voting score', 1)}${th('unity', 'With party', 1)}${th('missed', 'Missed', 1)}${th('raised', 'Raised this cycle', 1)}</tr></thead><tbody>
@@ -601,8 +612,8 @@ function votes(q) {
   const qs = (k, v) => { const u = new URLSearchParams(q); if (v == null) u.delete(k); else u.set(k, v); u.delete('page'); const s = u.toString(); return '/votes' + (s ? '?' + s : ''); };
   const body = `<div class="wrap narrow"><h1>Roll call votes</h1>
   <div class="filters"><div class="seg sm" role="group" aria-label="Chamber">${[[null, 'Both'], ['H', 'House'], ['S', 'Senate']].map(([v, l]) => `<a href="${qs('chamber', v)}" aria-pressed="${(q.get('chamber') || null) === v}">${l}</a>`).join('')}</div>
-  <div class="seg sm" role="group" aria-label="Type of vote">${[[null, 'All types'], ...KINDS].map(([v, l]) => `<a href="${qs('kind', v)}" aria-pressed="${(q.get('kind') || null) === v}">${l}</a>`).join('')}</div>
-  <div class="seg sm" role="group" aria-label="Partisanship">${[[null, 'All votes'], ['0', 'Bipartisan']].map(([v, l]) => `<a href="${qs('partyline', v)}" aria-pressed="${(q.get('partyline') || null) === v}">${l}</a>`).join('')}</div></div>
+  <div class="seg sm" role="group" aria-label="Type of vote">${[[null, 'All Types'], ...KINDS].map(([v, l]) => `<a href="${qs('kind', v)}" aria-pressed="${(q.get('kind') || null) === v}">${l}</a>`).join('')}</div>
+  <div class="seg sm" role="group" aria-label="Partisanship">${[[null, 'All Votes'], ['0', 'Bipartisan']].map(([v, l]) => `<a href="${qs('partyline', v)}" aria-pressed="${(q.get('partyline') || null) === v}">${l}</a>`).join('')}</div></div>
   <p class="sub">${list.length} roll calls in the 119th Congress.</p>
   <ol class="rolls">${list.slice((page - 1) * per, page * per).map(rollRow).join('')}</ol>${pager(qs('page', null), page, pages)}</div>`;
   return layout({ title: 'Roll call votes', desc: 'Every House and Senate roll call vote in the 119th Congress, with party splits, results and how each member voted.', path: '/votes', body, active: '/votes' });
@@ -821,7 +832,7 @@ function funder(f, q) {
     if (!sc || !(sc.win + sc.lose)) return '';
     const L = (D.pmRaces && D.pmRaces.funderRaces[f.id]) || [], isGen = x => /General|Special/.test(x.st);
     const bet = x => `${money(x.a)} ${x.sd === 'A' ? 'against' : 'for'} ${esc(x.n)}, ${esc(x.s)} ${esc(x.st.toLowerCase())}`;
-    const SC = [['all', 'All races', sc, L, `${rcy} races`], ['gen', 'General elections', sc.st && sc.st.g, L.filter(isGen), `${rcy} general elections`], ['prim', 'Primaries', sc.st && sc.st.p, L.filter(x => !isGen(x)), `${rcy} primaries`]];
+    const SC = [['all', 'All Races', sc, L, `${rcy} races`], ['gen', 'General Elections', sc.st && sc.st.g, L.filter(isGen), `${rcy} general elections`], ['prim', 'Primaries', sc.st && sc.st.p, L.filter(x => !isGen(x)), `${rcy} primaries`]];
     const card = ([k, , c, l, what], i) => { if (!c || !(c.win + c.lose)) return '';
       const spent = c.win + c.lose + (c.open || 0), bigW = l.find(x => x.g === true), bigL = l.find(x => x.g === false);
       return `<div data-scope-panel="${k}"${i ? ' hidden' : ''}><dl class="facts f-sc">
@@ -1530,7 +1541,7 @@ ${SITE}/sitemap.xml indexes ${Object.values(c).reduce((a, b) => a + b, 0).toLoca
 }
 
 // ---------------- 2026 post-mortem ----------------
-const PM_TABS = [['', 'Overview'], ['seats', 'Seats'], ['candidates', 'Candidates'], ['caucuses', 'Caucuses'], ['ballot', 'Ballot measures'], ['votes', 'How they voted'], ['money', 'Money'], ['israel', 'Pro-Israel PACs'], ['progressives', 'Progressives']];
+const PM_TABS = [['', 'Overview'], ['seats', 'Seats'], ['candidates', 'Candidates'], ['caucuses', 'Caucuses'], ['ballot', 'Ballot Measures'], ['votes', 'How They Voted'], ['money', 'Money'], ['israel', 'Pro-Israel PACs'], ['progressives', 'Progressives']];
 const PM_SECS = { seats: ['results', 'flips'], candidates: ['candidates'], caucuses: ['caucuses'], ballot: ['ballot'], votes: ['votes'], money: ['money'], israel: ['israel'], progressives: ['progressives'] };
 function postMortem(tab = '') {
   const X = D.postmortem; if (!X) return null;
@@ -1573,19 +1584,30 @@ function postMortem(tab = '') {
 
   const df = X.defeated, pls = X.primaryLosers;
   const dfP = p => df.filter(x => x.party === p).length, other = pls.filter(x => !x.sameSeat).length;
+  // head-to-head bar: the member's share against the winner's, party colors, 50% tick
+  const pcls = p => p === 'D' ? 'dm' : p === 'R' ? 'rp' : 'ns';
+  const h2h = (lp, l, wp, w, lbl) => l == null ? '' : `<span class="h2h" role="img" aria-label="${esc(lbl)}"><i class="${pcls(lp)}" style="width:${(l * 100).toFixed(1)}%"></i><i class="${pcls(wp)} w" style="width:${w != null ? (w * 100).toFixed(1) : 0}%"></i><b class="h50"></b></span><small class="h2h-n"><span>${(l * 100).toFixed(1)}%</span><span>${w != null ? (w * 100).toFixed(1) + '%' : ''}</span></small>`;
+  const pairs = df.reduce((o, x) => { const k = `${x.party}>${x.winnerParty || '?'}`; o[k] = (o[k] || 0) + 1; return o; }, {});
+  const PW = { D: 'Democrats', R: 'Republicans', I: 'independents' };
+  const pairLine = Object.entries(pairs).sort((a, b) => b[1] - a[1]).map(([k, n]) => { const [a1, b1] = k.split('>'); return `<li><span class="k ${pcls(a1)}" aria-hidden="true"></span><b>${n}</b> ${PW[a1] || ''} lost to ${a1 === b1 ? 'fellow ' : ''}${PW[b1] || 'others'}</li>`; }).join('');
+  const cMax = Math.max(...X.close.map(c => c.margin));
   add('candidates', 'Candidates', `<h2>Members who lost <span class="cnt">${df.length + pls.filter(x => x.sameSeat).length}</span></h2>
-  ${facts([X.counts.reElected ? ['Re-elected', X.counts.reElected, 'members who ran again and won'] : null, ['Lost the general election', df.length, `${dfP('R')} Republicans, ${dfP('D')} Democrats`], ['Lost renomination', pls.filter(x => x.sameSeat).length, 'in their own seat'], other ? ['Lost a bid for another office', other, 'in a primary'] : null, X.close[0] ? ['Closest race', pct(X.close[0].margin, 2), esc(X.close[0].seat)] : null])}
+  ${facts([X.counts.reElected ? ['Re-elected', X.counts.reElected, 'members who ran again and won'] : null, ['Lost the general election', df.length, `${dfP('R')} Republicans, ${dfP('D')} Democrats`], ['Lost renomination', pls.filter(x => x.sameSeat).length, 'in their own seat'], other ? ['Lost a bid for another office', other, 'in a primary'] : null, X.close[0] ? ['Closest race', pct(X.close[0].margin, 2), `${esc(X.close[0].seat)}, ${X.close[0].votes.toLocaleString('en-US')} votes`] : null])}
   <h3>In the general election</h3>
-  <div class="tbl"><table><thead><tr><th>Member</th><th>Seat</th><th class="n">Share</th><th>Lost to</th></tr></thead><tbody>
-  ${df.map(x => `<tr><td>${pc(x.party)} ${pl(x.name, x.slug)}</td><td>${esc(x.seat)}</td><td class="n">${x.pct != null ? x.pct.toFixed(1) + '%' : ''}</td><td>${x.winner ? `${pc(x.winnerParty)} ${pl(x.winner, x.winnerSlug)}` : ''}</td></tr>`).join('')}
+  <ul class="poll-key pm-pairs">${pairLine}</ul>
+  <p class="sub">Each bar shows the member's share of the vote, from the left, against the winner's, from the right. The tick marks 50%.</p>
+  <div class="tbl"><table class="pm-h2h"><thead><tr><th>Member</th><th>Seat</th><th>Vote share</th><th>Lost to</th></tr></thead><tbody>
+  ${df.map(x => `<tr><td>${pc(x.party)} ${pl(x.name, x.slug)}</td><td>${esc(x.seat)}</td><td>${h2h(x.party, x.pct != null ? x.pct / 100 : null, x.winnerParty, x.winnerPct != null ? x.winnerPct / 100 : null, `${x.name} ${x.pct}%, ${x.winner || ''} ${x.winnerPct != null ? x.winnerPct + '%' : ''}`)}</td><td>${x.winner ? `${pc(x.winnerParty)} ${pl(x.winner, x.winnerSlug)}` : ''}</td></tr>`).join('')}
   </tbody></table></div>
   <h3>In the primary</h3>
-  <div class="tbl"><table><thead><tr><th>Member</th><th>Race</th><th class="n">Share</th><th>Nominee</th></tr></thead><tbody>
-  ${pls.map(x => `<tr><td>${pc(x.party)} ${pl(x.name, x.slug)}</td><td>${esc(x.seat)}${x.sameSeat ? '' : '<br><small>sought another office</small>'}</td><td class="n">${x.pct != null ? pct(x.pct, 1) : ''}${x.runoff ? '<br><small>runoff</small>' : ''}</td><td>${esc(x.winner || '')}</td></tr>`).join('')}
+  <div class="tbl"><table class="pm-h2h"><thead><tr><th>Member</th><th>Race</th><th>Vote share</th><th>Nominee</th></tr></thead><tbody>
+  ${pls.map(x => `<tr><td>${pc(x.party)} ${pl(x.name, x.slug)}</td><td>${esc(x.seat)}${x.sameSeat ? '' : '<br><small>sought another office</small>'}${x.runoff ? '<br><small>runoff</small>' : ''}</td><td>${h2h(x.party, x.pct, x.winnerParty || x.party, x.winnerPct, `${x.name} ${x.pct != null ? pct(x.pct, 1) : ''}, ${x.winner || ''} ${x.winnerPct != null ? pct(x.winnerPct, 1) : ''}`)}</td><td>${x.winner ? `${pc(x.winnerParty || x.party)} ${esc(x.winner)}` : ''}</td></tr>`).join('')}
   </tbody></table></div>
-  ${full('Closest races', X.close.length, `<div class="tbl"><table><thead><tr><th>Seat</th><th>Winner</th><th>Runner-up</th><th class="n">Votes</th><th class="n">Margin</th></tr></thead><tbody>
-  ${X.close.map(c => `<tr><td>${esc(c.seat)}${c.flip ? ' <small>flipped</small>' : ''}</td><td>${pc(c.winnerParty)} ${pl(c.winner, c.winnerSlug)}</td><td>${pc(c.runnerUpParty)} ${esc(c.runnerUp)}</td><td class="n">${c.votes.toLocaleString('en-US')}</td><td class="n">${pct(c.margin, 2)}</td></tr>`).join('')}
-  </tbody></table></div>`)}`);
+  <h3>Closest races</h3>
+  <p class="sub">The narrowest margins of the general election. Shorter bars are closer races.</p>
+  <div class="tbl"><table class="pm-h2h"><thead><tr><th>Seat</th><th>Winner</th><th>Runner-up</th><th>Margin</th></tr></thead><tbody>
+  ${X.close.map(c => `<tr><td>${esc(c.seat)}${c.flip ? ` <span class="flip">${H.icon('swap')}flipped</span>` : ''}</td><td>${pc(c.winnerParty)} ${pl(c.winner, c.winnerSlug)}</td><td>${pc(c.runnerUpParty)} ${esc(c.runnerUp)}</td><td><span class="mgn" role="img" aria-label="${pct(c.margin, 2)} margin"><i class="${pcls(c.winnerParty)}" style="width:${Math.max(2, c.margin / cMax * 100).toFixed(1)}%"></i></span><small class="h2h-n"><span>${pct(c.margin, 2)}</span><span>${c.votes.toLocaleString('en-US')} votes</span></small></td></tr>`).join('')}
+  </tbody></table></div>`);
 
   const cs = [...X.caucuses].sort((a, b) => (b.lostGeneral + b.lostPrimary) / b.members - (a.lostGeneral + a.lostPrimary) / a.members);
   add('caucuses', 'Caucuses', `<h2>Caucuses</h2>
@@ -1635,7 +1657,7 @@ function postMortem(tab = '') {
   const M = X.money;
   const fl2 = f => f.slug ? `<a href="/f/${f.slug}">${leanDot(f.id)}${esc(nice(f.name))}</a>` : esc(nice(f.name));
   const winBar = (w, l, max) => `<span class="hb split" style="width:${((w + l) / max * 100).toFixed(1)}%" role="img" aria-label="${pct(w / (w + l))} backed winners"><i class="fW" style="flex:${w}"></i><i class="fL" style="flex:${l}"></i></span>`;
-  const SCOPES = [['all', 'All races', 'primaries and general elections together'], ['gen', 'General elections', 'general and special elections'], ['prim', 'Primaries', 'primaries, runoffs and conventions']];
+  const SCOPES = [['all', 'All Races', 'primaries and general elections together'], ['gen', 'General Elections', 'general and special elections'], ['prim', 'Primaries', 'primaries, runoffs and conventions']];
   const scopePanel = ([k, , what], i) => { const sc = (M.scopes || {})[k]; if (!sc) return ''; const spMax = Math.max(1, ...sc.spenders.map(s => s.total)), inMax = Math.max(1, ...sc.industries.map(s => s.win + s.lose));
     return `<div data-scope-panel="${k}"${i ? ' hidden' : ''}>
   ${(() => { const T = sc.totals || {}; const rows = [['D', k === 'prim' ? 'Democratic primaries' : 'Democratic side'], ['R', k === 'prim' ? 'Republican primaries' : 'Republican side'], ['O', k === 'prim' ? 'Other primaries' : 'Independents and others']].filter(([p]) => T[p]);

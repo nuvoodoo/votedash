@@ -74,7 +74,7 @@ function flow(q) {
 function filterBar(base, q, keep = []) {
   const make = (k, v) => { const u = new URLSearchParams(q); if (v == null) u.delete(k); else u.set(k, v); u.delete('page'); const s = u.toString(); return base + (s ? '?' + s : ''); };
   const seg = (k, opts, lab) => `<div class="seg sm" role="group" aria-label="${lab}">${opts.map(([v, l]) => `<a href="${make(k, v)}" aria-pressed="${(q.get(k) || null) === v}">${l}</a>`).join('')}</div>`;
-  return seg('kind', [[null, 'Bills'], ['resolutions', 'Resolutions']], 'Kind') + seg('origin', [[null, 'Both chambers'], ['House', 'House'], ['Senate', 'Senate']], 'Chamber of origin');
+  return seg('kind', [[null, 'Bills'], ['resolutions', 'Resolutions']], 'Kind') + seg('origin', [[null, 'Both Chambers'], ['House', 'House'], ['Senate', 'Senate']], 'Chamber of origin');
 }
 
 // ---------- stage finder ----------

@@ -80,7 +80,7 @@ function caucusAttr(p) {
 }
 
 // ---- layout ----
-const NAV = [['/find', 'Your reps'], ['/members', 'Members'], ['/committees', 'Committees'], ['/leadership', 'Leaders'], ['/schedule', 'Schedule'], ['/tracker', 'Bills'], ['/votes', 'Votes'], ['/money', 'Money'], ['/incoming', 'Incoming'], ['/2026-post-mortem', '2026 results']];
+const NAV = [['/find', 'Your Reps'], ['/members', 'Members'], ['/committees', 'Committees'], ['/leadership', 'Leaders'], ['/schedule', 'Schedule'], ['/tracker', 'Bills'], ['/votes', 'Votes'], ['/money', 'Money'], ['/incoming', 'Incoming'], ['/2026-post-mortem', '2026 Results']];
 
 // Icons: Lucide (ISC license), inline, stroke = currentColor
 const ICONS = {
@@ -114,7 +114,9 @@ const icon = (n, cls = '') => ICONS[n] ? `<svg class="ic ${cls}" viewBox="0 0 24
 const DT_ICON = [[/lost|losing|failed|defeated/i, 'x', 'ic-bad'], [/won|went its way|re-elected|passed|winning side|winners/i, 'check', 'ic-good'], [/effectiveness|rank/i, 'trophy'], [/flipped/i, 'swap'],
   [/outside spending|super pac/i, 'megaphone'], [/lobbying/i, 'briefcase'], [/raised|spent|given|money|from pacs|donor|cash/i, 'dollar'], [/with (their )?party|party/i, 'users'],
   [/vote|roll call|missed/i, 'vote'], [/house|senate|seat|congress|members/i, 'landmark'], [/measure|ballot/i, 'flag'], [/bill/i, 'file'], [/speech/i, 'mic'], [/term|since|next up|age/i, 'calendar']];
-const dtIcons = body => body.replace(/<dl class="facts[^"]*">[\s\S]*?<\/dl>/g, blk => blk.replace(/<dt>([^<]{2,80})<\/dt>/g, (m, t) => { const r = DT_ICON.find(([re]) => re.test(t)); return r ? `<dt>${icon(r[1], r[2] || '')}<span>${t}</span></dt>` : m; }));
+// a stat box whose value is a percentage gets a thin meter under it
+const factMeters = blk => blk.replace(/(<div(?: class="[^"]*")?>)(<dt>[\s\S]*?<\/dt>)<dd>(\d{1,3}(?:\.\d+)?)%<\/dd>(?!<dd class="mt">)/g, (m, open, dt, v) => `${open}${dt}<dd>${v}%</dd><dd class="mt"><span class="mt-one" role="presentation"><i style="width:${Math.min(100, +v)}%"></i></span></dd>`);
+const dtIcons = body => body.replace(/<dl class="facts[^"]*">[\s\S]*?<\/dl>/g, blk => factMeters(blk).replace(/<dt>([^<]{2,80})<\/dt>/g, (m, t) => { const r = DT_ICON.find(([re]) => re.test(t)); const T = t[0].toUpperCase() + t.slice(1); return r ? `<dt>${icon(r[1], r[2] || '')}<span>${T}</span></dt>` : `<dt>${T}</dt>`; }));
 function layout({ title: t, desc, path: p, body, active, jsonld, scripts = '', noindex, image }) {
   // off-site links open in a new tab
   body = body.replace(/<a ([^>]*?)href="(https?:\/\/(?!votedash\.net)[^"]+)"([^>]*)>/g, (m, pre, url, post) => {

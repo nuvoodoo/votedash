@@ -70,12 +70,12 @@ const seatLbl = p => p.chamber === 'S' ? `${p.state} Senate` : `${p.state}-${p.d
 const defeated = current.filter(p => p.race2026 && p.race2026.ran && p.race2026.decided && !p.race2026.won).map(p => {
   const r = raceRows.find(x => x.id === p.race2026.id);
   const wp = r && personFor(snap.races.find(x => x.id === r.id), r.w);
-  return { name: p.name, slug: p.slug, party: p.party, ch: p.chamber, seat: r ? r.seat : seatLbl(p), pct: p.race2026.pct, winner: r ? r.w.n : null, winnerParty: r ? r.w.p : null, winnerSlug: slugOf(wp), sameParty: r ? r.w.p === p.party : false };
+  return { name: p.name, slug: p.slug, party: p.party, ch: p.chamber, seat: r ? r.seat : seatLbl(p), pct: p.race2026.pct, winner: r ? r.w.n : null, winnerParty: r ? r.w.p : null, winnerPct: r ? r.w.pc : null, winnerSlug: slugOf(wp), sameParty: r ? r.w.p === p.party : false };
 }).sort((a, b) => a.ch.localeCompare(b.ch) * -1 || a.seat.localeCompare(b.seat));
 const primaryLosers = current.flatMap(p => (p.primaries || []).filter(x => x.year === 2026 && !x.won && !x.special).map(x => ({
   name: p.name, slug: p.slug, party: p.party, seat: x.chamber === 'S' ? `${x.state} Senate` : `${x.state}-${x.district || 'AL'}`, sameSeat: x.chamber === p.chamber,
-  pct: x.runoffPct ?? x.pct, runoff: x.runoffPct != null, winner: x.opponent ? x.opponent.name : null }))).sort((a, b) => b.sameSeat - a.sameSeat || a.seat.localeCompare(b.seat));
-const close = raceRows.filter(r => r.margin != null).sort((a, b) => a.margin - b.margin).slice(0, 15).map(r => ({ ch: r.ch, seat: r.seat, winner: r.w.n, winnerParty: r.w.p, winnerSlug: slugOf(personFor(snap.races.find(x => x.id === r.id), r.w)), runnerUp: r.ru.n, runnerUpParty: r.ru.p, votes: r.w.v - r.ru.v, margin: r.margin, flip: !!(r.incParty && r.w.p !== r.incParty) }));
+  pct: x.runoffPct ?? x.pct, runoff: x.runoffPct != null, winner: x.opponent ? x.opponent.name : null, winnerParty: x.opponent ? x.opponent.party || null : null, winnerPct: x.opponent && x.opponent.pct != null ? x.opponent.pct : null }))).sort((a, b) => b.sameSeat - a.sameSeat || a.seat.localeCompare(b.seat));
+const close = raceRows.filter(r => r.margin != null).sort((a, b) => a.margin - b.margin).slice(0, 15).map(r => ({ ch: r.ch, seat: r.seat, winner: r.w.n, winnerParty: r.w.p, winnerSlug: slugOf(personFor(snap.races.find(x => x.id === r.id), r.w)), runnerUp: r.ru.n, runnerUpParty: r.ru.p, votes: r.w.v - r.ru.v, margin: r.margin, wPct: r.tot ? r.w.v / r.tot : null, ruPct: r.tot ? r.ru.v / r.tot : null, flip: !!(r.incParty && r.w.p !== r.incParty) }));
 const newcomers = people.filter(p => p.status === 'elect').length;
 
 // ---------- caucuses ----------
