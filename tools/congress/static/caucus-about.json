@@ -1,0 +1,159 @@
+{
+ "bluedog": {
+  "about": "The Blue Dog Coalition is a caucus of moderate and conservative House Democrats, founded in 1995 after Democrats lost control of Congress in the 1994 elections. Many of its members represent right-leaning districts, and the group focuses on fiscal responsibility, balanced budgets, a strong national defense and working across party lines.",
+  "site": "https://bluedogs-gluesenkampperez.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/Blue_Dog_Coalition",
+  "socials": {
+   "x": "https://twitter.com/housebluedogs",
+   "facebook": "https://www.facebook.com/HouseBlueDogs/"
+  },
+  "sources": [
+   "https://en.wikipedia.org/wiki/Blue_Dog_Coalition",
+   "https://bluedogs-gluesenkampperez.house.gov/"
+  ]
+ },
+ "capac": {
+  "about": "The Congressional Asian Pacific American Caucus represents Asian American, Native Hawaiian and Pacific Islander communities in Congress. Founded in 1994 by Representative Norman Mineta, it brings together members of Asian and Pacific Islander descent, along with associate members who represent large AAPI communities, to advance legislation on issues that affect those communities. It describes itself as nonpartisan, though its current members are Democrats. It is chaired in the 119th Congress by Grace Meng of New York.",
+  "site": "https://capac.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/Congressional_Asian_Pacific_American_Caucus",
+  "socials": {
+   "facebook": "https://www.facebook.com/capac",
+   "instagram": "https://www.instagram.com/officialcapac"
+  },
+  "sources": [
+   "https://en.wikipedia.org/wiki/Congressional_Asian_Pacific_American_Caucus",
+   "https://capac.house.gov/"
+  ]
+ },
+ "cbc": {
+  "about": "The Congressional Black Caucus brings together the African American members of Congress. Formally organized in 1971 by 13 founding members including Shirley Chisholm, John Conyers and Charles Rangel, it works to advance the interests of Black Americans on education, health care, jobs and economic security, civil rights and criminal justice. Although founded as nonpartisan, its membership today is made up of Democrats. It is chaired in the 119th Congress by Yvette Clarke of New York.",
+  "site": "https://cbc.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/Congressional_Black_Caucus",
+  "socials": {
+   "x": "https://twitter.com/theblackcaucus",
+   "facebook": "https://www.facebook.com/CongressionalBlackCaucus/",
+   "instagram": "https://instagram.com/congressionalblackcaucus",
+   "youtube": "https://youtube.com/user/CBCaucus",
+   "bluesky": "https://bsky.app/profile/cbc.house.gov",
+   "linkedin": "https://www.linkedin.com/company/congressional-black-caucus/"
+  },
+  "sources": [
+   "https://en.wikipedia.org/wiki/Congressional_Black_Caucus",
+   "https://cbc.house.gov/"
+  ]
+ },
+ "chc": {
+  "about": "The Congressional Hispanic Caucus is the caucus of Hispanic and Latino Democrats in Congress, founded in 1976 by five members including Edward Roybal, Henry B. Gonzalez and Herman Badillo. It sets a shared legislative agenda on issues affecting Hispanic and Latino Americans and monitors executive and judicial actions that affect them. It is chaired in the 119th Congress by Adriano Espaillat of New York.",
+  "site": "https://chc.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/Congressional_Hispanic_Caucus",
+  "socials": {
+   "x": "https://x.com/HispanicCaucus",
+   "facebook": "https://www.facebook.com/congressional.hispanic.caucus"
+  },
+  "sources": [
+   "https://en.wikipedia.org/wiki/Congressional_Hispanic_Caucus",
+   "https://chc.house.gov/"
+  ]
+ },
+ "freedom": {
+  "about": "The House Freedom Caucus is a bloc of hard-line conservative House Republicans formed in 2015 by nine members, including Jim Jordan, Mark Meadows, Ron DeSantis and Mick Mulvaney. It pushes for deep spending cuts, limited government and strict immigration enforcement, and uses its votes as leverage to pull Republican leadership to the right. The group does not publish its membership list. It is chaired in the 119th Congress by Andy Harris of Maryland.",
+  "wikipedia": "https://en.wikipedia.org/wiki/Freedom_Caucus",
+  "socials": {
+   "x": "https://x.com/freedomcaucus",
+   "facebook": "https://www.facebook.com/freedomcaucus",
+   "instagram": "https://www.instagram.com/housefreedomcaucus"
+  },
+  "sources": [
+   "https://en.wikipedia.org/wiki/Freedom_Caucus",
+   "https://www.wikidata.org/wiki/Q19881038",
+   "https://harris.house.gov/media/press-releases/congressman-andy-harris-re-elected-house-freedom-caucus-chairman"
+  ]
+ },
+ "hispanicconf": {
+  "about": "The Congressional Hispanic Conference is the caucus of Hispanic Republicans in Congress, organized in 2003 by Mario Diaz-Balart with founding members including Ileana Ros-Lehtinen, Lincoln Diaz-Balart and Henry Bonilla. It was created to give Hispanic Republicans their own voice on Latino issues, and it promotes conservative policy on taxes, trade, school choice and economic opportunity.",
+  "site": "https://hispanicconference-gonzales.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/Congressional_Hispanic_Conference",
+  "socials": {
+   "x": "https://x.com/HispanicConf",
+   "facebook": "https://www.facebook.com/pages/Congressional-Hispanic-Conference/306314689378759",
+   "youtube": "https://www.youtube.com/HispanicConference"
+  },
+  "sources": [
+   "https://en.wikipedia.org/wiki/Congressional_Hispanic_Conference",
+   "https://hispanicconference-gonzales.house.gov/"
+  ]
+ },
+ "mainstreet": {
+  "about": "The Republican Main Street Caucus is a group of pragmatic, governing-minded conservative House Republicans. First formed in 2017, it was relaunched for the 118th Congress and centers its agenda on economic growth, jobs, energy security, public safety and lower costs through limited government and free enterprise. It is chaired in the 119th Congress by Mike Flood of Nebraska.",
+  "site": "https://mainstreetcaucus.house.gov/",
+  "socials": {
+   "x": "https://x.com/MainCaucus",
+   "facebook": "https://www.facebook.com/profile.php?id=61574973398578",
+   "linkedin": "https://www.linkedin.com/company/republican-main-street-caucus/"
+  },
+  "sources": [
+   "https://mainstreetcaucus.house.gov/",
+   "https://mainstreetcaucus.house.gov/media/press-releases/main-street-caucus-elects-rep-flood-chair",
+   "https://ballotpedia.org/Republican_Main_Street_Partnership"
+  ]
+ },
+ "newdem": {
+  "about": "The New Democrat Coalition is a caucus of center-left House Democrats founded in 1997 by Cal Dooley, Jim Moran and Tim Roemer. Its members are generally socially liberal and fiscally moderate, favoring pro-growth, business-friendly economic policy, innovation and trade, and it presents itself as a bridge across the partisan divide. It is chaired in the 119th Congress by Brad Schneider of Illinois.",
+  "site": "https://newdemocratcoalition.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/New_Democrat_Coalition",
+  "socials": {
+   "x": "https://twitter.com/NewDemCoalition",
+   "facebook": "https://www.facebook.com/NewDemCoalition/",
+   "instagram": "https://www.instagram.com/newdemocratcoalition/",
+   "youtube": "https://www.youtube.com/user/NewDemocratCoalition",
+   "bluesky": "https://bsky.app/profile/newdems.bsky.social",
+   "threads": "https://www.threads.net/@newdemocratcoalition"
+  },
+  "sources": [
+   "https://en.wikipedia.org/wiki/New_Democrat_Coalition",
+   "https://newdemocratcoalition.house.gov/"
+  ]
+ },
+ "problemsolvers": {
+  "about": "The Problem Solvers Caucus is a bipartisan House group launched in 2017, growing out of meetings organized by the centrist group No Labels. It is built with equal numbers of Democrats and Republicans and seeks bipartisan agreement on major issues, often by having members vote together as a bloc on deals the group endorses. It is co-chaired in the 119th Congress by Brian Fitzpatrick of Pennsylvania and Tom Suozzi of New York.",
+  "site": "https://problemsolverscaucus.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/Problem_Solvers_Caucus",
+  "socials": {
+   "x": "https://x.com/probsolvecaucus",
+   "facebook": "https://www.facebook.com/ProblemSolversCaucus/",
+   "instagram": "https://www.instagram.com/problemsolverscaucus/"
+  },
+  "sources": [
+   "https://en.wikipedia.org/wiki/Problem_Solvers_Caucus",
+   "https://problemsolverscaucus.house.gov/"
+  ]
+ },
+ "progressive": {
+  "about": "The Congressional Progressive Caucus is the organized left wing of the Democratic Party in Congress, founded in 1991 by members including Bernie Sanders, Ron Dellums and Maxine Waters. It advocates Medicare for All, living wages, stronger corporate regulation and higher taxes on corporations, lower military spending, criminal justice reform and climate action. It is chaired in the 119th Congress by Greg Casar of Texas.",
+  "site": "https://progressives.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/Congressional_Progressive_Caucus",
+  "socials": {
+   "x": "https://twitter.com/USProgressives",
+   "facebook": "https://www.facebook.com/USProgressives",
+   "youtube": "https://www.youtube.com/progressivecaucus"
+  },
+  "sources": [
+   "https://en.wikipedia.org/wiki/Congressional_Progressive_Caucus",
+   "https://progressives.house.gov/"
+  ]
+ },
+ "rsc": {
+  "about": "The Republican Study Committee is the House's oldest and largest conservative caucus, founded in 1973 with help from activist Paul Weyrich to hold the Republican leadership to conservative principles. It develops policy for the party's right flank, favoring lower non-defense spending, socially conservative legislation and gun rights, and has published its own alternative federal budget every year since 1995. It is chaired in the 119th Congress by August Pfluger of Texas.",
+  "site": "https://rsc-pfluger.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/Republican_Study_Committee",
+  "socials": {
+   "x": "https://twitter.com/RepublicanStudy",
+   "facebook": "https://www.facebook.com/republicanstudycommittee/",
+   "instagram": "https://www.instagram.com/republicanstudy/"
+  },
+  "sources": [
+   "https://en.wikipedia.org/wiki/Republican_Study_Committee",
+   "https://rsc-pfluger.house.gov/"
+  ]
+ }
+}

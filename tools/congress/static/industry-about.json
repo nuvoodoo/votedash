@@ -1,0 +1,266 @@
+{
+ "abortion-anti": {
+  "about": "Organizations that oppose abortion, including national and state right-to-life groups and religious advocacy organizations. They lobby for restrictions on abortion and against federal funding for abortion providers."
+ },
+ "abortion-rights": {
+  "about": "Organizations that support legal access to abortion and reproductive health services, including family planning providers and reproductive rights advocacy groups. They lobby to protect abortion access and for funding of family planning programs."
+ },
+ "accountants": {
+  "about": "Accounting and auditing firms, tax preparation firms and individual certified public accountants, along with their professional associations. Their lobbying typically involves tax policy, auditing standards and the regulation of tax preparers."
+ },
+ "agricultural-services": {
+  "about": "Companies that supply farmers, including makers of seed, fertilizer, pesticides and farm equipment, agricultural cooperatives, and farm credit and farm bureau organizations. They lobby on the farm bill, pesticide and biotechnology regulation, and agricultural trade."
+ },
+ "air-transport": {
+  "about": "Passenger and cargo airlines, airports, aircraft manufacturers and parts makers, general aviation and aviation services companies, along with their trade associations. They lobby on Federal Aviation Administration funding and rules, air traffic control, aviation taxes and airport infrastructure."
+ },
+ "animal-welfare": {
+  "about": "Organizations that advocate for the humane treatment of animals, including animal protection societies and wildlife advocacy groups. They lobby on animal cruelty laws, farm animal welfare, wildlife protection and the use of animals in research."
+ },
+ "automotive": {
+  "about": "Car and truck manufacturers, auto parts makers, car dealers, auto repair shops and tire companies, along with their trade groups. Their lobbying typically covers fuel economy and emissions standards, vehicle safety rules, trade and tariffs, and electric vehicle incentives."
+ },
+ "beer-wine-liquor": {
+  "about": "Brewers, wineries and distillers, along with beer, wine and liquor wholesalers and distributors and their trade groups. They lobby on alcohol excise taxes, trade and tariffs, and rules governing alcohol distribution and labeling."
+ },
+ "building-materials": {
+  "about": "Makers and sellers of cement, concrete, stone, gravel, lumber, plumbing and heating equipment and other building products, along with heavy construction equipment manufacturers and their trade groups. Their lobbying typically covers infrastructure funding, trade and tariffs, and environmental permitting."
+ },
+ "building-trades-unions": {
+  "about": "Unions of construction workers, including carpenters, electricians, plumbers and pipefitters, ironworkers, laborers, painters and operating engineers. They lobby on infrastructure spending, prevailing wage rules for federal projects, apprenticeship programs and labor law."
+ },
+ "business-associations": {
+  "about": "Broad business organizations that represent companies across many industries, such as chambers of commerce, associations of small businesses and groups of corporate executives. Their lobbying typically covers taxes, regulation, trade and labor policy that affect business in general."
+ },
+ "business-services": {
+  "about": "Firms that sell services to other businesses, including consultants, advertising and marketing agencies, staffing and temporary employment firms, security services, equipment rental and other professional services. Their lobbying varies widely with each firm's line of business."
+ },
+ "cable-satellite": {
+  "about": "Cable television operators, satellite TV providers and cable programming networks, along with their trade associations. Their lobbying typically involves retransmission and carriage rules, broadband policy and media ownership regulation."
+ },
+ "candidate-committees": {
+  "about": "The official campaign committees that candidates for Congress and president form to raise and spend money for their own elections. Contributions between campaign committees are counted here."
+ },
+ "casinos-gambling": {
+  "about": "Casino operators, gaming equipment makers, Native American tribes that run casinos, sports betting and online gaming companies, racetracks and lottery contractors. Their lobbying typically covers the legality and taxation of sports betting and online gaming, and tribal gaming rights."
+ },
+ "chemicals": {
+  "about": "Makers of industrial chemicals, plastics, paints, coatings, adhesives and household and personal care chemical products, along with their trade associations. They lobby on chemical safety regulation, environmental rules, trade and energy costs."
+ },
+ "civil-rights": {
+  "about": "Organizations that advocate for civil liberties, racial justice, voting rights, immigrant rights and human rights. Their lobbying typically covers voting rights, criminal justice, immigration and anti-discrimination laws."
+ },
+ "commercial-banks": {
+  "about": "Commercial banks, savings and loans and bank holding companies, along with the trade associations that represent them. Their lobbying centers on banking regulation, capital requirements, deposit insurance and consumer financial protection rules."
+ },
+ "computers-software": {
+  "about": "Makers of computers, computer hardware and software, IT services firms and data companies, along with their trade associations. Their lobbying typically involves skilled-worker immigration, research tax credits, cybersecurity, export controls, government technology contracts and data privacy."
+ },
+ "construction-services": {
+  "about": "Engineering firms, architects, surveyors and construction management companies, along with their professional associations. They lobby on infrastructure spending, how federal design contracts are awarded and professional liability."
+ },
+ "credit-unions": {
+  "about": "Member-owned credit unions and the leagues and national associations that represent them. They lobby to keep their federal tax exemption and on banking regulation, lending limits and payment card rules."
+ },
+ "crop-production": {
+  "about": "Farmers and growers of grain, cotton, sugar, fruits, vegetables, nuts and other crops, along with grain elevators, cotton gins, sugar refiners and the commodity associations that represent them. Their lobbying centers on the farm bill, crop insurance, commodity support programs and trade policy."
+ },
+ "crypto": {
+  "about": "Cryptocurrency exchanges, blockchain developers, crypto mining companies, stablecoin issuers and investors in digital assets, along with their trade groups. Their lobbying centers on how digital assets are regulated and taxed, and on which federal agencies oversee them."
+ },
+ "dairy": {
+  "about": "Dairy farmers, milk cooperatives and dairy processors, along with the associations that represent them. They lobby on milk pricing, dairy support programs in the farm bill, trade and farm labor."
+ },
+ "defense-aerospace": {
+  "about": "Manufacturers of military aircraft, missiles, spacecraft, warships and other weapons systems, along with their trade associations. They lobby on the defense budget, weapons procurement programs, space policy and export rules."
+ },
+ "defense-electronics": {
+  "about": "Companies that make military communications gear, radar, sensors, guidance systems, electronic warfare equipment and defense IT systems. Their lobbying centers on defense appropriations, procurement programs and cybersecurity."
+ },
+ "defense-services": {
+  "about": "Contractors that provide logistics, base operations, training, maintenance, security, intelligence support and other services to the military, along with makers of ammunition, vehicles and other defense goods not covered elsewhere. They lobby on the defense budget and federal contracting rules."
+ },
+ "democratic-liberal": {
+  "about": "Political action committees and advocacy groups that support Democratic candidates or liberal and progressive causes in general, rather than a single issue."
+ },
+ "democratic-party": {
+  "about": "Official Democratic Party committees, including the national committee, the House and Senate campaign committees and state and local party organizations. They raise money and support Democratic candidates in federal elections."
+ },
+ "education": {
+  "about": "Colleges and universities, for-profit schools, private and charter schools, education technology and testing companies, and the associations that represent them. They lobby on federal student aid, research funding, accreditation rules and education spending."
+ },
+ "electric-utilities": {
+  "about": "Investor-owned electric utilities, public power systems, rural electric cooperatives and independent power producers, along with their associations. They lobby on energy and environmental regulation, transmission policy, grid reliability and energy tax credits."
+ },
+ "electronics": {
+  "about": "Manufacturers of semiconductors, electronic components, consumer electronics, household appliances and other electrical equipment, along with their trade groups. They lobby on trade and tariffs, chip manufacturing incentives, export controls and research funding."
+ },
+ "environment": {
+  "about": "Environmental and conservation organizations, including groups focused on climate change, clean air and water, wildlife and public lands. They lobby on climate and energy policy, environmental regulation and the protection of public lands."
+ },
+ "ethnic-foreign-policy": {
+  "about": "Organizations that represent ethnic and diaspora communities or advocate on United States policy toward particular countries and regions, apart from Israel. Their lobbying centers on foreign aid, diplomacy, trade and immigration policy affecting those countries and communities."
+ },
+ "finance-credit": {
+  "about": "Non-bank lenders and finance companies, including consumer lenders, payday and installment lenders, student loan companies, credit card issuers, credit bureaus, payment processors and debt collectors. They lobby on consumer financial protection rules, interest rate limits and credit reporting regulation."
+ },
+ "food-processing": {
+  "about": "Food and beverage manufacturers, packaged food makers, food wholesalers and distributors, and grocery and convenience store chains, along with their trade associations. Their lobbying typically covers food safety rules, nutrition labeling, nutrition assistance programs and trade."
+ },
+ "forestry": {
+  "about": "Timber companies, sawmills, and makers of paper, pulp, packaging and other wood products, along with forest landowners and their associations. They lobby on access to timber on federal lands, forest management, tax treatment of timberland and environmental rules."
+ },
+ "general-contractors": {
+  "about": "Construction firms that build roads, bridges, commercial buildings, public works and other large projects, along with the associations that represent them. Their lobbying centers on federal infrastructure and highway funding, government contracting rules and labor regulation."
+ },
+ "gun-control": {
+  "about": "Organizations that advocate for stricter regulation of firearms to reduce gun violence. They lobby for measures such as expanded background checks, limits on certain weapons and magazines, and red flag laws."
+ },
+ "gun-rights": {
+  "about": "Organizations that oppose restrictions on gun ownership, including gun owners' associations, shooting sports groups and firearms industry groups. They lobby against new gun control laws and for expanded concealed-carry and other gun owner rights."
+ },
+ "health-professionals": {
+  "about": "Physicians, dentists, nurses, pharmacists, chiropractors, optometrists, psychologists and other health care practitioners, along with their professional associations. They lobby on Medicare and Medicaid payment rates, scope-of-practice rules, medical liability and health insurance policy."
+ },
+ "health-services": {
+  "about": "Health maintenance organizations and managed care companies, home health agencies, medical laboratories, outpatient and dialysis centers, pharmacy benefit managers and other health service providers. They lobby on Medicare Advantage, Medicaid managed care, health insurance rules and reimbursement policy."
+ },
+ "home-builders": {
+  "about": "Residential home builders, developers of housing subdivisions and manufactured housing companies, along with their trade associations. They lobby on mortgage finance, housing tax incentives, lumber and materials tariffs, and land use and environmental rules."
+ },
+ "hospitals-nursing-homes": {
+  "about": "Hospitals, hospital systems, nursing homes, assisted living facilities and other long-term care providers, along with their associations. Their lobbying centers on Medicare and Medicaid reimbursement and health care regulation."
+ },
+ "industrial-unions": {
+  "about": "Unions representing workers in manufacturing, mining, steel, autos, aerospace, chemicals and other industries. Their lobbying typically covers trade policy, labor law, workplace safety and pensions."
+ },
+ "insurance": {
+  "about": "Life, health, property and casualty insurers, insurance brokers and agents, along with their trade associations. Their lobbying typically covers federal flood and terrorism insurance programs, health insurance policy, tax treatment of insurance products and financial regulation."
+ },
+ "internet": {
+  "about": "Online platforms, search engines, social media networks, e-commerce sites and other internet service companies, along with the trade groups that represent them. They lobby on online liability protections, data privacy, antitrust, taxation of digital services and immigration of skilled workers."
+ },
+ "joint-fundraising": {
+  "about": "Committees formed by two or more candidates, party committees or political action committees to raise money together and divide the proceeds among the participants. They let donors write a single large check that is split across several committees."
+ },
+ "lawyers": {
+  "about": "Individual attorneys, law firms and legal associations, with trial lawyers making up a large share. Their lobbying typically involves civil liability law, limits on lawsuits and access to the courts."
+ },
+ "leadership-pacs": {
+  "about": "Political action committees set up by members of Congress and other political figures, separate from their own campaign committees. They are typically used to contribute to other candidates and build influence within a party."
+ },
+ "lgbtq": {
+  "about": "Organizations that advocate for the rights of lesbian, gay, bisexual, transgender and queer people. They lobby for anti-discrimination protections in employment, housing and public services."
+ },
+ "livestock": {
+  "about": "Cattle ranchers, hog and poultry producers, egg farmers, meatpackers and the trade groups that represent them. Their lobbying typically covers farm bill programs, meat inspection and labeling rules, trade access and animal health."
+ },
+ "lobbyists": {
+  "about": "Lobbying firms, government relations consultants, public relations and public affairs firms and individual lobbyists who represent clients before Congress and federal agencies. Their giving often follows the interests of the clients they represent."
+ },
+ "lodging-tourism": {
+  "about": "Hotels, motels, resorts, travel agencies, short-term rental platforms and tourism promotion groups, along with their trade associations. They lobby on travel promotion, visa and border policy, and taxes affecting the travel industry."
+ },
+ "manufacturing": {
+  "about": "Manufacturers of industrial machinery, tools, textiles, apparel, household goods, plastics, glass and other products not covered by a more specific category, along with broad manufacturing associations. They lobby on trade, taxes, energy costs and environmental and workplace regulation."
+ },
+ "medical-devices": {
+  "about": "Makers of medical devices, diagnostic equipment, surgical instruments, implants and medical supplies, along with their trade groups. They lobby on Food and Drug Administration approval rules, Medicare coverage and payment for devices, and taxes on medical devices."
+ },
+ "mining": {
+  "about": "Coal mining companies and miners of metals and minerals such as copper, gold, iron ore and lithium, along with their trade groups. Their lobbying typically involves mining on federal lands, environmental permitting, mine safety rules and domestic supply of critical minerals."
+ },
+ "misc-transport": {
+  "about": "Package delivery and courier companies, logistics and freight brokerage firms, warehousing, bus and transit operators, ride-hailing services, and car rental and moving companies. Their lobbying typically covers postal policy, transportation infrastructure, and how workers are classified as employees or contractors."
+ },
+ "misc-unions": {
+  "about": "Unions of workers in health care, retail, food processing, hotels, building services, communications, entertainment and other service industries, along with labor federations that span many unions. They lobby on labor law, the minimum wage, health care and workplace protections."
+ },
+ "oil-gas": {
+  "about": "Oil and natural gas producers, drillers, refiners, pipeline operators, oilfield service companies and fuel distributors, along with their trade associations. Their lobbying typically covers drilling on federal lands and offshore, energy tax provisions, pipeline approval, and environmental and emissions rules."
+ },
+ "other-single-issue": {
+  "about": "Advocacy groups and political action committees focused on a single issue not covered by another category, such as term limits, tax reform, drug policy, campaign finance or government spending."
+ },
+ "pharmaceuticals": {
+  "about": "Brand-name and generic drug manufacturers, biotechnology companies, makers of vitamins and nutritional supplements, and drug wholesalers, along with their trade associations. Their lobbying typically covers drug pricing, Medicare prescription drug policy, patent protection and Food and Drug Administration approval rules."
+ },
+ "private-equity": {
+  "about": "Private equity firms, venture capital firms and hedge funds, along with the associations that represent them. They lobby on the tax treatment of carried interest and investment income, and on regulation of private funds."
+ },
+ "pro-israel": {
+  "about": "Political action committees and advocacy organizations that support candidates who back a strong United States relationship with Israel. Their lobbying centers on foreign aid and security assistance to Israel and policy in the Middle East."
+ },
+ "public-sector-unions": {
+  "about": "Unions of government employees, including teachers, police officers, firefighters, postal workers and federal, state and local government workers. They lobby on federal employee pay and benefits, education funding, pensions and collective bargaining rights for public workers."
+ },
+ "publishing": {
+  "about": "Newspaper, magazine and book publishers, commercial printers and greeting card companies, along with their trade associations. Their lobbying typically covers postal rates, copyright, and the relationship between publishers and online platforms."
+ },
+ "railroads": {
+  "about": "Freight railroads, passenger rail operators and makers of railcars and rail equipment, along with their trade associations. Their lobbying typically covers rail safety rules, regulation of shipping rates, and funding for passenger rail and rail infrastructure."
+ },
+ "real-estate": {
+  "about": "Real estate developers, commercial property owners, real estate agents and brokers, property managers, mortgage lenders and title companies, along with their associations. They lobby on the mortgage interest deduction and other real estate tax provisions, housing finance and flood insurance."
+ },
+ "recreation-sports": {
+  "about": "Professional sports leagues and teams, concert promoters, live venues, amusement parks, fitness clubs, golf courses and makers of recreational vehicles, boats and sporting goods. Their lobbying typically covers ticketing rules, broadcasting rights, public lands access and trade."
+ },
+ "renewable-energy": {
+  "about": "Companies in solar, wind, geothermal, hydropower, nuclear, biofuels and energy storage, along with energy efficiency firms and their trade associations. They lobby on clean energy tax credits, renewable fuel standards, transmission and permitting rules, and research funding."
+ },
+ "republican-conservative": {
+  "about": "Political action committees and advocacy groups that support Republican candidates or conservative causes in general, rather than a single issue."
+ },
+ "republican-party": {
+  "about": "Official Republican Party committees, including the national committee, the House and Senate campaign committees and state and local party organizations. They raise money and support Republican candidates in federal elections."
+ },
+ "restaurants": {
+  "about": "Restaurant chains, independent restaurants, fast food franchisors and franchisees, caterers and food service contractors, along with their associations. Their lobbying typically covers the minimum wage, tipped wage rules, franchise and joint-employer rules, and immigration."
+ },
+ "retail": {
+  "about": "Department stores, discount and general merchandise chains, specialty retailers, pharmacies, online sellers and direct sales companies, along with their trade associations. They lobby on trade and tariffs, sales tax collection on online purchases, credit card swipe fees and labor rules."
+ },
+ "retirees-seniors": {
+  "about": "Organizations that represent older Americans and retirees, including associations of retired workers. They lobby on Social Security, Medicare, pensions and prescription drug costs."
+ },
+ "sea-transport": {
+  "about": "Shipping lines, ship builders, port operators, cruise lines, freight forwarders and inland barge and towing companies, along with their associations. They lobby on the Jones Act and other cabotage rules, port and waterway funding, and maritime security."
+ },
+ "securities-investment": {
+  "about": "Investment banks, stock brokerages, asset managers, mutual fund companies, stock and commodity exchanges and financial advisers, along with their trade associations. Their lobbying typically covers securities and derivatives regulation, capital gains and retirement savings tax policy, and financial market rules."
+ },
+ "special-trade-contractors": {
+  "about": "Specialty contractors such as electricians, plumbers, roofers, and heating, air conditioning and mechanical contractors, along with the associations that represent them. Their lobbying typically involves labor rules, apprenticeship and workforce training, and government contracting."
+ },
+ "steel-manufacturing": {
+  "about": "Steel producers, aluminum and other metal manufacturers, foundries and metal fabricators, along with their trade groups. Their lobbying centers on trade policy, tariffs and anti-dumping protections against imported metal."
+ },
+ "telecom": {
+  "about": "Local and long-distance telephone companies, wireless carriers, broadband providers and makers of telecommunications equipment, along with their trade associations. They lobby on spectrum allocation, broadband subsidies, net neutrality and Federal Communications Commission rules."
+ },
+ "tobacco": {
+  "about": "Cigarette, cigar and smokeless tobacco manufacturers, tobacco growers and leaf dealers, and makers of vaping and e-cigarette products. Their lobbying typically involves federal regulation of tobacco and nicotine products, excise taxes and marketing restrictions."
+ },
+ "transportation-unions": {
+  "about": "Unions of airline pilots and flight attendants, railroad workers, truck drivers, transit workers, longshoremen and seafarers. Their lobbying typically covers transportation safety, infrastructure funding, labor law and rules for each mode of transport."
+ },
+ "trucking": {
+  "about": "Trucking companies, freight haulers, truck leasing firms and independent truck drivers, along with the associations that represent them. They lobby on highway funding, fuel taxes, driver hours-of-service rules, truck size and weight limits, and driver shortages."
+ },
+ "tv-movies-music": {
+  "about": "Television broadcasters and networks, film studios and production companies, record labels, music publishers and theater chains, along with the guilds and trade groups of the entertainment business. They lobby on copyright protection, piracy, broadcast regulation and media ownership rules."
+ },
+ "veterans": {
+  "about": "Veterans service organizations, military associations and groups representing service members, retirees and their families. They lobby on veterans' health care and benefits, military pay and the defense budget."
+ },
+ "waste-environmental-services": {
+  "about": "Garbage collection and landfill companies, recycling firms, hazardous waste handlers and environmental cleanup and consulting firms, along with their associations. Their lobbying typically covers environmental regulation, Superfund cleanup and recycling policy."
+ },
+ "water-utilities": {
+  "about": "Public and private water and wastewater utilities and the associations that represent them. They lobby on drinking water standards, infrastructure funding and the regulation of contaminants."
+ },
+ "womens-issues": {
+  "about": "Organizations that work to elect women to office or advocate on issues such as pay equity, workplace discrimination and family leave. Some focus on recruiting and supporting women candidates of a particular party."
+ }
+}

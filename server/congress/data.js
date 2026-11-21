@@ -40,6 +40,8 @@ function build() {
   // hand-written funder descriptions, read from the repo so nightly rebuilds never drop them
   const aboutPath = path.join(__dirname, '../../tools/congress/static/funder-about.json');
   const funderAbout = fs.existsSync(aboutPath) ? JSON.parse(fs.readFileSync(aboutPath, 'utf8')) : {};
+  const staticJson = f => { const p = path.join(__dirname, '../../tools/congress/static', f); return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : {}; };
+  const caucusAbout = staticJson('caucus-about.json'), committeeAbout = staticJson('committee-about.json'), industryAbout = staticJson('industry-about.json'); const leadershipSponsors = staticJson('leadership-sponsors.json');
 
   const byId = new Map(people.map(p => [p.id, p]));
   const bySlug = new Map(people.map(p => [p.slug, p]));
@@ -84,7 +86,7 @@ function build() {
   for (const f of fundersById.values()) if (f.total + f.ie >= 10000) search.push({ t: 'funder', key: norm(`${f.name} ${f.org || ''}`), f });
   if (bills) for (const [k, b] of Object.entries(bills.bills)) search.push({ t: 'bill', key: norm(`${k} ${b.type}${b.number} ${b.type} ${b.number} ${b.short || ''} ${b.title}`), k, b });
 
-  Object.assign(D, { funderAbout, postmortem, pmRaces, approval, polls, ieYear, dataDir: DIR, caucuses, pacHistory, leadership, givenTo, people, byId, bySlug, order, rollcalls, rcByK, rcPos, funders: fundersById, fundersBySlug, meta, bills, speeches, industries, indName, sectorOf, sectors, industryOf, industryTotals, lobbying, record, chambers, states, search, STATES });
+  Object.assign(D, { funderAbout, caucusAbout, committeeAbout, industryAbout, leadershipSponsors, postmortem, pmRaces, approval, polls, ieYear, dataDir: DIR, caucuses, pacHistory, leadership, givenTo, people, byId, bySlug, order, rollcalls, rcByK, rcPos, funders: fundersById, fundersBySlug, meta, bills, speeches, industries, indName, sectorOf, sectors, industryOf, industryTotals, lobbying, record, chambers, states, search, STATES });
   D.recentRolls = { H: rollcalls.filter(r => r.chamber === 'H').sort(byDate), S: rollcalls.filter(r => r.chamber === 'S').sort(byDate) };
   D.allRolls = [...rollcalls].sort(byDate);
 }

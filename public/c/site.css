@@ -132,7 +132,7 @@ ol.rolls,ul.vlist,ul.blist,ul.slist,ol.rank,ul.rec,ul.plain,ul.cards,ul.faces,ul
 .rank li>a:hover b{text-decoration:underline}
 .amt{font-weight:600;white-space:nowrap;color:var(--treasury)}
 .rank.sm li{padding:6px 0}
-.f-about{max-width:68ch;margin:0 0 20px}.f-about p{margin:0 0 8px;line-height:1.55}.f-links{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
+.f-about{max-width:68ch;margin:0 0 20px}.f-about p{margin:0 0 8px;line-height:1.55}.f-links{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px}.f-links a{display:inline-flex;align-items:center;gap:6px}.f-links .ic{flex:none}
 .rank .ra{display:flex;align-items:baseline;gap:10px;flex:none}.rank .ra .res{font-size:13px}
 .who{display:flex;gap:10px;align-items:center;color:var(--bronze);text-decoration:none;min-width:0}
 .who img.pt{width:40px;height:49px;object-fit:cover;border-radius:2px;flex:none;background:var(--soft)}

@@ -733,10 +733,40 @@ function raceSpendersSec(p) {
     return `<h4>${esc(seat)}, 2026 ${esc(stage.toLowerCase())}</h4><div class="tbl"><table><thead><tr><th>PAC</th><th class="n">Effectiveness</th><th>Spent</th><th class="n">Amount</th></tr></thead><tbody>${l.map(x => `<tr><td>${x.sl ? `<a href="/f/${x.sl}">${leanDot(x.id)}${esc(nice(x.n))}</a>` : esc(nice(x.n))}</td><td class="n">${x.e != null && x.rk ? `${pct(x.e)} <small>#${x.rk.toLocaleString('en-US')}</small>` : ''}</td><td>${x.sd === 'A' ? 'Against' : 'For'} ${esc(x.c || '')}</td><td class="n">${money(x.a)}</td></tr>`).join('')}</tbody></table></div>`; }).filter(Boolean);
   return blocks.length ? `<h3>PACs in the 2026 race</h3><p class="sub">PACs that gave or spent in the race, ranked by their 2026 difficulty-weighted win rate across all races: wins in tossups count ten times wins in safe seats.</p>${blocks.join('')}` : '';
 }
-function aboutBlock(a) {
-  if (!a || !a.about) return '';
-  const links = [a.site && `<a href="${esc(a.site)}" rel="noopener">Official website</a>`, a.wikipedia && `<a href="${esc(a.wikipedia)}" rel="noopener">Wikipedia</a>`].filter(Boolean);
-  return `<div class="f-about"><p>${esc(a.about)}</p>${links.length ? `<p class="f-links">${links.join('')}</p>` : ''}</div>`;
+// About block shared by funder, caucus, committee and industry pages: a paragraph, then website, Wikipedia and social links
+const LINKS = [['site', 'globe', 'Website'], ['wikipedia', 'wiki', 'Wikipedia'], ['x', 'xlogo', 'X'], ['facebook', 'facebook', 'Facebook'], ['instagram', 'instagram', 'Instagram'], ['youtube', 'youtube', 'YouTube'], ['bluesky', 'bluesky', 'Bluesky'], ['threads', 'threads', 'Threads'], ['linkedin', 'linkedin', 'LinkedIn']];
+function aboutBlock(a, text) {
+  const t = (a && a.about) || text; if (!t && !a) return '';
+  const all = { ...(a && a.socials), site: a && a.site, wikipedia: a && a.wikipedia };
+  const links = LINKS.filter(([k]) => all[k]).map(([k, ic, l]) => `<a href="${esc(all[k])}" rel="noopener">${H.icon(ic)}${l}</a>`);
+  if (!t && !links.length) return '';
+  return `<div class="f-about">${t ? `<p>${esc(t)}</p>` : ''}${links.length ? `<p class="f-links">${links.join('')}</p>` : ''}</div>`;
+}
+// plain-language explanation of a PAC built from its FEC record, for funders without a written one
+const KIND_OF = { Corporation: 'a company', 'Trade association': 'a trade association', 'Labor union': 'a labor union', 'Membership group': 'a membership organization', Cooperative: 'a cooperative' };
+// the member behind a campaign committee (FEC candidate id) or a leadership PAC (FEC sponsor ids in tools/congress/static/leadership-sponsors.json)
+function leaderOf(f) {
+  const ids = [f.sponsor, ...((D.leadershipSponsors || {})[f.id] || [])].filter(Boolean);
+  return ids.length ? D.people.find(x => (x.ids && x.ids.fec || []).some(c => ids.includes(c))) || null : null;
+}
+function funderText(f) {
+  const n = nice(f.name), org = f.org ? nice(f.org.replace(/\s*\([^)]*\)/g, '')) : '', ind = D.industryOf(f.id), inds = ind ? D.indName.get(ind) : '';
+  const p = leaderOf(f), who = p ? `${p.chamber === 'S' ? 'Sen.' : 'Rep.'} ${p.name}` : '';
+  let a;
+  if (KIND_OF[f.kind] && !org) a = `${n} is a political action committee sponsored by ${KIND_OF[f.kind]}${inds ? ` in the ${inds.toLowerCase()} field` : ''}. It collects voluntary contributions from the organization's employees or members and gives them to candidates.`;
+  else if (KIND_OF[f.kind]) a = `${n.replace(/\s+-\s+.*$/, '')} is the political action committee of ${org}, ${KIND_OF[f.kind]}${inds ? ` in the ${inds.toLowerCase()} field` : ''}. It collects voluntary contributions from the organization's employees or members and gives them to candidates.`;
+  else if (f.kind === 'Leadership PAC') a = `${n} is ${who ? `the leadership PAC of ${who}` : 'a leadership PAC'}, a committee a member of Congress uses to give money to other candidates and party allies.`;
+  else if (f.kind === 'Committee' && who) a = `${n} is the campaign committee of ${who}, which also gives to other candidates.`;
+  else if (f.kind === 'Super PAC') a = `${n} is a super PAC: it can raise unlimited sums from people, companies and unions, and spends it independently of candidates.`;
+  else if (f.kind === 'Hybrid PAC') a = `${n} is a hybrid PAC, with one account that gives to candidates and a separate account that raises unlimited money for independent spending.`;
+  else if (f.kind === 'Party committee') a = `${n} is a ${f.party === 'REP' ? 'Republican' : f.party === 'DEM' ? 'Democratic' : ''} party committee.`.replace('a  party', 'a party');
+  else if (f.kind === 'PAC') a = `${n} is a political action committee that raises money from individuals and gives it to candidates.`;
+  else return '';
+  const g = f.total || 0, ie = f.ie || 0;
+  const m = g && ie ? `Since 2021 it has given ${money(g)} to members of Congress and spent ${money(ie)} on outside spending for or against them.` : g ? `Since 2021 it has given ${money(g)} to members of Congress.` : ie ? `Since 2021 it has spent ${money(ie)} on outside spending for or against members of Congress.` : '';
+  const l = leanOf(f.id), when = l && (l.since === 'since 2021' ? 'since 2021' : 'in 2025-26');
+  const ln = !l ? '' : l.step === 'n' ? `It splits its money between the parties: ${pct(1 - l.sh)} helped Democrats and ${pct(l.sh)} Republicans ${when}.` : l.sh > 0.5 ? `${pct(l.sh)} of its money ${when} helped Republicans.` : `${pct(1 - l.sh)} of its money ${when} helped Democrats.`;
+  return [a, m, ln].filter(Boolean).join(' ');
 }
 
 // ---------------- PAC lean: which party its money helped ----------------
@@ -782,7 +812,7 @@ function funder(f, q) {
   const body = `<div class="wrap"><p class="crumb"><a href="/money">Money</a>${ind ? `, <a href="/industry/${ind}">${esc(D.indName.get(ind))}</a>` : ''}</p>
   <h1>${esc(nice(f.name))}</h1>
   <p class="lede">${esc(f.kind)}${f.org ? ` connected to ${esc(nice(f.org))}` : ''}${f.city ? `, ${esc(nice(f.city))}, ${esc(f.state)}` : ''}. FEC committee <a href="https://www.fec.gov/data/committee/${f.id}/" rel="noopener">${f.id}</a>.</p>
-  ${aboutBlock(D.funderAbout[f.id])}
+  ${aboutBlock(D.funderAbout[f.id], funderText(f))}
   ${leanTrack(f.id)}
   ${yearNav('/f/' + f.slug, y)}
   ${(() => { // 2026 scorecard: every 2026 House and Senate candidate it spent on, scored by the contest each dollar went to; filter by stage
@@ -838,6 +868,7 @@ function industry(id, q) {
   const ptot = f => y ? Object.values(view(y).givenBy.get(f.id) || {}).reduce((a, b) => a + b, 0) : f.total;
   const pacs = [...D.funders.values()].filter(f => D.industryOf(f.id) === id).map(f => [f, ptot(f)]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
   const body = `<div class="wrap"><p class="crumb"><a href="/money">Money</a>${sec ? `, ${esc(sec.name)}` : ''}</p><h1>${esc(D.indName.get(id))}${y ? `, ${y}` : ''}</h1>
+  ${aboutBlock(D.industryAbout[id])}
   ${yearNav('/industry/' + id, y)}
   ${t.total ? `<dl class="facts"><div><dt>Given to members</dt><dd>${money(t.total)}</dd><dd class="s">PAC contributions ${when}</dd></div><div><dt>To Democrats</dt><dd>${pct(t.D / t.total)}</dd></div><div><dt>To Republicans</dt><dd>${pct(t.R / t.total)}</dd></div></dl>` : `<p class="sub">No PAC contributions from this industry to members in ${y}.</p>`}
   <div class="cols"><div class="col-main"><h2>Top recipients</h2><ol class="rank">${rec.slice(0, 20).map(([p, a]) => `<li>${personLink(p)}<b class="amt">${money(a)}</b></li>`).join('')}</ol></div>
@@ -1268,6 +1299,7 @@ function caucusPage(id, q) {
   const ch = ms.some(p => p.chamber === 'H') ? 'H' : 'S';
   const body = `<div class="wrap"><p class="crumb"><a href="/">Seat chart</a>, caucuses</p><h1>${esc(C.name)}</h1>
   <p class="lede">${ms.length} members of the ${ch === 'H' ? 'House' : 'Senate'}${ms.some(p => p.chamber === 'S') && ms.some(p => p.chamber === 'H') ? ' and Senate' : ''}${parties.length > 1 ? `: ${parties.map(([pt, n]) => `${n} ${PARTY[pt]}${n === 1 ? '' : 's'}`).join(', ')}` : ''}. Member list from <a href="${esc(C.source.url)}" rel="noopener">${esc(C.source.name.replace(/\s*\([^)]*\)\s*$/, ''))}</a>.</p>
+  ${aboutBlock(D.caucusAbout[id])}
   <figure class="vote-seats">${seatChart(ch, p => ids.has(p.id) ? 'f' + p.party : 'fx', { label: `${C.name} members in the ${ch === 'H' ? 'House' : 'Senate'}` })}</figure>
   <dl class="facts">${avgCoh != null ? `<div><dt>Votes together</dt><dd>${pct(avgCoh, 1)}</dd><dd class="s">Average share voting with the caucus majority</dd></div>` : ''}${avgUnity != null ? `<div><dt>With their party</dt><dd>${pct(avgUnity, 1)}</dd><dd class="s">Average party loyalty of members</dd></div>` : ''}${breaks.length ? `<div><dt>Broke with party</dt><dd>${breaks.length}</dd><dd class="s">Roll calls where most of the caucus voted against most of its party</dd></div>` : ''}</dl>
   <div class="cols"><div class="col-main">
@@ -1359,6 +1391,7 @@ function committee(slug, q) {
   const body = `<div class="wrap"><p class="crumb"><a href="/committees">Committees</a>${parent ? `, <a href="/committee/${cmSlug(c.parent)}">${esc(cmShort(parent.name))}</a>` : ''}</p>
   <h1>${esc(parent ? `${cmShort(parent.name)}: ${c.name}` : c.name)}</h1>
   ${c.jurisdiction ? `<p class="lede">${esc(c.jurisdiction.length > 420 ? c.jurisdiction.slice(0, c.jurisdiction.lastIndexOf('.', 420) + 1) || c.jurisdiction.slice(0, 420) : c.jurisdiction)}</p>` : ''}
+  ${aboutBlock(D.committeeAbout[id])}
   <dl class="facts">${chair ? `<div><dt>Chair</dt><dd class="nm"><a href="${href(chair.p)}">${esc(chair.p.name)}</a></dd><dd class="s">${short(chair.p)}</dd></div>` : ''}${rank ? `<div><dt>Ranking member</dt><dd class="nm"><a href="${href(rank.p)}">${esc(rank.p.name)}</a></dd><dd class="s">${short(rank.p)}</dd></div>` : ''}<div><dt>Members</dt><dd>${ms.length}</dd><dd class="s">${sides.map(([pt, l]) => `${l.length} ${pt}`).join(', ')}</dd></div>${bl.length ? `<div><dt>Bills referred</dt><dd>${bl.length}</dd><dd class="s">${reported.length} acted on</dd></div>` : ''}</dl>
   <div class="cols"><div class="col-main">
   ${meet.length ? `<h2>Upcoming hearings and markups</h2><ul class="mts">${meet.map(m => meetingRow(m).replace('<time>', `<time>${esc(new Date(m.date).toLocaleDateString('en-US', { ...ET, month: 'short', day: 'numeric' }))}, `)).join('')}</ul>` : ''}
