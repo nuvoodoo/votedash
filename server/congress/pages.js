@@ -796,7 +796,8 @@ function funder(f, q) {
   <div><dt>Spent on ${what}</dt><dd>${money(spent)}</dd><dd class="s">PAC gifts and outside spending for or against House and Senate candidates</dd></div>
   <div><dt>Races that went its way</dt><dd>${c.won} of ${c.races}</dd><dd class="mt"><span class="mt-bar" role="img" aria-label="${c.won} won, ${c.races - c.won} lost"><i class="fW" style="flex:${c.won}"></i><i class="fL" style="flex:${c.races - c.won}"></i></span></dd><dd class="s">${pct(c.won / c.races)} of the races it put money into</dd></div>
   <div><dt>Money on the winning side</dt><dd>${pct(c.win / (c.win + c.lose))}</dd><dd class="mt"><span class="mt-bar" role="img" aria-label="${money(c.win)} on winners, ${money(c.lose)} on losers"><i class="fW" style="flex:${c.win}"></i><i class="fL" style="flex:${c.lose}"></i></span></dd><dd class="s">${money(c.win)} on winners, ${money(c.lose)} on losers</dd></div>
-  ${c.eff != null && c.rank ? `<div><dt>Effectiveness rank</dt><dd>#${c.rank.toLocaleString('en-US')} <small>of ${c.of.toLocaleString('en-US')}</small></dd><dd class="mt"><span class="mt-pct" role="img" aria-label="Better than ${pct(1 - c.rank / c.of)} of PACs"><i style="left:${((1 - c.rank / c.of) * 100).toFixed(1)}%"></i></span></dd><dd class="s">Better than ${pct(1 - c.rank / c.of)} of PACs. ${pct(c.eff)} of races won when each is weighted by how competitive it was</dd></div>` : ''}
+  ${c.eff != null && c.rank ? `<div><dt>Race effectiveness rank</dt><dd>#${c.rank.toLocaleString('en-US')} <small>of ${c.of.toLocaleString('en-US')}</small></dd><dd class="mt"><span class="mt-pct" role="img" aria-label="Better than ${pct(1 - c.rank / c.of)} of PACs"><i style="left:${((1 - c.rank / c.of) * 100).toFixed(1)}%"></i></span></dd><dd class="s">Better than ${pct(1 - c.rank / c.of)} of PACs. ${pct(c.eff)} of races won, each race weighted by how competitive it was</dd></div>` : ''}
+  ${c.meff != null && c.mrank ? `<div><dt>Money effectiveness rank</dt><dd>#${c.mrank.toLocaleString('en-US')} <small>of ${c.mof.toLocaleString('en-US')}</small></dd><dd class="mt"><span class="mt-pct" role="img" aria-label="Better than ${pct(1 - c.mrank / c.mof)} of PACs"><i style="left:${((1 - c.mrank / c.mof) * 100).toFixed(1)}%"></i></span></dd><dd class="s">Better than ${pct(1 - c.mrank / c.mof)} of PACs. ${pct(c.meff)} of its money won, each dollar weighted by how competitive its race was</dd></div>` : ''}
   </dl>${bigW || bigL ? `<p class="sub f-sc-n">${bigL ? `Biggest losing bet: ${bet(bigL)}.` : ''}${bigW ? ` Biggest winning bet: ${bet(bigW)}.` : ''}</p>` : ''}</div>`; };
     const has = SC.filter(([, , c]) => c && c.win + c.lose);
     return `<h2 class="f-sc-h">${rcy} scorecard</h2>
@@ -1510,6 +1511,9 @@ function postMortem(tab = '') {
   const add = (id, label, html) => { if (!html) return; nav.push([id, label]); secMap[id] = `<section id="${id}" class="sec">${html}</section>`; };
   const facts = items => `<dl class="facts pm-kpi">${items.filter(Boolean).map(([dt, dd, sub]) => `<div><dt>${dt}</dt><dd>${dd}</dd>${sub ? `<dd class="s">${sub}</dd>` : ''}</div>`).join('')}</dl>`;
   const mini = (rows, max) => `<div class="pm-mini">${rows.map(([l, v, shown, cls]) => `<div><span>${l}</span><span class="pm-track"><i class="${cls || ''}" style="width:${Math.max(1, v / (max || 1) * 100).toFixed(1)}%"></i></span><b>${shown}</b></div>`).join('')}</div>`;
+  const OUTK = `<ul class="poll-key pm-key"><li><span class="k fW" aria-hidden="true"></span>Re-elected</li><li><span class="k fL" aria-hidden="true"></span>Lost general</li><li><span class="k fLp" aria-hidden="true"></span>Lost primary</li><li><span class="k ns" aria-hidden="true"></span>Left: ran for other office or retired</li></ul>`;
+  const outBar = c => { const o = c.otherOffice + c.retired; return `<span class="mt-bar" role="img" aria-label="${c.reElected} re-elected, ${c.lostGeneral} lost the general, ${c.lostPrimary} lost a primary, ${o} left"><i class="fW" style="flex:${c.reElected}"></i><i class="fL" style="flex:${c.lostGeneral}"></i><i class="fLp" style="flex:${c.lostPrimary}"></i><i class="ns" style="flex:${o}"></i></span>`; };
+  const outRows = list => `<div class="pm-mini pm-out">${list.map(c => `<div><span>${c.link || esc(c.name)}</span>${outBar(c)}<b>${c.reElected} won <small>${c.lostGeneral + c.lostPrimary} lost</small></b></div>`).join('')}</div>`;
   const full = (label, n, html) => `<details class="pm-more"><summary><b>${label}</b>${n != null ? ` <span class="cnt">${n}</span>` : ''}</summary>${html}</details>`;
   const dH = hA.D - hB.D, dS = sA.D - sB.D;
   const lede = `Democrats gained ${dH} House seats and ${dS} Senate seats on November 3, 2026. ${X.counts.defeated} members lost the general election, ${X.counts.primaryLosers} lost renomination, and ${X.counts.newcomers} members-elect take office January 3, 2027.`;
@@ -1532,7 +1536,7 @@ function postMortem(tab = '') {
   const df = X.defeated, pls = X.primaryLosers;
   const dfP = p => df.filter(x => x.party === p).length, other = pls.filter(x => !x.sameSeat).length;
   add('candidates', 'Candidates', `<h2>Members who lost <span class="cnt">${df.length + pls.filter(x => x.sameSeat).length}</span></h2>
-  ${facts([['Lost the general election', df.length, `${dfP('R')} Republicans, ${dfP('D')} Democrats`], ['Lost renomination', pls.filter(x => x.sameSeat).length, 'in their own seat'], other ? ['Lost a bid for another office', other, 'in a primary'] : null, X.close[0] ? ['Closest race', pct(X.close[0].margin, 2), esc(X.close[0].seat)] : null])}
+  ${facts([X.counts.reElected ? ['Re-elected', X.counts.reElected, 'members who ran again and won'] : null, ['Lost the general election', df.length, `${dfP('R')} Republicans, ${dfP('D')} Democrats`], ['Lost renomination', pls.filter(x => x.sameSeat).length, 'in their own seat'], other ? ['Lost a bid for another office', other, 'in a primary'] : null, X.close[0] ? ['Closest race', pct(X.close[0].margin, 2), esc(X.close[0].seat)] : null])}
   <h3>In the general election</h3>
   <div class="tbl"><table><thead><tr><th>Member</th><th>Seat</th><th class="n">Share</th><th>Lost to</th></tr></thead><tbody>
   ${df.map(x => `<tr><td>${pc(x.party)} ${pl(x.name, x.slug)}</td><td>${esc(x.seat)}</td><td class="n">${x.pct != null ? x.pct.toFixed(1) + '%' : ''}</td><td>${x.winner ? `${pc(x.winnerParty)} ${pl(x.winner, x.winnerSlug)}` : ''}</td></tr>`).join('')}
@@ -1547,8 +1551,9 @@ function postMortem(tab = '') {
 
   const cs = [...X.caucuses].sort((a, b) => (b.lostGeneral + b.lostPrimary) / b.members - (a.lostGeneral + a.lostPrimary) / a.members);
   add('caucuses', 'Caucuses', `<h2>Caucuses</h2>
-  <p class="sub">Share of each caucus's members who lost their 2026 general election or primary.</p>
-  ${mini(cs.map(c => { const l = c.lostGeneral + c.lostPrimary; return [`${pc(c.party)} <a href="/caucus/${c.id}">${esc(c.name)}</a>`, l / c.members, `${pct(l / c.members)} <small>${l} of ${c.members}</small>`, c.party === 'D' ? 'dm' : c.party === 'R' ? 'rp' : 'ns']; }), Math.max(...cs.map(c => (c.lostGeneral + c.lostPrimary) / c.members)))}
+  <p class="sub">What happened to each caucus's members in 2026, ordered by the share who lost.</p>
+  ${OUTK}
+  ${outRows(cs.map(c => ({ ...c, link: `${pc(c.party)} <a href="/caucus/${c.id}">${esc(c.name)}</a>` })))}
   ${full('Full table', null, `<div class="tbl"><table><thead><tr><th>Caucus</th><th class="n">Members</th><th class="n">Re-elected</th><th class="n">Lost general</th><th class="n">Lost primary</th><th class="n">Ran for other office</th><th class="n">Retired</th><th class="n">Lost</th></tr></thead><tbody>
   ${cs.map(c => `<tr><td>${pc(c.party)} <a href="/caucus/${c.id}">${esc(c.name)}</a></td><td class="n">${c.members}</td><td class="n">${c.reElected}</td><td class="n">${c.lostGeneral}</td><td class="n">${c.lostPrimary}</td><td class="n">${c.otherOffice}</td><td class="n">${c.retired}</td><td class="n">${pct((c.lostGeneral + c.lostPrimary) / c.members)}</td></tr>`).join('')}
   </tbody></table></div>`)}
@@ -1611,6 +1616,11 @@ function postMortem(tab = '') {
   <h3>Industries</h3>
   <p class="sub">PAC contributions to candidates in ${what}, by the industry behind each PAC.</p>
   <ul class="hbars pm-sp">${sc.industries.map(s => `<li><a href="/industry/${s.id}">${esc(s.name)}</a>${winBar(s.win, s.lose, inMax)}<b>${money(s.win + s.lose)} <small>${pct(s.win / (s.win + s.lose))} on winners</small></b></li>`).join('')}</ul>
+  ${(sc.winning || []).length ? `<h3>Biggest winning bets</h3>
+  <p class="sub">Spenders with the most money behind winning candidates in ${what}.</p>
+  <div class="tbl"><table><thead><tr><th>Spender</th><th class="n">Behind winners</th><th class="n">Behind losers</th></tr></thead><tbody>
+  ${sc.winning.map(s => `<tr><td>${fl2(s)}</td><td class="n">${money(s.win)}</td><td class="n">${money(s.lose)}</td></tr>`).join('')}
+  </tbody></table></div>` : ''}
   <h3>Biggest losing bets</h3>
   <p class="sub">Spenders with the most money behind losing candidates in ${what}.</p>
   <div class="tbl"><table><thead><tr><th>Spender</th><th class="n">Behind losers</th><th class="n">Behind winners</th></tr></thead><tbody>
@@ -1715,15 +1725,15 @@ function postMortem(tab = '') {
   const card = (k, title, big, sub, viz) => `<article class="pm-card"><h2><a href="${href2(k)}">${title}</a></h2><p class="pm-big">${big}</p>${sub ? `<p class="sub">${sub}</p>` : ''}${viz || ''}<p class="pm-open"><a href="${href2(k)}">${esc(PM_TABS.find(t => t[0] === k)[1])}<span aria-hidden="true"> →</span></a></p></article>`;
   const MT = (M.scopes && M.scopes.all && M.scopes.all.totals) || {}, onW = t => t ? t.win / (t.win + t.lose) : 0;
   const I0 = X.israel && X.israel.sum, G0 = X.progressive && X.progressive.primary;
-  const csTop = cs.slice(0, 4), csMax = Math.max(...csTop.map(c => (c.lostGeneral + c.lostPrimary) / c.members));
+  const csTop = cs.slice(0, 4);
   const bTot = X.ballot.reduce((a, g) => a + g.measures.length, 0), bPass = X.ballot.reduce((a, g) => a + g.passed, 0);
   const keyIss = X.ballot.filter(g => ['abortion', 'voting', 'gender'].includes(g.id));
   const overview = `${facts([['House', `${dH > 0 ? '+' : ''}${dH} D`, `${hA.D} D, ${hA.R} R${hA.undecided ? `, ${hA.undecided} undecided` : ''}`], ['Senate', `${dS > 0 ? '+' : ''}${dS} D`, `${sA.D} D, ${sA.R} R${sA.I ? `, ${sA.I} I` : ''}`], ['Seats flipped', fl.length, Object.entries(flipDir).map(([k, n]) => `${n} ${k[0]} to ${k[1]}`).join(', ')], ['Members who lost', df.length + pls.filter(x => x.sameSeat).length, `${df.length} general, ${pls.filter(x => x.sameSeat).length} primary`], MT.D ? ['PAC and super PAC money', money(Object.values(MT).reduce((a, t) => a + t.win + t.lose, 0)), `${pct(Object.values(MT).reduce((a, t) => a + t.win, 0) / Object.values(MT).reduce((a, t) => a + t.win + t.lose, 0))} backed winners`] : null])}
   <div class="pm-cards">
   ${card('seats', 'The new Congress', `+${dH} House, +${dS} Senate`, 'Seats after the election, 120th Congress.', `<p class="pm-lab">House</p>${seatBar(hA, 435)}<p class="pm-lab">Senate</p>${seatBar(sA, 100)}`)}
   ${card('seats', 'Flipped seats', fl.length, 'Each square is one seat that changed party.', waffle(fl))}
-  ${card('candidates', 'Members who lost', df.length + pls.filter(x => x.sameSeat).length, '', mini([['Republicans, general', dfP('R'), dfP('R'), 'rp'], ['Democrats, general', dfP('D'), dfP('D'), 'dm'], ['Lost renomination', pls.filter(x => x.sameSeat).length, pls.filter(x => x.sameSeat).length, 'ns']], Math.max(dfP('R'), dfP('D'), pls.length)))}
-  ${card('caucuses', 'Caucuses hit hardest', csTop[0] ? pct((csTop[0].lostGeneral + csTop[0].lostPrimary) / csTop[0].members) : '', csTop[0] ? `of the ${esc(csTop[0].name)} lost.` : '', mini(csTop.map(c => [esc(c.name), (c.lostGeneral + c.lostPrimary) / c.members, pct((c.lostGeneral + c.lostPrimary) / c.members), c.party === 'D' ? 'dm' : c.party === 'R' ? 'rp' : 'ns']), csMax))}
+  ${card('candidates', 'Members who ran again', `${X.counts.reElected} won, ${df.length + pls.filter(x => x.sameSeat).length} lost`, '', mini([['Re-elected', X.counts.reElected, X.counts.reElected, 'fW'], ['Lost the general', df.length, `${df.length} <small>${dfP('R')} R, ${dfP('D')} D</small>`, 'fL'], ['Lost renomination', pls.filter(x => x.sameSeat).length, pls.filter(x => x.sameSeat).length, 'fLp']], X.counts.reElected))}
+  ${card('caucuses', 'Caucuses: won and lost', csTop[0] ? pct((csTop[0].lostGeneral + csTop[0].lostPrimary) / csTop[0].members) : '', csTop[0] ? `of the ${esc(csTop[0].name)} lost, the most of any caucus.` : '', outRows(csTop))}
   ${card('ballot', 'Ballot measures', `${bPass} of ${bTot} passed`, 'Selected issues:', `<ul class="poll-key pm-key"><li><span class="k fW" aria-hidden="true"></span>Passed</li><li><span class="k fL" aria-hidden="true"></span>Failed</li></ul><div class="pm-mini">${keyIss.map(g => `<div><span>${esc(g.label)}</span><span class="pm-track"><span class="hb split" role="img" aria-label="${g.passed} passed, ${g.failed} failed" style="width:100%"><i class="fW" style="flex:${g.passed}"></i><i class="fL" style="flex:${g.failed}"></i></span></span><b>${g.passed}–${g.failed}</b></div>`).join('')}</div>`)}
   ${card('votes', 'How the defeated voted', pct(R.lost.unity, 1), 'Party-line votes by defeated Republicans, against re-elected Republicans. Scale starts at 85%.', mini([['Defeated', R.lost.unity - 0.85, pct(R.lost.unity, 1), 'rp'], ['Re-elected', R.won.unity - 0.85, pct(R.won.unity, 1), 'rp']], 0.15))}
   ${MT.D && MT.R ? card('money', 'Money', `${pct(onW(MT.D))} vs ${pct(onW(MT.R))}`, 'Share of PAC and super PAC money that backed winners, Democratic side against Republican side.', mini([['Democratic side', onW(MT.D), pct(onW(MT.D)), 'dm'], ['Republican side', onW(MT.R), pct(onW(MT.R)), 'rp']], 1)) : ''}

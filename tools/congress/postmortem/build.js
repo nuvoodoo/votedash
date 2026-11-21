@@ -287,7 +287,7 @@ const mkScope = sc => {
   const ins = [...indAll.entries()].filter(([k]) => sc === 'a' ? !k.includes('|') : k.startsWith(sc + '|')).map(([k, t]) => { const id = k.replace(/^[gp]\|/, ''); return { id, name: indName.get(id) || id, win: Math.round(t.win), lose: Math.round(t.lose) }; })
     .filter(x => x.win + x.lose >= 250000).sort((a, b) => (b.win + b.lose) - (a.win + a.lose));
   const T = sideTot[sc] || {}; const totals = Object.fromEntries(['D', 'R', 'O'].filter(k => T[k]).map(k => [k, { win: Math.round(T[k].win), lose: Math.round(T[k].lose), open: Math.round(T[k].open) }]));
-  return { totals, spenders: sp.slice(0, 25), industries: ins.slice(0, 20), losing: sp.filter(x => x.lose >= 1e6).sort((a, b) => b.lose - a.lose).slice(0, 15) };
+  return { totals, spenders: sp.slice(0, 25), industries: ins.slice(0, 20), losing: sp.filter(x => x.lose >= 1e6).sort((a, b) => b.lose - a.lose).slice(0, 15), winning: sp.filter(x => x.win >= 1e6).sort((a, b) => b.win - a.win).slice(0, 15) };
 };
 const scopes = { all: mkScope('a'), gen: mkScope('g'), prim: mkScope('p') };
 const nameOfCm = id => (fundById[id] && fundById[id].name) || cmName.get(id) || id, slugOfCm = id => fundById[id] ? fundById[id].slug : null;
@@ -298,8 +298,12 @@ const funderRaces = {};
 for (const [k, v] of Object.entries(funderScores)) {
   const r = [...v._r.values()];
   const e = { a: effOf(r), g: effOf(r, 'g'), p: effOf(r, 'p') };
+  // money effectiveness: each decided race counts by dollars spent x difficulty
+  const C = [...v._c.values()].filter(x => x.good != null), stg = x => /General|Special/.test(x.stage) ? 'g' : 'p';
+  const meOf = sc => { const l = sc ? C.filter(x => stg(x) === sc) : C, W = l.reduce((a, x) => a + x.amt * (DIFF_W[x.cat] || 0.1), 0); return W ? l.reduce((a, x) => a + (x.good ? x.amt * (DIFF_W[x.cat] || 0.1) : 0), 0) / W : null; };
+  const me = { a: meOf(), g: meOf('g'), p: meOf('p') };
   if (v.win + v.lose >= 50000) funderRaces[k] = [...v._c.values()].sort((a, b) => b.amt - a.amt).slice(0, 25).map(x => { const o = { c: x.cand, n: x.name, sl: x.slug, p: x.p, s: x.seat, st: x.stage, k: x.cat, sd: x.side === 'against' ? 'A' : 'F', a: Math.round(x.amt), g: x.good }; if (x.rating) o.r = x.rating; return o; });
-  funderScores[k] = { ld: v._l ? Math.round(v._l.D) : 0, lr: v._l ? Math.round(v._l.R) : 0, win: Math.round(v.win), lose: Math.round(v.lose), open: Math.round(v.open), races: r.length, won: r.filter(x => x.good).length, eff: e.a.eff, effW: e.a.w, _e: e, _d: { g: v.g || { win: 0, lose: 0 }, p: v.p || { win: 0, lose: 0 } } };
+  funderScores[k] = { ld: v._l ? Math.round(v._l.D) : 0, lr: v._l ? Math.round(v._l.R) : 0, win: Math.round(v.win), lose: Math.round(v.lose), open: Math.round(v.open), races: r.length, won: r.filter(x => x.good).length, eff: e.a.eff, effW: e.a.w, _m: me, _e: e, _d: { g: v.g || { win: 0, lose: 0 }, p: v.p || { win: 0, lose: 0 } } };
 }
 // rank: difficulty-weighted win rate among committees with at least MIN_RACES decided races and $50K behind them
 const effective = {};
@@ -307,11 +311,13 @@ for (const sc of ['a', 'g', 'p']) {
   const pool = Object.entries(funderScores).filter(([, f]) => { const e = f._e[sc], d = sc === 'a' ? f : f._d[sc]; return e.n >= MIN_RACES && e.eff != null && d.win + d.lose >= 50000; })
     .sort((x, y) => y[1]._e[sc].rs - x[1]._e[sc].rs || y[1]._e[sc].w - x[1]._e[sc].w);
   pool.forEach(([id, f], i) => { f['rank' + sc] = i + 1; f['of' + sc] = pool.length; });
+  const mpool = pool.filter(([, f]) => f._m[sc] != null).sort((x, y) => y[1]._m[sc] - x[1]._m[sc] || (y[1].win + y[1].lose) - (x[1].win + x[1].lose));
+  mpool.forEach(([id, f], i) => { f['mrank' + sc] = i + 1; f['mof' + sc] = mpool.length; });
   effective[sc] = pool.slice(0, 25).map(([id, f]) => { const e = f._e[sc], d = sc === 'a' ? f : f._d[sc]; return { id, name: nameOfCm(id), slug: slugOfCm(id), eff: e.eff, n: e.n, won: e.won, w: e.w, spent: Math.round(d.win + d.lose) }; });
 }
 // per-stage scorecards for the PAC page filter: g = general and special elections, p = primaries, runoffs and conventions
-for (const f of Object.values(funderScores)) { f.st = {}; for (const k of ['g', 'p']) { const d = f._d[k], e = f._e[k]; if (!(d.win + d.lose)) continue; f.st[k] = { win: Math.round(d.win), lose: Math.round(d.lose), open: Math.round(d.open || 0), races: e.n, won: e.won, eff: e.eff, rank: f['rank' + k] || null, of: f['of' + k] || null }; } }
-for (const f of Object.values(funderScores)) { f.rank = f.ranka || null; f.of = f.ofa || null; f.rankG = f.rankg || null; f.ofG = f.ofg || null; f.rankP = f.rankp || null; f.ofP = f.ofp || null; for (const k of ['ranka', 'ofa', 'rankg', 'ofg', 'rankp', 'ofp', '_e', '_d']) delete f[k]; }
+for (const f of Object.values(funderScores)) { f.st = {}; for (const k of ['g', 'p']) { const d = f._d[k], e = f._e[k]; if (!(d.win + d.lose)) continue; f.st[k] = { meff: f._m[k], mrank: f['mrank' + k] || null, mof: f['mof' + k] || null, win: Math.round(d.win), lose: Math.round(d.lose), open: Math.round(d.open || 0), races: e.n, won: e.won, eff: e.eff, rank: f['rank' + k] || null, of: f['of' + k] || null }; } }
+for (const f of Object.values(funderScores)) { f.meff = f._m.a; f.mrank = f.mranka || null; f.mof = f.mofa || null; for (const k of ['mranka', 'mofa', 'mrankg', 'mofg', 'mrankp', 'mofp', '_m']) delete f[k]; f.rank = f.ranka || null; f.of = f.ofa || null; f.rankG = f.rankg || null; f.ofG = f.ofg || null; f.rankP = f.rankp || null; f.ofP = f.ofp || null; for (const k of ['ranka', 'ofa', 'rankg', 'ofg', 'rankp', 'ofp', '_e', '_d']) delete f[k]; }
 const raceSpenders = {};
 for (const [rk, m] of raceSp) {
   const byCm = new Map(); for (const x of m.values()) { const t = byCm.get(x.cm) || { id: x.cm, amt: 0, parts: [] }; byCm.set(x.cm, t); t.amt += x.amt; t.parts.push(x); }
@@ -419,7 +425,7 @@ const progressive = { finance, groups: byGroup, primary, general, candidates: pr
 
 const out = { built: new Date().toISOString(), electionDate: '2026-11-03',
   seats: { H: { before: hBefore, after: hAfter }, S: { before: sBefore, after: sAfter } },
-  counts: { flips: flips.length, defeated: defeated.length, primaryLosers: primaryLosers.filter(x => x.sameSeat).length, newcomers },
+  counts: { reElected: current.filter(p => p.race2026 && p.race2026.ran && p.race2026.won).length, flips: flips.length, defeated: defeated.length, primaryLosers: primaryLosers.filter(x => x.sameSeat).length, newcomers },
   flips, defeated, primaryLosers, close, caucuses, ballot, ballotMoney,
   votes: { summary: voteSummary, splits, keyLaws },
   money: { totals, scopes, effective, spenders: scopes.all.spenders, industries: scopes.all.industries, costly, outspent, losingSpenders: scopes.all.losing },

@@ -719,3 +719,10 @@ dl.facts dd.mt{margin:6px 0 2px}
 .mt-bar i{display:block;height:100%}
 .mt-pct{position:relative;display:block;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--soft),var(--treasury))}
 .mt-pct i{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--paper);border:3px solid var(--bronze);transform:translate(-50%,-50%)}
+
+/* outcome bars: won / lost general / lost primary / left */
+.fLp,.mt-bar .fLp,.pm-track .fLp,.poll-key .fLp{background:repeating-linear-gradient(45deg,var(--nay) 0 3px,var(--paper) 3px 5px)}
+.mt-bar .ns,.poll-key .ns{background:var(--absent)}
+.pm-track .fW{background:var(--yea)}.pm-track .fL{background:var(--nay)}
+.pm-out>div{grid-template-columns:minmax(0,230px) 1fr auto}
+@media (max-width:560px){.pm-out>div{grid-template-columns:1fr auto}.pm-out .mt-bar{grid-column:1/-1;grid-row:2}}
