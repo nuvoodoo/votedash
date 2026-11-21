@@ -1484,6 +1484,79 @@ function about() {
   <h2>Record</h2><p>Each item on a member's record links to the official document or news report it is drawn from: House and Senate ethics committees, court and Justice Department records, censure resolutions and major news organizations.</p></div>`;
   return layout({ title: 'How VoteDash works', desc: 'Where VoteDash gets its data (Congress.gov, the FEC, Voteview, the Congressional Record and election results) and how each number on the site is built.', path: '/about', body });
 }
+// every outside source the site is built from, grouped by what it supplies
+function bibliography() {
+  const polls = D.polls || {};
+  const pollRefs = [];
+  for (const v of Object.values(polls)) if (v && v.url && v.pollster && !pollRefs.some(r => r[2] === v.url)) pollRefs.push([v.pollster, v.label || 'National survey', v.url, `${v.pop || 'Survey'}, ${v.dates}`]);
+  const S = [
+    ['Members and committees', [
+      ['@unitedstates project', 'congress-legislators', 'https://github.com/unitedstates/congress-legislators', 'Members, terms, committee assignments, district offices, social accounts and ID crosswalks'],
+      ['U.S. Government Publishing Office', 'Guide to House and Senate Members', 'https://memberguide.gpo.gov/', 'Official portraits'],
+      ['Congressional Black Caucus', 'Membership', 'https://cbc.house.gov/membership/', 'Caucus roster'],
+      ['Congressional Hispanic Caucus', 'Members', 'https://chc.house.gov/members', 'Caucus roster'],
+      ['Congressional Asian Pacific American Caucus', 'Membership', 'https://capac.house.gov/membership', 'Caucus roster'],
+      ['Congressional Progressive Caucus', 'Caucus Members', 'https://progressives.house.gov/caucus-members', 'Caucus roster'],
+      ['New Democrat Coalition', 'Members', 'https://newdemocratcoalition.house.gov/members', 'Caucus roster'],
+      ['Blue Dog Coalition', 'Members', 'https://bluedogs-gluesenkampperez.house.gov/members', 'Caucus roster'],
+      ['Problem Solvers Caucus', 'Caucus Members', 'https://problemsolverscaucus.house.gov/about/caucus-members.htm', 'Caucus roster'],
+      ['Republican Main Street Caucus', 'Membership', 'https://mainstreetcaucus.house.gov/membership', 'Caucus roster'],
+      ['Congressional Hispanic Conference', 'Members', 'https://hispanicconference-gonzales.house.gov/members', 'Caucus roster'],
+      ['Wikipedia', 'Freedom Caucus; Republican Study Committee; Congressional Hispanic Conference', 'https://en.wikipedia.org/wiki/Freedom_Caucus', 'Rosters for caucuses that publish none'],
+    ]],
+    ['Votes', [
+      ['Lewis, Poole, Rosenthal, Boche, Rudkin and Sonnet (UCLA)', 'Voteview: Congressional Roll-Call Votes Database', 'https://voteview.com/data', 'Every roll call of the 119th Congress, member votes and DW-NOMINATE scores'],
+      ['Office of the Clerk, U.S. House of Representatives', 'Roll Call Votes', 'https://clerk.house.gov/Votes', 'Same-day House roll calls'],
+      ['U.S. Senate', 'Roll Call Votes, 119th Congress', 'https://www.senate.gov/legislative/votes_new.htm', 'Same-day Senate roll calls'],
+    ]],
+    ['Bills, schedule and speeches', [
+      ['U.S. Government Publishing Office', 'GovInfo Bulk Data: Bill Status (BILLSTATUS)', 'https://www.govinfo.gov/bulkdata/BILLSTATUS', 'Bills, sponsors, cosponsors, actions and policy areas'],
+      ['Library of Congress', 'Congress.gov API', 'https://api.congress.gov/', 'Committee meetings and hearings'],
+      ['U.S. Government Publishing Office', 'Congressional Record (CREC) on GovInfo', 'https://www.govinfo.gov/app/collection/crec', 'Floor speeches'],
+      ['Office of the Clerk, U.S. House of Representatives', 'House Floor Activities and Bills This Week', 'https://docs.house.gov/floor/', 'House floor schedule'],
+      ['Senate Democrats', 'Senate Floor Schedule', 'https://www.democrats.senate.gov/floor/senate-schedule', 'Senate floor schedule'],
+    ]],
+    ['Money and lobbying', [
+      ['Federal Election Commission', 'Bulk Data', 'https://www.fec.gov/data/browse-data/?tab=bulk-data', 'Candidate summaries 2022-2026, committee master files, candidate-committee linkages, PAC contributions, individual contributions and independent expenditures'],
+      ['Federal Election Commission', 'OpenFEC API', 'https://api.open.fec.gov/developers/', 'Committee disbursements'],
+      ['Wikidata', 'Wikidata', 'https://www.wikidata.org/', 'PAC websites and social accounts'],
+      ['U.S. Senate and U.S. House of Representatives', 'Lobbying Disclosure Act filings, LDA.gov', 'https://lda.gov/', 'Lobbying clients, registrants, issues and spending'],
+    ]],
+    ['Elections', [
+      ['MIT Election Data and Science Lab', 'U.S. House 1976-2024', 'https://doi.org/10.7910/DVN/IG0UN2', 'House general election results'],
+      ['MIT Election Data and Science Lab', 'U.S. Senate statewide 1976-2024', 'https://doi.org/10.7910/DVN/PEJ5QU', 'Senate general election results'],
+      ['Federal Election Commission', 'Federal Elections 2012-2022', 'https://www.fec.gov/introduction-campaign-finance/election-results-and-voting-information/', 'Primary and general election results'],
+      ['civicAPI', 'civicAPI', 'https://civicapi.org/', 'Primaries, special elections and 2026 results'],
+      ['Ballotpedia', 'Ballotpedia', 'https://ballotpedia.org/', '2026 ballot measures'],
+    ]],
+    ['Polling', [
+      ['Cooperative Election Study (Harvard University)', 'Cumulative CES Common Content', 'https://doi.org/10.7910/DVN/II2DB6', 'Member approval by state and district, 2019-2025'],
+      ...pollRefs,
+    ]],
+    ['Find your representatives', [
+      ['U.S. Census Bureau', 'TIGERweb', 'https://tigerweb.geo.census.gov/', 'Congressional district boundaries'],
+      ['U.S. Census Bureau', 'Census Geocoder', 'https://geocoding.geo.census.gov/geocoder/', 'Street address lookup'],
+      ['U.S. Census Bureau', 'Gazetteer Files and Relationship Files (ZCTA to 119th Congressional District)', 'https://www.census.gov/geographies/reference-files/time-series/geo/relationship-files.html', 'ZIP code lookup'],
+    ]],
+    ['Record and markets', [
+      ['Wikipedia', 'Member articles', 'https://en.wikipedia.org/', 'Record items, each linked to the official document or news report it cites'],
+      ['Kalshi', 'Kalshi Trade API', 'https://kalshi.com/', 'Election market odds'],
+      ['Polymarket', 'Polymarket', 'https://polymarket.com/', 'Election market odds'],
+    ]],
+    ['2026 election-night dashboard', [
+      ['civicAPI', 'civicAPI', 'https://civicapi.org/', 'Live vote counts'],
+      ['CNN', '2026 Election Results', 'https://www.cnn.com/election/2026', 'Live vote counts and race calls'],
+      ['Decision Desk HQ', 'Race projections', 'https://decisiondeskhq.com/', 'Race calls'],
+      ['Los Angeles County Registrar-Recorder/County Clerk', 'Election Results', 'https://results.lavote.gov/', 'Los Angeles County results'],
+      ['Polymarket', 'Polymarket', 'https://polymarket.com/', 'Market odds and call times'],
+      ['Pollgebra', 'Pollgebra', 'https://pollgebra.com/', 'Model calls'],
+    ]],
+  ];
+  const body = `<div class="wrap narrow prose"><h1>Bibliography</h1>
+  <p>Every outside source VoteDash is built from, grouped by what it supplies. How each number is calculated is on <a href="/about">How VoteDash works</a>.</p>
+  ${S.map(([h, refs]) => `<h2>${esc(h)}</h2><ul class="bib">${refs.map(([who, what, u, use]) => `<li>${esc(who)}. <a href="${esc(u)}"><cite>${esc(what)}</cite></a>. ${esc(use)}.</li>`).join('')}</ul>`).join('\n  ')}</div>`;
+  return layout({ title: 'Bibliography', desc: 'Every data source behind VoteDash: Voteview, the FEC, Congress.gov, GovInfo, LDA.gov, the MIT Election Lab, the Cooperative Election Study, the Census Bureau and more.', path: '/bibliography', body });
+}
 function notFound() { return layout({ title: 'Page not found', body: `<div class="wrap narrow"><h1>That page isn't here</h1><p>Search for a member, state, PAC or bill.</p><form class="bigsearch" action="/search"><label for="nq" class="vh">Search</label><input id="nq" name="q" type="search" data-suggest><button>Search</button></form></div>`, noindex: true }); }
 
 // sitemap index plus one sitemap per kind of page; cached per data build
@@ -1498,7 +1571,7 @@ function sitemaps() {
     record: p => D.record && (D.record.byPerson[p.id] || []).length, connections: p => (p.votesLike || []).length || (p.sharedDonors || []).length };
   const tabsOf = p => Object.keys(has).filter(id => has[id](p));
   const groups = {
-    pages: [...'/ /leadership /tracker /find /committees /schedule /members /votes /money /issues /incoming /compare /about'.split(' '), ...PM_TABS.map(([k]) => k ? '/2026-post-mortem/' + k : '/2026-post-mortem'),
+    pages: [...'/ /leadership /tracker /find /committees /schedule /members /votes /money /issues /incoming /compare /about /bibliography'.split(' '), ...PM_TABS.map(([k]) => k ? '/2026-post-mortem/' + k : '/2026-post-mortem'),
       ...(D.caucuses ? D.caucuses.caucuses.map(c => `/caucus/${c.id}`) : []), ...Object.keys(D.STATES).filter(s => D.states[s]).map(s => `/state/${s.toLowerCase()}`), ...Object.keys(D.meta.committees).map(c => `/committee/${c.toLowerCase()}`),
       ...(D.leadership && D.leadership.elections ? D.leadership.elections.map(e => `/leadership/${e.id}`) : []), ...(D.bills ? [...BV.STEPS, ...BV.SIDE].map(st => `/tracker/${st.id}`) : [])],
     members: D.people.flatMap(p => [href(p), ...tabsOf(p).map(id => `${href(p)}/${id}`), ...(p.status !== 'elect' ? [`${href(p)}/network`] : [])]),
@@ -1809,4 +1882,4 @@ ${tabNav}
   return layout({ title: tab ? `${TAB[1]}: the 2026 midterms` : 'The 2026 midterms: winners, losers, ballot measures and money', desc: lede, path: href2(tab), body, active: base });
 }
 
-module.exports = { funderRecipients, sitemapFile, llms, postMortem, compare, trackerStage, caucusPage, leadership, leaderElection, tracker, committees, committee, find, contactLinks, schedule, home, member, network, graph, members, stateP, incoming, votes, vote, bill, moneyP, funder, industry, issues, issue, search, suggest, about, notFound, sitemap };
+module.exports = { funderRecipients, sitemapFile, llms, postMortem, compare, trackerStage, caucusPage, leadership, leaderElection, tracker, committees, committee, find, contactLinks, schedule, home, member, network, graph, members, stateP, incoming, votes, vote, bill, moneyP, funder, industry, issues, issue, search, suggest, about, bibliography, notFound, sitemap };

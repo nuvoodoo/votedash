@@ -64,6 +64,7 @@ const server = http.createServer((req, res) => {
     if (p === '/votes') return html(req, res, P.votes(url.searchParams));
     if (p === '/money') return html(req, res, P.moneyP(url.searchParams));
     if (p === '/about') return html(req, res, P.about());
+    if (p === '/bibliography') return html(req, res, P.bibliography());
     if (p === '/search') { const r = P.search(url.searchParams); if (r && r.redirect) { res.writeHead(302, { Location: r.redirect }); return res.end(); } return html(req, res, r); }
     if (p === '/find') { P.find(url.searchParams).then(b => html(req, res, b)).catch(e => { console.error(e); send(req, res, 500, Buffer.from('Server error'), 'text/plain', 'no-store'); }); return; }
     if (p === '/issues') { const b = P.issues(); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }

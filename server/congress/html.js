@@ -148,7 +148,7 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(
 <footer class="foot"><div class="wrap foot-in">
   <div><a class="logo" href="/">Vote<span>Dash</span></a><p>Every member of the 119th Congress and the members-elect of the 120th: how they vote, who funds them and what is on their record.</p></div>
   <div><h2>Sources</h2><p>Members and committees: congress-legislators project. Votes and voting scores: Voteview, UCLA. Campaign finance: Federal Election Commission. Bills: Congress.gov. Speeches: Congressional Record via GovInfo. Lobbying: LDA.gov. Election results: MIT Election Data and Science Lab and civicAPI. Portraits: Government Publishing Office.</p></div>
-  <div><h2>Elsewhere</h2><p><a href="/2026/">2026 midterm results</a><br><a href="/about">How VoteDash works</a></p></div>
+  <div><h2>Elsewhere</h2><p><a href="/2026/">2026 midterm results</a><br><a href="/about">How VoteDash works</a><br><a href="/bibliography">Bibliography</a></p></div>
 </div><div class="wrap fine">Data updated ${date(D.meta.built.slice(0, 10))}.</div></footer>
 <script src="/c/site.js?v=${vOf('site.js')}" defer></script>${scripts}
 </body></html>`;

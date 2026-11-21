@@ -303,6 +303,7 @@ td small{color:var(--muted)}
 
 /* prose + footer */
 .prose p{font-size:17px}
+.bib{padding-left:20px}.bib li{margin:0 0 8px;font-size:16px}.bib cite{font-style:italic}
 .foot{background:var(--bronze);color:#D6DEDA;margin-top:48px;padding:36px 0 20px}
 .foot a{color:#fff}
 .foot .logo{color:#fff}.foot .logo span{color:#7CCBA5}
