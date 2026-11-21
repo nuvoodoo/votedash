@@ -696,3 +696,26 @@ dl.f-sc{margin-top:12px}
 dl.f-sc dt{order:-1;font-weight:600;color:var(--bronze);margin-bottom:4px}
 dl.f-sc dd small{font:400 15px var(--sans);color:var(--muted)}
 .f-sc-n{margin-top:10px}
+
+/* ---- visual language: PAC lean (diverging, validated), icons, meters ---- */
+:root{--ln-d3:#1F4E96;--ln-d2:#4A7BC4;--ln-d1:#9DB8E2;--ln-n:#B9BEBA;--ln-r1:#E9A39C;--ln-r2:#D0594E;--ln-r3:#9E2A22;--good:#1D6A4E;--bad:#B23A2F}
+@media (prefers-color-scheme:dark){:root{--ln-d1:#34507E;--ln-d2:#4F7FCC;--ln-d3:#86AEF0;--ln-n:#5A666E;--ln-r1:#844039;--ln-r2:#CC5F55;--ln-r3:#F0948A;--good:#5DB78D;--bad:#EA7B70}}
+.ln{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:0;flex:none;box-shadow:0 0 0 1px var(--paper)}
+.ln-d3{background:var(--ln-d3)}.ln-d2{background:var(--ln-d2)}.ln-d1{background:var(--ln-d1)}.ln-n{background:var(--ln-n)}.ln-r1{background:var(--ln-r1)}.ln-r2{background:var(--ln-r2)}.ln-r3{background:var(--ln-r3)}
+.ln-key{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:13px;color:var(--muted);margin:10px 0}
+.ln-key .ln{margin-right:2px;width:9px;height:9px}
+.ln-track{margin:18px 0 6px;max-width:640px}
+.ln-h{font-weight:600;margin:0 0 8px;font-size:15px}
+.ln-bar{position:relative;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--ln-d3),var(--ln-d2) 18%,var(--ln-d1) 34%,var(--ln-n) 50%,var(--ln-r1) 66%,var(--ln-r2) 82%,var(--ln-r3))}
+.ln-mark{position:absolute;top:50%;width:22px;height:22px;border-radius:50%;transform:translate(-50%,-50%);border:3px solid var(--paper);box-shadow:0 0 0 1px var(--bronze)}
+.ln-ends{display:flex;justify-content:space-between;margin:8px 0 0;font-size:14px;font-weight:600}
+.ln-ends small{font-weight:400;color:var(--muted)}
+.ln-dem{color:var(--dem)}.ln-rep{color:var(--rep)}
+dl.facts dt{display:flex;align-items:center;gap:6px}
+.ic{flex:none;color:var(--muted)}
+.ic.ic-good{color:var(--good)}.ic.ic-bad{color:var(--bad)}
+dl.facts dd.mt{margin:6px 0 2px}
+.mt-bar{display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;background:var(--soft)}
+.mt-bar i{display:block;height:100%}
+.mt-pct{position:relative;display:block;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--soft),var(--treasury))}
+.mt-pct i{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--paper);border:3px solid var(--bronze);transform:translate(-50%,-50%)}

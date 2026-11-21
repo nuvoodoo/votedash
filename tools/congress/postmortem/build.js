@@ -243,6 +243,7 @@ for (const c of lines('itpas2.txt')) {
   // in a primary, money against a candidate still helps a candidate of the same party
   const side = sc === 'p' || !against ? pt : pt === 'D' ? 'R' : pt === 'R' ? 'D' : 'O';
   for (const k of ['a', sc]) { const T = sideTot[k] || (sideTot[k] = {}); const t = T[side] || (T[side] = { win: 0, lose: 0, open: 0 }); t[good == null ? 'open' : good ? 'win' : 'lose'] += amt; }
+  if (side === 'D' || side === 'R') { const L = fs0._l || (fs0._l = { D: 0, R: 0 }); L[side] += amt; }
   const fsc = fs0[sc] || (fs0[sc] = { win: 0, lose: 0, contrib: 0, ie: 0 }); if (good != null) fsc[good ? 'win' : 'lose'] += amt; fsc[kind] += amt;
   if (kind === 'contrib' && good != null) { const io = ind.committees[c[0]]; if (io) for (const key of [io.industry, sc + '|' + io.industry]) { const t = indAll.get(key) || { win: 0, lose: 0 }; indAll.set(key, t); t[good ? 'win' : 'lose'] += amt; } }
   if (kind === 'ie') { const m = ieByCand.get(cd[0]) || new Map(); ieByCand.set(cd[0], m); const x = m.get(c[0]) || { for: 0, against: 0, p: 0, g: 0, pA: 0, pF: 0 }; m.set(c[0], x); x[against ? 'against' : 'for'] += amt; x[sc] += amt; if (sc === 'p') x[against ? 'pA' : 'pF'] += amt; }
@@ -298,7 +299,7 @@ for (const [k, v] of Object.entries(funderScores)) {
   const r = [...v._r.values()];
   const e = { a: effOf(r), g: effOf(r, 'g'), p: effOf(r, 'p') };
   if (v.win + v.lose >= 50000) funderRaces[k] = [...v._c.values()].sort((a, b) => b.amt - a.amt).slice(0, 25).map(x => { const o = { c: x.cand, n: x.name, sl: x.slug, p: x.p, s: x.seat, st: x.stage, k: x.cat, sd: x.side === 'against' ? 'A' : 'F', a: Math.round(x.amt), g: x.good }; if (x.rating) o.r = x.rating; return o; });
-  funderScores[k] = { win: Math.round(v.win), lose: Math.round(v.lose), open: Math.round(v.open), races: r.length, won: r.filter(x => x.good).length, eff: e.a.eff, effW: e.a.w, _e: e, _d: { g: v.g || { win: 0, lose: 0 }, p: v.p || { win: 0, lose: 0 } } };
+  funderScores[k] = { ld: v._l ? Math.round(v._l.D) : 0, lr: v._l ? Math.round(v._l.R) : 0, win: Math.round(v.win), lose: Math.round(v.lose), open: Math.round(v.open), races: r.length, won: r.filter(x => x.good).length, eff: e.a.eff, effW: e.a.w, _e: e, _d: { g: v.g || { win: 0, lose: 0 }, p: v.p || { win: 0, lose: 0 } } };
 }
 // rank: difficulty-weighted win rate among committees with at least MIN_RACES decided races and $50K behind them
 const effective = {};
@@ -326,7 +327,7 @@ for (const p of people) for (const x of (p.primaries || []).filter(x => x.year =
 }
 fs.writeFileSync(path.join(OUT, 'pm-races.json'), JSON.stringify({ funderRaces, raceSpenders, personRaces }));
 const R0 = o =>Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'number' ? Math.round(v) : v]));
-const israelRows = [...isr.entries()].map(([g, s]) => R0({ name: ISRAEL_NAMES[g] || (fundById[g] && fundById[g].name) || cmName.get(g) || g, label: true, slug: (fundById[g === 'AIPAC' ? 'C00799031' : g] || {}).slug || null, ...s, ids: undefined }))
+const israelRows = [...isr.entries()].map(([g, s]) => R0({ id: g, name: ISRAEL_NAMES[g] || (fundById[g] && fundById[g].name) || cmName.get(g) || g, label: true, slug: (fundById[g === 'AIPAC' ? 'C00799031' : g] || {}).slug || null, ...s, ids: undefined }))
   .filter(s => s.total >= 50000).sort((a, b) => b.total - a.total);
 const israelSum = R0(israelRows.reduce((o, s) => { for (const k of ['total', 'contrib', 'ie', 'bundled', 'primary', 'primIe', 'forD', 'forR', 'againstD', 'againstR', 'win', 'lose', 'open']) o[k] = (o[k] || 0) + (s[k] || 0); return o; }, {}));
 const israel = { sum: israelSum, all: Math.round(allCmte), allIe: Math.round(allIe), allPrimIe: Math.round(allPrimIe), groups: israelRows,
