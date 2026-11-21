@@ -689,3 +689,10 @@ svg.tline{width:100%;min-width:620px;height:auto;display:block}
 @media (max-width:560px){.pm-mini>div,.pm-issue,.pm-eff li{grid-template-columns:1fr auto}.pm-mini .pm-track,.pm-issue .pm-track,.pm-eff .pm-track{grid-column:1/-1;grid-row:2}.pm-cards{grid-template-columns:1fr}}
 .pm-h1{color:inherit;text-decoration:none}
 .subnav a[aria-current=page]{box-shadow:inset 0 -3px 0 var(--treasury);color:var(--treasury)}
+/* PAC 2026 scorecard: label above the number */
+dl.facts:empty{display:none}
+.f-sc-h{margin:28px 0 0}
+dl.f-sc{margin-top:12px}
+dl.f-sc dt{order:-1;font-weight:600;color:var(--bronze);margin-bottom:4px}
+dl.f-sc dd small{font:400 15px var(--sans);color:var(--muted)}
+.f-sc-n{margin-top:10px}
