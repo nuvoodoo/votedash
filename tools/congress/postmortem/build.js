@@ -261,7 +261,11 @@ for (const c of lines('itpas2.txt')) {
 }
 // AIPAC PAC's bundled (earmarked) contributions forwarded to candidates: tools/congress/postmortem/aipac-earmarks.js
 const cclCand = new Map(lines('ccl.txt').filter(c => c[2] === '2026').map(c => [c[3], c[0]]));
-const EARM = fs.existsSync(path.join(RAW, 'aipac-earmarks.json')) ? J(RAW, 'aipac-earmarks.json') : [];
+// source: the AIPAC rows of the FEC individual-contributions bulk file (indiv26), extracted by aipac-earmarks-bulk.sh:
+// contributions earmarked through AIPAC PAC (OTHER_ID C00797670) as reported by the recipient campaigns
+const EARM = fs.existsSync(path.join(RAW, 'aipac-earmarks.txt'))
+  ? lines('aipac-earmarks.txt').filter(c => c[0] !== 'C00797670' && c[18] !== 'X').map(c => ({ rid: c[0], amt: +c[14], el: c[3] || 'P', desc: 'EARMARK' }))
+  : fs.existsSync(path.join(RAW, 'aipac-earmarks.json')) ? J(RAW, 'aipac-earmarks.json') : [];
 for (const e of EARM) {
   if (!/^EARMARK/i.test(e.desc || '') || !e.amt) continue;
   const cd = cnById.get(e.cid) || cnById.get(cclCand.get(e.rid)); if (!cd) continue;
