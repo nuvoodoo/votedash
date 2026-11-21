@@ -83,6 +83,7 @@ const server = http.createServer((req, res) => {
     if ((m = p.match(/^\/state\/([a-z]{2})$/))) { const b = P.stateP(m[1].toUpperCase()); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/vote\/([HS]\d+)$/))) { const rc = D.rcByK.get(m[1]); return rc ? html(req, res, P.vote(rc)) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/bill\/([a-z]+\d+)$/))) { const b = P.bill(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
+    if ((m = p.match(/^\/f\/([\w-]+)\/recipients$/))) { const f = D.fundersBySlug.get(m[1]); return f ? html(req, res, P.funderRecipients(f, url.searchParams)) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/f\/([\w-]+)$/))) { const f = D.fundersBySlug.get(m[1]); return f ? html(req, res, P.funder(f, url.searchParams)) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/industry\/([\w-]+)$/))) { const b = P.industry(m[1], url.searchParams); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/issue\/([\w-]+)$/))) { const b = P.issue(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
