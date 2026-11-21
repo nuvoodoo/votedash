@@ -7,7 +7,7 @@ const UA = { 'User-Agent': 'VoteDash/1.0 (+https://votedash.net/about)' };
 const ABOUT = /(Senate|House|Congress|Speaker|filibuster|cloture|shutdown|veto|reconciliation|\bAct\b|\bbill\b|nominee|Majority Leader|Minority Leader|impeach|war powers|debt ceiling|appropriation)/i;
 const NOT = /(win the (Senate|House)|Midterm|popular vote|turnout|seats|winner\?|primary|governor|state (senate|house)|house of delegates|\bmayor\b|Trump on \$|Belichick|billionaire|New Mexico penalty|state income tax|Onion Futures|National Popular Vote)/i;
 
-async function json(url) { try { const r = await fetch(url, { headers: UA }); return r.ok ? await r.json() : null; } catch { return null; } }
+async function json(url) { try { const r = await fetch(url, { headers: UA, signal: AbortSignal.timeout(30e3) }); return r.ok ? await r.json() : null; } catch { return null; } }
 const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 
 async function exchangeA() {

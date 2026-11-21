@@ -89,6 +89,29 @@ function build() {
   Object.assign(D, { funderAbout, caucusAbout, committeeAbout, industryAbout, leadershipSponsors, postmortem, pmRaces, approval, polls, ieYear, dataDir: DIR, caucuses, pacHistory, leadership, givenTo, people, byId, bySlug, order, rollcalls, rcByK, rcPos, funders: fundersById, fundersBySlug, meta, bills, speeches, industries, indName, sectorOf, sectors, industryOf, industryTotals, lobbying, record, chambers, states, search, STATES });
   D.recentRolls = { H: rollcalls.filter(r => r.chamber === 'H').sort(byDate), S: rollcalls.filter(r => r.chamber === 'S').sort(byDate) };
   D.allRolls = [...rollcalls].sort(byDate);
+  reconcileBills(rollcalls);
+}
+// The GovInfo bill-status files lag the floor by days; a passage roll call newer than a
+// bill's recorded stage moves the bill forward so the bill and its vote agree.
+const PASSAGE_Q = /^(On Passage( of the Bill)?|On Motion to Suspend the Rules and (Pass|Agree)(, as Amended)?|On Agreeing to the (Concurrent )?Resolution(, as Amended)?|On the (Joint |Concurrent )?Resolution)$/i;
+const CONCUR_Q = /^On Motion to (Suspend the Rules and )?Concur in the Senate Amendments?$/i;
+const PASSED_R = /^(Passed|Agreed to|Bill Passed|(Joint |Concurrent )?Resolution (Passed|Agreed to))$/i;
+const EARLY = ['introduced', 'committee', 'reported'];
+function reconcileBills(rolls) {
+  if (!D.bills) return;
+  for (const rc of [...rolls].sort((a, b) => a.date.localeCompare(b.date) || a.roll - b.roll)) {
+    const k = D.bills.rollcallBill[rc.k] || (rc.bill ? rc.bill.toLowerCase() : null); const b = k && D.bills.bills[k];
+    if (!b || !PASSED_R.test(rc.result || '') || (b.stageDate && rc.date < b.stageDate)) continue;
+    const ch = rc.chamber === 'H' ? 'house' : 'senate', other = ch === 'house' ? 'senate' : 'house';
+    const simple = /^(hres|sres)/.test(k);
+    let next = null;
+    if (PASSAGE_Q.test(rc.question || '')) next = EARLY.includes(b.stage) ? 'passed-' + ch : b.stage === 'passed-' + other && !simple ? 'passed-both' : null;
+    else if (CONCUR_Q.test(rc.question || '') && (EARLY.includes(b.stage) || /^passed-(house|senate)$/.test(b.stage))) next = 'passed-both';
+    if (!next) continue;
+    b.stage = next; b.stageDate = rc.date;
+    if (simple || /^(hconres|sconres)/.test(k)) b.agreed = true;
+    if (!b.latest || rc.date > b.latest.date) b.latest = { date: rc.date, text: `${rc.question}: ${rc.result} ${rc.yea}-${rc.nay} (Roll no. ${rc.clerk}).` };
+  }
 }
 function byDate(a, b) { return b.date.localeCompare(a.date) || b.roll - a.roll; }
 function partyMid(p) { return p === 'D' ? -0.38 : p === 'R' ? 0.5 : 0; }
@@ -96,4 +119,5 @@ const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase
 build();
 D.norm = norm;
 D.reload = build;
+D.reconcileBills = reconcileBills;
 module.exports = D;

@@ -281,7 +281,8 @@ function votesSec(p) {
   <p><a class="more" href="${href(p)}/votes">All ${p.votes.eligible} votes</a></p>`;
 }
 const times = n => n === 1 ? 'Once' : n === 2 ? 'Twice' : `${n} times`;
-const wasIn = (p, rc) => p.terms.some(t => (t.type === 'sen') === (rc.chamber === 'S') && t.start <= rc.date && t.end >= rc.date);
+// whether a member with no recorded vote should count as not voting; delegates vote only in the Committee of the Whole
+const wasIn = (p, rc) => !p.delegate && p.terms.some(t => (t.type === 'sen') === (rc.chamber === 'S') && t.start <= rc.date && t.end >= rc.date);
 function vrow(rc, c, flag) {
   return `<li class="${flag ? 'brk' : ''}"><span class="vc v${c}">${VOTE_WORD[c]}</span><a href="/vote/${rc.k}"><b>${esc(rcTitle(rc))}</b><small>${esc(rc.question)}, ${date(rc.date)}. ${esc(rc.result)} ${rc.yea}-${rc.nay}</small></a></li>`;
 }
@@ -1067,7 +1068,7 @@ function trackerStage(stage, q) {
     <label for="fp">Sponsor</label><select id="fp" name="party"><option value="">Any party</option><option value="D"${R.party === 'D' ? ' selected' : ''}>Democrat</option><option value="R"${R.party === 'R' ? ' selected' : ''}>Republican</option><option value="I"${R.party === 'I' ? ' selected' : ''}>Independent</option></select>
     <label for="fs">Sort</label><select id="fs" name="sort"><option value="recent"${R.sort === 'recent' ? ' selected' : ''}>Latest step first</option><option value="cosponsors"${R.sort === 'cosponsors' ? ' selected' : ''}>Most cosponsors</option><option value="oldest"${R.sort === 'oldest' ? ' selected' : ''}>Oldest first</option></select>
     <button type="submit">Find bills</button></form>
-  <ul class="blist finder-list">${list.slice((page - 1) * per, page * per).map(([k, b]) => { const sp = D.byId.get(b.sponsor); return `<li><a href="/bill/${k}"><span class="bl">${BV.label(k)}${b.policyArea ? ` &nbsp;${esc(b.policyArea)}` : ''}</span><b>${esc(b.short || b.title)}</b><small>${sp ? `${esc(title(sp) + ' ' + sp.name)} (${short(sp)}). ` : ''}${b.cosponsors ? `${b.cosponsors} cosponsors. ` : ''}${b.latest ? `${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</small>${track(k, b)}</a></li>`; }).join('')}</ul>
+  <ul class="blist finder-list">${list.slice((page - 1) * per, page * per).map(([k, b]) => { const sp = D.byId.get(b.sponsor); return `<li><a href="/bill/${k}"><span class="bl">${BV.label(k)}${b.policyArea ? ` &nbsp;${esc(b.policyArea)}` : ''}</span><b>${esc(b.short || b.title)}</b><small>${sp ? `${esc(title(sp) + ' ' + sp.name)} (${short(sp)}). ` : ''}${b.cosponsors ? `${b.cosponsors} cosponsors. ` : ''}${stageOf(k, b) === 'vetoed' && b.stageDate ? `Vetoed ${date(b.stageDate)}. ` : ''}${b.latest ? `Latest action ${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</small>${track(k, b)}</a></li>`; }).join('')}</ul>
   ${pager(qs('page', null), page, pages)}</div>`;
   return layout({ title: `${st.name}: bill tracker`, desc: `${list.length} bills ${st.name.toLowerCase()} in the 119th Congress.`, path: `/tracker/${stage}`, body, active: '/tracker', noindex: !!(R.text || R.area || R.party) });
 }

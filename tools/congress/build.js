@@ -223,7 +223,8 @@ const rcByK = Object.fromEntries(rollcalls.map(r => [r.k, r]));
     const bio = icpsrTo[ch + icpsr]; if (!bio) continue;
     const i = pos[ch][bio]; if (i == null) continue;
     const rc = rcByK[ch + roll]; if (!rc) continue;
-    const c = +code; rc.codes[i] = c >= 1 && c <= 3 ? 'Y' : c >= 4 && c <= 6 ? 'N' : c >= 7 && c <= 9 ? 'P' : '0';
+    const c = +code; // Voteview cast codes: 1-3 yea, 4-6 nay, 7-8 present, 9 not voting, 0 not a member
+    rc.codes[i] = c >= 1 && c <= 3 ? 'Y' : c >= 4 && c <= 6 ? 'N' : c === 7 || c === 8 ? 'P' : '0';
   }
 }
 // party position per roll call and per-member stats
@@ -266,7 +267,8 @@ for (const ch of ['H', 'S']) {
     m.crossParty = scores.filter(([id]) => byId[id].party !== p && byId[id].party !== 'I').slice(0, 4).map(([id, s]) => ({ id, agree: +s.toFixed(3) }));
   }
 }
-function rcWasMember(m, rc) { return m.terms.some(t => (t.type === 'sen') === (rc.chamber === 'S') && t.start <= rc.date && t.end >= rc.date); }
+// delegates vote only in the Committee of the Whole: with no recorded vote they were not eligible
+function rcWasMember(m, rc) { return !m.delegate && m.terms.some(t => (t.type === 'sen') === (rc.chamber === 'S') && t.start <= rc.date && t.end >= rc.date); }
 
 // ---------- shared donors ----------
 const owners = [...members.map(m => m.id), ...elect.map(e => e.id)];

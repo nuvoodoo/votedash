@@ -18,7 +18,8 @@ function readEnvKey() { try { const t = fs.readFileSync(path.join(__dirname, '..
 async function get(url, type = 'text') {
   for (let i = 0; i < 3; i++) {
     try {
-      const r = await fetch(url, { headers: { 'User-Agent': UA } });
+      // a hung request would hold the refresh lock and freeze every feed until restart
+      const r = await fetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(30e3) });
       if (r.status === 404) { mark(url); return null; }
       if (!r.ok) throw new Error(r.status);
       const out = type === 'json' ? await r.json() : await r.text();
@@ -167,6 +168,7 @@ function merge(add) {
   D.recentRolls = { H: D.rollcalls.filter(r => r.chamber === 'H').sort(byDate), S: D.rollcalls.filter(r => r.chamber === 'S').sort(byDate) };
   D.allRolls = [...D.rollcalls].sort(byDate);
   L.fresh = D.rollcalls.filter(r => r.fresh);
+  D.reconcileBills(add);
 }
 
 function save() { try { fs.writeFileSync(CACHE, JSON.stringify({ meetings: L.meetings, house: L.house, senate: L.senate, fresh: L.fresh, markets: MK.get(), updated: L.updated })); } catch (e) { console.error('live save', e.message); } }
