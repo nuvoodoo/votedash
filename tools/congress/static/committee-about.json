@@ -1,0 +1,625 @@
+{
+ "HLIG": {
+  "about": "The House Intelligence Committee oversees the U.S. intelligence community, including the CIA, the NSA, the Office of the Director of National Intelligence, and the intelligence work of the military and other agencies. It authorizes intelligence programs and budgets and reviews covert actions, much of it in closed session. The House set it up in 1977 as a permanent select committee with the same standing as a regular committee, following investigations of intelligence abuses in the mid-1970s.",
+  "site": "https://intelligence.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Permanent_Select_Committee_on_Intelligence",
+  "socials": {
+   "x": "https://x.com/houseintel"
+  },
+  "sources": [
+   "https://intelligence.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Permanent_Select_Committee_on_Intelligence"
+  ]
+ },
+ "HSAG": {
+  "about": "The House Agriculture Committee writes federal farm and food policy, including the multiyear farm bill. Its work covers crop and livestock programs, rural development, forestry, farmland conservation, commodity futures markets, and nutrition programs such as SNAP, with oversight of the Department of Agriculture and the Commodity Futures Trading Commission. It was created in 1820 to give farming the same standing in the House as commerce and manufacturing.",
+  "site": "https://agriculture.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Agriculture",
+  "socials": {
+   "x": "https://x.com/houseagGOP",
+   "facebook": "https://www.facebook.com/HouseAgGOP",
+   "instagram": "https://www.instagram.com/houseaggop/",
+   "youtube": "https://www.youtube.com/user/AgRepublicans"
+  },
+  "sources": [
+   "https://agriculture.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Agriculture"
+  ]
+ },
+ "HSAP": {
+  "about": "The Appropriations Committee holds the House's power of the purse: it writes the annual spending bills that fund every federal department and agency. Each of its subcommittees drafts one of the regular appropriations bills, and the committee also handles emergency and supplemental funding. It was created in 1865, when spending authority was split off from the Ways and Means Committee after the Civil War.",
+  "site": "https://appropriations.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Appropriations",
+  "socials": {
+   "x": "https://x.com/houseappropsgop",
+   "facebook": "https://www.facebook.com/HouseAppropsGOP",
+   "instagram": "https://www.instagram.com/houseappropsgop/",
+   "youtube": "https://www.youtube.com/user/houseappropsgop"
+  },
+  "sources": [
+   "https://appropriations.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Appropriations"
+  ]
+ },
+ "HSAS": {
+  "about": "The House Armed Services Committee oversees the Department of Defense, the armed forces, and the defense and nuclear-weapons programs of the Department of Energy. Each year it writes the National Defense Authorization Act, which sets military policy, pay, and weapons programs and has become law every year since 1962. It was formed by the Legislative Reorganization Act of 1946, which merged the House's separate Military Affairs and Naval Affairs committees.",
+  "site": "https://armedservices.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Armed_Services",
+  "socials": {
+   "x": "https://x.com/hascrepublicans",
+   "facebook": "https://www.facebook.com/HouseArmedServicesCommittee",
+   "instagram": "https://www.instagram.com/hascrepublicans/",
+   "youtube": "https://www.youtube.com/@HouseArmedServices"
+  },
+  "sources": [
+   "https://armedservices.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Armed_Services"
+  ]
+ },
+ "HSBA": {
+  "about": "The Financial Services Committee oversees banking, securities, insurance, and housing. Its jurisdiction includes monetary policy and the Federal Reserve, the Treasury's financial work, the Securities and Exchange Commission, deposit insurance, international finance, and federal housing and urban development programs. It began in 1865 as the Committee on Banking and Currency and took its present name in 2001.",
+  "site": "https://financialservices.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Financial_Services",
+  "socials": {
+   "x": "https://x.com/financialcmte",
+   "instagram": "https://www.instagram.com/financialcmte/",
+   "youtube": "https://www.youtube.com/gopfinancialservices"
+  },
+  "sources": [
+   "https://financialservices.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Financial_Services"
+  ]
+ },
+ "HSBU": {
+  "about": "The House Budget Committee drafts the annual congressional budget resolution, which sets overall targets for federal spending, revenue, and deficits. It oversees the federal budget process, the Congressional Budget Office, and spending that runs outside the regular appropriations bills, and its budget resolution can set up the reconciliation process used to pass fiscal legislation by simple majority in the Senate. It became a standing committee under the Congressional Budget Act of 1974.",
+  "site": "https://budget.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_the_Budget",
+  "socials": {
+   "x": "https://x.com/housebudgetgop",
+   "youtube": "https://www.youtube.com/HouseBudgetGOP"
+  },
+  "sources": [
+   "https://budget.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_the_Budget"
+  ]
+ },
+ "HSED": {
+  "about": "The Education and Workforce Committee handles federal policy on schools, colleges, and the workplace. It oversees the Departments of Education and Labor, student aid, child nutrition programs, job training, workplace safety, wages, pensions, and employer health plans. It was founded in 1867 as the Committee on Education and Labor and has carried several names since.",
+  "site": "https://edworkforce.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Education_and_Workforce",
+  "socials": {
+   "x": "https://x.com/EdWorkforceCmte",
+   "facebook": "https://www.facebook.com/EdWorkforceCmte",
+   "instagram": "https://www.instagram.com/EdWorkforceCmte/",
+   "youtube": "https://www.youtube.com/channel/UC8Ewe7WqGg01KRNjJCO5cjg"
+  },
+  "sources": [
+   "https://edworkforce.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Education_and_Workforce"
+  ]
+ },
+ "HSFA": {
+  "about": "The Foreign Affairs Committee handles legislation and oversight on U.S. relations with other countries. Its work covers the State Department, foreign aid, arms sales and export controls, sanctions, treaties, war powers, and international organizations. It became a standing committee in 1822 and was called the Committee on International Relations from 1975 to 1978 and again from 1995 to 2007.",
+  "site": "https://foreignaffairs.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Foreign_Affairs",
+  "socials": {
+   "x": "https://x.com/houseforeigngop",
+   "facebook": "https://www.facebook.com/HouseForeign",
+   "youtube": "https://www.youtube.com/channel/UCtxAmeCl0xtSuo7tHZpgcQA"
+  },
+  "sources": [
+   "https://foreignaffairs.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Foreign_Affairs",
+   "https://www.archives.gov/legislative/guide/house/chapter-10.html"
+  ]
+ },
+ "HSGO": {
+  "about": "The Oversight Committee is the House's main investigative panel, with authority to look into any matter across the federal government. It also writes law on the federal workforce and civil service, the Postal Service, government management and records, and the District of Columbia. It grew out of the Committee on Expenditures in the Executive Departments, created in 1927, and its chair is one of the few in the House who can issue subpoenas without a committee vote.",
+  "site": "https://oversight.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Oversight_and_Government_Reform",
+  "socials": {
+   "x": "https://x.com/gopoversight",
+   "facebook": "https://www.facebook.com/GOPOversight",
+   "instagram": "https://www.instagram.com/gopoversight/",
+   "youtube": "https://www.youtube.com/user/oversightandreform"
+  },
+  "sources": [
+   "https://oversight.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Oversight_and_Government_Reform"
+  ]
+ },
+ "HSHA": {
+  "about": "The Committee on House Administration runs the internal business of the House, including member and committee budgets, office rules, and Capitol security. It also has jurisdiction over federal elections and campaign finance law, and it oversees legislative-branch bodies such as the Library of Congress, the Smithsonian, and the Government Publishing Office. It was created by the Legislative Reorganization Act of 1946, which merged several older housekeeping committees.",
+  "site": "https://cha.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_House_Administration",
+  "socials": {
+   "x": "https://x.com/HouseAdmin",
+   "facebook": "https://www.facebook.com/CommitteeonHouseAdministration",
+   "youtube": "https://www.youtube.com/HouseAdminGOP"
+  },
+  "sources": [
+   "https://cha.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_House_Administration"
+  ]
+ },
+ "HSHM": {
+  "about": "The Homeland Security Committee oversees the Department of Homeland Security and the nation's defenses against terrorism and other domestic threats. Its work covers border and transportation security, cybersecurity, emergency preparedness and response, and protection of critical infrastructure. A select committee first took up the subject in 2002 to draft the Homeland Security Act, and the House made it a permanent standing committee in 2005.",
+  "site": "https://homeland.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Homeland_Security",
+  "socials": {
+   "x": "https://x.com/HomelandGOP",
+   "instagram": "https://www.instagram.com/homelandgop/",
+   "youtube": "https://www.youtube.com/@HouseHomeland"
+  },
+  "sources": [
+   "https://homeland.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Homeland_Security"
+  ]
+ },
+ "HSIF": {
+  "about": "Energy and Commerce has one of the broadest jurisdictions in the House, covering energy policy, health care, telecommunications, consumer protection, food and drug safety, and interstate and foreign commerce. Agencies under its watch include the Department of Health and Human Services, the Food and Drug Administration, the Federal Communications Commission, the Federal Trade Commission, and much of the Department of Energy. Established in 1795, it is one of the oldest standing committees in the House.",
+  "site": "https://energycommerce.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Energy_and_Commerce",
+  "socials": {
+   "x": "https://x.com/HouseCommerce",
+   "facebook": "https://www.facebook.com/energyandcommerce",
+   "instagram": "https://www.instagram.com/energyandcommerce/",
+   "youtube": "https://www.youtube.com/energyandcommerce"
+  },
+  "sources": [
+   "https://energycommerce.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Energy_and_Commerce"
+  ]
+ },
+ "HSII": {
+  "about": "The Natural Resources Committee oversees public lands, national parks and forests, energy and mineral development on federal land and offshore, water projects, fisheries and wildlife, and relations with Native American tribes and U.S. territories. The Department of the Interior is its main agency. It traces its history to the Committee on Public Lands, created in 1805.",
+  "site": "https://naturalresources.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Natural_Resources",
+  "socials": {
+   "x": "https://x.com/NatResources",
+   "facebook": "https://www.facebook.com/NaturalResourcesCommittee",
+   "instagram": "https://www.instagram.com/natresources/",
+   "youtube": "https://www.youtube.com/user/NaturalResourcesGOP"
+  },
+  "sources": [
+   "https://naturalresources.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Natural_Resources",
+   "https://naturalresources.house.gov/about/"
+  ]
+ },
+ "HSJU": {
+  "about": "The House Judiciary Committee handles the federal courts, federal law enforcement, criminal law, immigration, civil rights, antitrust, intellectual property, and constitutional amendments. It oversees the Department of Justice, including the FBI. Created in 1813, it is also the committee that considers articles of impeachment against federal officials.",
+  "site": "https://judiciary.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_the_Judiciary",
+  "socials": {
+   "x": "https://x.com/JudiciaryGOP",
+   "facebook": "https://www.facebook.com/JudiciaryGOP",
+   "instagram": "https://www.instagram.com/judiciarygop/",
+   "youtube": "https://www.youtube.com/@USHouseJudiciaryGOP"
+  },
+  "sources": [
+   "https://judiciary.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_the_Judiciary"
+  ]
+ },
+ "HSPW": {
+  "about": "The Transportation and Infrastructure Committee covers highways, transit, aviation, railroads, pipelines, maritime transport, water resources, and public buildings. It oversees the Department of Transportation, the Federal Aviation Administration, the Army Corps of Engineers' civil works, the Coast Guard, and federal disaster programs, and it writes the multiyear surface transportation bills. It was formed in 1947 as the Committee on Public Works and took its present name in 1995.",
+  "site": "https://transportation.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Transportation_and_Infrastructure",
+  "socials": {
+   "x": "https://x.com/TransportGOP",
+   "facebook": "https://www.facebook.com/TransportGOP",
+   "instagram": "https://www.instagram.com/TransportGOP/",
+   "youtube": "https://www.youtube.com/Transport"
+  },
+  "sources": [
+   "https://transportation.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Transportation_and_Infrastructure"
+  ]
+ },
+ "HSQJ": {
+  "about": "The Select Subcommittee to Investigate the Remaining Questions Surrounding January 6, 2021 is an investigative panel of the House Judiciary Committee. The House created it in September 2025 by adopting H.Res. 605, directing it to examine the events of January 6, 2021, including the security response at the Capitol, the pipe bombs placed near the party headquarters, and the handling of evidence by the earlier House select committee. It is charged with producing a final report rather than writing legislation.",
+  "site": "https://january6-judiciary.house.gov/",
+  "socials": {
+   "x": "https://x.com/J6Select",
+   "facebook": "https://www.facebook.com/profile.php?id=61581026159432"
+  },
+  "sources": [
+   "https://january6-judiciary.house.gov/",
+   "https://www.congress.gov/119/bills/hres605/BILLS-119hres605eh.htm",
+   "https://clerk.house.gov/Committees/QJ00"
+  ]
+ },
+ "HSRU": {
+  "about": "The Rules Committee sets the terms under which nearly every major bill reaches the House floor, including how long debate lasts and which amendments may be offered. Because it controls this gateway, it works closely with the majority leadership and is often called the Speaker's committee. A Rules Committee was first formed in 1789, and its modern role as the House's traffic controller took shape after 1880.",
+  "site": "https://rules.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Rules",
+  "socials": {
+   "x": "https://x.com/RulesReps",
+   "instagram": "https://www.instagram.com/rulesreps/",
+   "youtube": "https://www.youtube.com/user/RulesReps"
+  },
+  "sources": [
+   "https://rules.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Rules"
+  ]
+ },
+ "HSSM": {
+  "about": "The Small Business Committee looks after federal policy affecting small firms and entrepreneurs. It oversees the Small Business Administration and its loan, disaster aid, and contracting programs, along with federal rules and procurement practices that affect small companies. It began in 1941 as a select committee and became a standing committee in 1975.",
+  "site": "https://smallbusiness.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Small_Business",
+  "socials": {
+   "x": "https://x.com/HouseSmallBiz",
+   "facebook": "https://www.facebook.com/HouseSmallBusinessCommittee",
+   "instagram": "https://www.instagram.com/housesmallbiz/",
+   "youtube": "https://www.youtube.com/SmallBizRepublicans"
+  },
+  "sources": [
+   "https://smallbusiness.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Small_Business"
+  ]
+ },
+ "HSSO": {
+  "about": "The Ethics Committee enforces the House's standards of conduct for members, officers, and staff. It investigates alleged violations, issues guidance and advisory opinions, reviews financial disclosure reports, and approves gifts and travel. Established in 1967 and known until 2011 as the Committee on Standards of Official Conduct, it is the only House committee split evenly between the two parties.",
+  "site": "https://ethics.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Ethics",
+  "sources": [
+   "https://ethics.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Ethics"
+  ]
+ },
+ "HSSY": {
+  "about": "The Science, Space, and Technology Committee handles federal non-defense research and development. It has jurisdiction over NASA, the National Science Foundation, the National Institute of Standards and Technology, and the White House Office of Science and Technology Policy, plus research programs at the Department of Energy, NOAA, and other agencies. It grew out of a select committee formed in 1958 after the Soviet Sputnik launch, which drafted the law that created NASA.",
+  "site": "https://science.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Science,_Space,_and_Technology",
+  "socials": {
+   "x": "https://x.com/housescience",
+   "facebook": "https://www.facebook.com/HouseScienceGOP",
+   "youtube": "https://www.youtube.com/c/housesciencegop"
+  },
+  "sources": [
+   "https://science.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Science,_Space,_and_Technology"
+  ]
+ },
+ "HSVR": {
+  "about": "The Veterans' Affairs Committee oversees the Department of Veterans Affairs and the benefits owed to former service members. Its work covers veterans' health care, disability compensation and pensions, the GI Bill and other education benefits, home loans, job training, and national cemeteries. It was created by the Legislative Reorganization Act of 1946.",
+  "site": "https://veterans.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Veterans%27_Affairs",
+  "socials": {
+   "x": "https://x.com/housevetaffairs",
+   "facebook": "https://www.facebook.com/HouseVetAffairs",
+   "instagram": "https://www.instagram.com/houseveteransaffairsgop/",
+   "youtube": "https://www.youtube.com/user/HouseVetsAffairs"
+  },
+  "sources": [
+   "https://veterans.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Veterans%27_Affairs"
+  ]
+ },
+ "HSWM": {
+  "about": "Ways and Means is the House's chief tax-writing committee, and because the Constitution requires revenue bills to start in the House, federal tax legislation begins here. It also has jurisdiction over tariffs and trade, Social Security, Medicare, unemployment benefits, and welfare programs. First set up in 1789 and made a standing committee in 1795, it is the oldest committee in the House.",
+  "site": "https://waysandmeans.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Ways_and_Means",
+  "socials": {
+   "x": "https://x.com/WaysandMeansGOP",
+   "instagram": "https://www.instagram.com/waysandmeansgop/",
+   "youtube": "https://www.youtube.com/user/WandMRepublicans"
+  },
+  "sources": [
+   "https://waysandmeans.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Committee_on_Ways_and_Means"
+  ]
+ },
+ "HSZS": {
+  "about": "The House Select Committee on the Strategic Competition Between the United States and the Chinese Communist Party investigates the economic, technological and security challenges posed by the People's Republic of China and its ruling party. Created on January 10, 2023, it holds hearings, publishes investigations and recommends policy to the House on issues such as supply chains, investment, export controls and human rights. As a select committee it has no legislative jurisdiction and does not report bills.",
+  "site": "https://chinaselectcommittee.house.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_House_Select_Committee_on_Strategic_Competition_between_the_United_States_and_the_Chinese_Communist_Party",
+  "socials": {
+   "x": "https://x.com/ChinaSelect",
+   "facebook": "https://www.facebook.com/p/The-Select-Committee-on-the-Chinese-Communist-Party-100089761247756/",
+   "instagram": "https://www.instagram.com/chinaselect/",
+   "youtube": "https://www.youtube.com/channel/UCpXe-EZd7pE7QM1daNAk0mA",
+   "linkedin": "https://www.linkedin.com/company/select-committee-on-china"
+  },
+  "sources": [
+   "https://chinaselectcommittee.house.gov/",
+   "https://en.wikipedia.org/wiki/United_States_House_Select_Committee_on_Strategic_Competition_between_the_United_States_and_the_Chinese_Communist_Party"
+  ]
+ },
+ "JCSE": {
+  "about": "The Commission on Security and Cooperation in Europe, known as the U.S. Helsinki Commission, is an independent federal commission that monitors compliance with the 1975 Helsinki Final Act and the commitments of the Organization for Security and Co-operation in Europe. It focuses on human rights, democracy, military security, and economic cooperation across Europe, Eurasia, and North America. Created by Congress in 1976, it is unusual in combining members of the House and Senate with officials from the State, Defense, and Commerce Departments.",
+  "site": "https://www.csce.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/Commission_on_Security_and_Cooperation_in_Europe",
+  "socials": {
+   "x": "https://x.com/HelsinkiComm",
+   "facebook": "https://www.facebook.com/helsinkicommission",
+   "instagram": "https://www.instagram.com/helsinkicommission/",
+   "youtube": "https://www.youtube.com/user/HelsinkiCommission",
+   "linkedin": "https://www.linkedin.com/company/u-s-commission-on-security-and-cooperation-in-europe/"
+  },
+  "sources": [
+   "https://www.csce.gov/",
+   "https://en.wikipedia.org/wiki/Commission_on_Security_and_Cooperation_in_Europe"
+  ]
+ },
+ "JSEC": {
+  "about": "The Joint Economic Committee is a House-Senate panel that studies the U.S. economy and advises Congress on economic policy. It reviews the President's annual Economic Report, holds hearings on topics such as jobs, inflation, and growth, and publishes research, but it does not write or report legislation. It was created by the Employment Act of 1946.",
+  "site": "https://www.jec.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Congressional_Joint_Economic_Committee",
+  "socials": {
+   "x": "https://x.com/jecrepublicans",
+   "youtube": "https://www.youtube.com/@JointEconomicCommittee"
+  },
+  "sources": [
+   "https://www.jec.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Congressional_Joint_Economic_Committee"
+  ]
+ },
+ "JSLC": {
+  "about": "The Joint Committee on the Library is a small House-Senate panel that oversees the Library of Congress. It also has a say over works of art in the Capitol, including the National Statuary Hall Collection, and over the U.S. Botanic Garden. It dates to 1806, making it one of the oldest committees in Congress, and its members are drawn from the House Administration and Senate Rules committees.",
+  "site": "https://cha.house.gov/about/joint-committees/joint-committee-on-library",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Congressional_Joint_Committee_on_the_Library",
+  "sources": [
+   "https://cha.house.gov/about/joint-committees/joint-committee-on-library",
+   "https://en.wikipedia.org/wiki/United_States_Congressional_Joint_Committee_on_the_Library"
+  ]
+ },
+ "JSPR": {
+  "about": "The Joint Committee on Printing oversees the Government Publishing Office and the printing and distribution of federal publications, including the Congressional Record and the Federal Depository Library Program. Its authority comes from Title 44 of the U.S. Code. It traces back to a printing committee created in 1846, and the present joint committee was set up by the Legislative Reorganization Act of 1946, which combined the House and Senate printing committees.",
+  "site": "https://cha.house.gov/about/joint-committees/joint-committee-on-printing",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Congressional_Joint_Committee_on_Printing",
+  "sources": [
+   "https://cha.house.gov/about/joint-committees/joint-committee-on-printing",
+   "https://en.wikipedia.org/wiki/United_States_Congressional_Joint_Committee_on_Printing"
+  ]
+ },
+ "JSTX": {
+  "about": "The Joint Committee on Taxation is a nonpartisan joint committee of the House and Senate that supports Congress on federal tax legislation. Created by the Revenue Act of 1926, it brings together members of the House Ways and Means and Senate Finance committees and is served by a professional staff of economists, attorneys and accountants. Its staff produces the official revenue estimates for every tax bill Congress considers and reviews large tax refunds before the IRS pays them.",
+  "site": "https://www.jct.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Congressional_Joint_Committee_on_Taxation",
+  "socials": {
+   "x": "https://twitter.com/jctgov",
+   "facebook": "https://www.facebook.com/JointCommitteeOnTaxation/",
+   "linkedin": "https://www.linkedin.com/company/joint-committee-on-taxation"
+  },
+  "sources": [
+   "https://www.jct.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Congressional_Joint_Committee_on_Taxation"
+  ]
+ },
+ "SCNC": {
+  "about": "The Senate Caucus on International Narcotics Control monitors U.S. and international efforts against drug trafficking and abuse, including compliance with narcotics control treaties. Established in 1985, it is a formal Senate body with the standing of a committee, including subpoena power and the authority to take sworn testimony. It holds hearings and issues reports on counternarcotics policy, interdiction, border control and money laundering, but does not write legislation.",
+  "site": "https://www.drugcaucus.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Caucus_on_International_Narcotics_Control",
+  "sources": [
+   "https://www.drugcaucus.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Caucus_on_International_Narcotics_Control"
+  ]
+ },
+ "SLET": {
+  "about": "The Senate Select Committee on Ethics enforces the Senate's standards of conduct for senators and Senate staff. It investigates complaints of misconduct, recommends discipline to the full Senate, issues advisory guidance, and administers financial disclosure, gift and travel rules. Created in 1977 from an earlier select committee on standards and conduct, it is the only Senate committee required to have an equal number of members from each party.",
+  "site": "https://www.ethics.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Select_Committee_on_Ethics",
+  "sources": [
+   "https://www.ethics.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Select_Committee_on_Ethics"
+  ]
+ },
+ "SLIA": {
+  "about": "The Senate Committee on Indian Affairs handles legislation and oversight on issues affecting American Indian, Alaska Native and Native Hawaiian peoples, including tribal self-governance, health care, housing, education, lands and economic development. It oversees federal agencies such as the Bureau of Indian Affairs and the Indian Health Service. A Senate committee on Indian affairs first existed from 1820 to 1947; the current committee was created in 1977 as a temporary select committee and made permanent in 1984.",
+  "site": "https://www.indian.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Indian_Affairs",
+  "socials": {
+   "x": "https://twitter.com/IndianCommittee",
+   "facebook": "https://www.facebook.com/IndianCommittee/",
+   "youtube": "https://www.youtube.com/user/SenateIndianAffairs"
+  },
+  "sources": [
+   "https://www.indian.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Indian_Affairs"
+  ]
+ },
+ "SLIN": {
+  "about": "The Senate Select Committee on Intelligence oversees the U.S. intelligence community, including the Office of the Director of National Intelligence, the CIA, the NSA and the intelligence elements of other departments. It writes the annual intelligence authorization bill, reviews classified programs and budgets, and considers nominations for senior intelligence posts. It was created in 1976 after the Church Committee investigations into intelligence abuses, and several of its seats are reserved for members of the Appropriations, Armed Services, Foreign Relations and Judiciary committees.",
+  "site": "https://www.intelligence.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Select_Committee_on_Intelligence",
+  "sources": [
+   "https://www.intelligence.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Select_Committee_on_Intelligence"
+  ]
+ },
+ "SPAG": {
+  "about": "The Senate Special Committee on Aging studies issues facing older Americans, including Medicare, Social Security, retirement security, nursing home care, elder fraud and age discrimination. Established in 1961 as a temporary committee and made permanent in 1977, it holds hearings and publishes investigations and reports. As a special committee it has no authority to report legislation.",
+  "site": "https://www.aging.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Special_Committee_on_Aging",
+  "socials": {
+   "x": "https://twitter.com/SenateAging",
+   "facebook": "https://www.facebook.com/SenateAgingGOP/"
+  },
+  "sources": [
+   "https://www.aging.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Special_Committee_on_Aging"
+  ]
+ },
+ "SSAF": {
+  "about": "The Senate Committee on Agriculture, Nutrition, and Forestry writes the farm bill and oversees farm and commodity programs, crop insurance, food safety, nutrition programs such as SNAP and school meals, forestry, rural development and agricultural trade. It oversees the Department of Agriculture and the Commodity Futures Trading Commission, which regulates futures and derivatives markets. Created in 1825 as the Committee on Agriculture, it added forestry in 1884 and nutrition in 1977.",
+  "site": "https://www.agriculture.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Agriculture,_Nutrition,_and_Forestry",
+  "socials": {
+   "x": "https://www.twitter.com/SenateAgGOP"
+  },
+  "sources": [
+   "https://www.agriculture.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Agriculture,_Nutrition,_and_Forestry"
+  ]
+ },
+ "SSAP": {
+  "about": "The Senate Committee on Appropriations writes the annual spending bills that fund federal agencies and programs, covering all discretionary spending. Working through subcommittees that each handle a slice of the government, it also drafts emergency and supplemental funding measures. It was organized in 1867, when the power over spending was separated from the Finance Committee, and it is the largest committee in the Senate.",
+  "site": "https://www.appropriations.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Appropriations",
+  "socials": {
+   "x": "https://www.twitter.com/SenateApprops"
+  },
+  "sources": [
+   "https://www.appropriations.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Appropriations"
+  ]
+ },
+ "SSAS": {
+  "about": "The Senate Committee on Armed Services oversees the military and the Department of Defense, including military personnel and benefits, weapons programs, research and development, and the national security aspects of nuclear energy. It writes the annual National Defense Authorization Act and holds confirmation hearings for senior defense officials and military promotions. It was created by the Legislative Reorganization Act of 1946, which merged the Senate's separate military and naval affairs committees dating to 1816.",
+  "site": "https://www.armed-services.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Armed_Services",
+  "sources": [
+   "https://www.armed-services.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Armed_Services"
+  ]
+ },
+ "SSBK": {
+  "about": "The Senate Committee on Banking, Housing, and Urban Affairs handles banking and financial regulation, deposit insurance, securities markets, monetary policy, housing, urban development, mass transit, currency and export controls. It oversees agencies including the Federal Reserve, the Securities and Exchange Commission, the Department of Housing and Urban Development and the Treasury's financial functions. Created in 1913 as the Committee on Banking and Currency, it took its current name in 1970.",
+  "site": "https://www.banking.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Banking,_Housing,_and_Urban_Affairs",
+  "socials": {
+   "x": "https://x.com/BankingGOP",
+   "youtube": "https://www.youtube.com/@SenBankingGOP"
+  },
+  "sources": [
+   "https://www.banking.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Banking,_Housing,_and_Urban_Affairs"
+  ]
+ },
+ "SSBU": {
+  "about": "The Senate Committee on the Budget drafts Congress's annual budget resolution, which sets overall spending and revenue targets, and tracks how legislation measures up against those limits. It has jurisdiction over the Congressional Budget Office and plays a central role in the budget reconciliation process. The committee was established by the Congressional Budget and Impoundment Control Act of 1974.",
+  "site": "https://www.budget.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_the_Budget",
+  "socials": {
+   "x": "https://twitter.com/budgetGOP"
+  },
+  "sources": [
+   "https://www.budget.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_the_Budget"
+  ]
+ },
+ "SSCM": {
+  "about": "The Senate Committee on Commerce, Science, and Transportation covers interstate commerce, consumer protection, communications, science and technology policy, space, and transportation, including aviation, rail, highway safety, maritime matters and the Coast Guard. It oversees agencies such as the Federal Communications Commission, the Federal Trade Commission, NASA, NOAA and much of the Department of Transportation. Its roots go back to the Committee on Commerce and Manufactures of 1816, and it took its current form in 1977.",
+  "site": "https://www.commerce.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Commerce,_Science,_and_Transportation",
+  "socials": {
+   "x": "https://twitter.com/SenateCommerce",
+   "facebook": "https://www.facebook.com/SenateCommerce",
+   "youtube": "https://www.youtube.com/@CommerceRepublicans"
+  },
+  "sources": [
+   "https://www.commerce.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Commerce,_Science,_and_Transportation"
+  ]
+ },
+ "SSEG": {
+  "about": "The Senate Committee on Energy and Natural Resources handles energy policy, mining, nuclear development, federal public lands, national parks, water and irrigation projects, and U.S. territories. It oversees the Department of Energy and the Department of the Interior. It took its current name in 1977, succeeding the Committee on Interior and Insular Affairs, when most Native American matters moved to the Committee on Indian Affairs.",
+  "site": "https://www.energy.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Energy_and_Natural_Resources",
+  "socials": {
+   "x": "https://x.com/EnergyGOP",
+   "youtube": "https://www.youtube.com/@ENRGOP"
+  },
+  "sources": [
+   "https://www.energy.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Energy_and_Natural_Resources"
+  ]
+ },
+ "SSEV": {
+  "about": "The Senate Committee on Environment and Public Works covers environmental protection, clean air and water, toxic waste cleanup, highways and bridges, water infrastructure, and fish and wildlife conservation. It oversees the Environmental Protection Agency, the Nuclear Regulatory Commission, the Army Corps of Engineers' civil works and federal highway programs. It traces to the Committee on Public Works formed in 1947 and took its current name in 1977.",
+  "site": "https://www.epw.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Environment_and_Public_Works",
+  "socials": {
+   "x": "https://x.com/EPWGOP"
+  },
+  "sources": [
+   "https://www.epw.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Environment_and_Public_Works"
+  ]
+ },
+ "SSFI": {
+  "about": "The Senate Committee on Finance writes federal tax law and handles the public debt, tariffs and trade agreements, Social Security, Medicare, Medicaid and other health programs funded by dedicated taxes or trust funds. It oversees the Treasury Department, the Internal Revenue Service and the U.S. Trade Representative, and considers nominations for those posts. Formed in 1816 as one of the Senate's first standing committees, it is widely considered one of the most powerful committees in Congress.",
+  "site": "https://www.finance.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Finance",
+  "sources": [
+   "https://www.finance.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Finance"
+  ]
+ },
+ "SSFR": {
+  "about": "The Senate Committee on Foreign Relations leads the Senate's work on foreign policy, including foreign aid, arms sales, sanctions and the State Department. It is the only Senate committee that considers treaties, and it handles all ambassador and senior diplomatic nominations. Formed in 1816 as one of the Senate's original standing committees, it played a central role in the Alaska Purchase, the founding of the United Nations and the Marshall Plan.",
+  "site": "https://www.foreign.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Foreign_Relations",
+  "sources": [
+   "https://www.foreign.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Foreign_Relations"
+  ]
+ },
+ "SSGA": {
+  "about": "The Senate Committee on Homeland Security and Governmental Affairs is the Senate's chief oversight and investigative committee. It oversees the Department of Homeland Security and the workings of the federal government itself, including the civil service, the Postal Service, the census, the National Archives, federal contracting and the District of Columbia. Its Permanent Subcommittee on Investigations can examine matters across the government, and its chair can issue subpoenas without a committee vote. It traces to a 1921 committee on executive branch spending and added homeland security to its name in 2004.",
+  "site": "https://www.hsgac.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Homeland_Security_and_Governmental_Affairs",
+  "socials": {
+   "x": "https://x.com/HSGAC_GOP"
+  },
+  "sources": [
+   "https://www.hsgac.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Homeland_Security_and_Governmental_Affairs"
+  ]
+ },
+ "SSHR": {
+  "about": "The Senate Committee on Health, Education, Labor, and Pensions handles public health, health insurance, schools and higher education, workplace safety, wages and labor relations, and private pensions. It oversees the Department of Education, the Department of Labor and public health agencies of the Department of Health and Human Services. It dates to the Committee on Education and Labor created in 1869 and took its current name in 1999.",
+  "site": "https://www.help.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Health,_Education,_Labor_and_Pensions",
+  "sources": [
+   "https://www.help.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Health,_Education,_Labor_and_Pensions"
+  ]
+ },
+ "SSJU": {
+  "about": "The Senate Committee on the Judiciary oversees the Department of Justice, including the FBI, and handles federal criminal law, immigration, antitrust, intellectual property, civil rights and proposed constitutional amendments. It holds confirmation hearings for federal judges, including Supreme Court nominees, as well as senior Justice Department officials. It was formed in 1816 as one of the Senate's original standing committees.",
+  "site": "https://www.judiciary.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_the_Judiciary",
+  "socials": {
+   "x": "https://twitter.com/SenJudiciaryGOP",
+   "facebook": "https://www.facebook.com/SenJudiciaryGOP",
+   "instagram": "https://www.instagram.com/senjudiciarygop"
+  },
+  "sources": [
+   "https://www.judiciary.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_the_Judiciary"
+  ]
+ },
+ "SSRA": {
+  "about": "The Senate Committee on Rules and Administration handles the Senate's rules and internal operations, the Senate office buildings, and federal election law, including campaign finance and contested Senate elections. It also oversees institutions such as the Library of Congress, the Smithsonian and the Government Publishing Office, and some of its members sit on the joint committees on the Library and on Printing. It was created in 1947 under the Legislative Reorganization Act of 1946.",
+  "site": "https://www.rules.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Rules_and_Administration",
+  "sources": [
+   "https://www.rules.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Rules_and_Administration"
+  ]
+ },
+ "SSSB": {
+  "about": "The Senate Committee on Small Business and Entrepreneurship oversees the Small Business Administration and federal programs that support small firms, including loans, disaster assistance, government contracting and entrepreneurial development. It also studies how federal regulation and policy affect small businesses. Founded as a select committee in 1950, it became a standing committee in 1981 and added entrepreneurship to its name in 2001.",
+  "site": "https://www.sbc.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Small_Business_and_Entrepreneurship",
+  "sources": [
+   "https://www.sbc.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Small_Business_and_Entrepreneurship"
+  ]
+ },
+ "SSVA": {
+  "about": "The Senate Committee on Veterans' Affairs handles legislation and oversight on veterans' benefits and services, including health care, disability compensation, GI Bill education benefits, home loans, pensions and national cemeteries. It oversees the Department of Veterans Affairs and considers nominations for its senior officials. It was established under the Legislative Reorganization Act of 1970.",
+  "site": "https://www.veterans.senate.gov/",
+  "wikipedia": "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Veterans'_Affairs",
+  "socials": {
+   "x": "https://x.com/SVACGOP"
+  },
+  "sources": [
+   "https://www.veterans.senate.gov/",
+   "https://en.wikipedia.org/wiki/United_States_Senate_Committee_on_Veterans'_Affairs"
+  ]
+ }
+}
