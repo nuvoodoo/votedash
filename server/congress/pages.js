@@ -145,7 +145,7 @@ function tabHtml(p, id, q, full) {
     case 'markets': return (MKT.get().members[p.id] || []).length ? `<h2>Prediction markets</h2><p class="sub">Market-implied chances, updated every 10 minutes.</p>${pmRows(MKT.get().members[p.id])}` : '';
     case 'polling': return memberPolling(p);
     case 'votes': return full ? votesFull(p, +q.get('page') || 1) : votesSec(p);
-    case 'money': return full ? moneySec(p, yearOf(q), `${href(p)}/money`, '') : moneySec(p, yearOf(q));
+    case 'money': return full ? moneySec(p, yearOf(q), `${href(p)}/money`, '', true) : moneySec(p, yearOf(q));
     case 'bills': return billsSec(p, full);
     case 'speeches': return speechesSec(p, full);
     case 'record': return recordSec(p);
@@ -354,12 +354,13 @@ function histDetails(pid, cm) {
     <p class="cyt">${Object.entries(byCy).map(([cy, a]) => `<span>${typeof cy === 'string' && cy === 'Undated' ? 'Undated' : `${cy - 1}-${String(cy).slice(2)}`}: <b>${money(a, true)}</b></span>`).join('')}</p>
     <ol class="tx">${h.slice().reverse().map(x => `<li><time>${x.date ? date(x.date) : 'Undated'}</time><b>${money(x.amt, true)}</b></li>`).join('')}</ol></details>`;
 }
-function moneySec(p, y, base = href(p), anchor = '#money') {
+function moneySec(p, y, base = href(p), anchor = '#money', full = false) {
   const m = p.money; if (!m) return '';
   const V = y ? view(y) : null, cy = y ? cycleOf(y) : null;
   const cycles = Object.entries(m.cycles).filter(([c]) => !cy || +c === cy).sort((a, b) => b[0] - a[0]);
   const max = Math.max(...cycles.map(([, c]) => c.receipts), 1);
-  const pacs = y ? topOf(V.givenTo.get(p.id), 25) : m.topPacs;
+  // The money tab's own page lists every PAC; the profile shows the top 25 and links there.
+  const pacs = full ? topOf(y ? V.givenTo.get(p.id) : D.givenTo.get(p.id), Infinity) : y ? topOf(V.givenTo.get(p.id), 25) : m.topPacs;
   const pacTotal = y ? Object.values(V.givenTo.get(p.id) || {}).reduce((a, b) => a + b, 0) : m.pacTotal;
   const pacCount = y ? Object.keys(V.givenTo.get(p.id) || {}).length : m.pacCount;
   const ind = (y ? V.byInd.get(p.id) || [] : m.byIndustry || []).slice(0, 8);
@@ -374,8 +375,9 @@ function moneySec(p, y, base = href(p), anchor = '#money') {
     <p class="cy-k"><span><i class="m-indiv"></i>Individuals ${money(c.indiv)}</span><span><i class="m-pac"></i>PACs ${money(c.pac)}</span>${c.party ? `<span><i class="m-party"></i>Party ${money(c.party)}</span>` : ''}${c.self ? `<span><i class="m-self"></i>Self-funded ${money(c.self)}</span>` : ''}<span>Cash on hand ${money(c.cash)}</span></p></div>`).join('')}</div>` : ''}
   ${sourcesPie(p, cy)}
   ${ind.length ? `<h3>Top industries</h3><p class="sub">PAC contributions ${when}, grouped by the industry behind each PAC.</p><ul class="hbars">${ind.map(([id, amt]) => `<li><a href="/industry/${id}${y ? '?year=' + y : ''}">${esc(D.indName.get(id))}</a><span class="hb"><i style="width:${(amt / indMax * 100).toFixed(1)}%"></i></span><b>${money(amt)}</b></li>`).join('')}</ul>` : ''}
-  ${pacs.length ? `<h3>Top PAC donors</h3><p class="sub">${pacCount} PACs gave ${money(pacTotal)} ${when}. Share is each PAC's part of everything ${esc(p.name)} raised ${cy ? `in the ${cyLabel(cy)} cycle` : 'since 2021'}. Open a row for every contribution.</p>
-  <div class="tbl"><table class="pacs"><thead><tr><th>PAC</th><th>Connected to</th><th class="n">Given</th><th class="n">Share</th></tr></thead><tbody>${pacs.map(x => ({ ...x, f: D.funders.get(x.id) })).filter(x => x.f).map(x => `<tr><td>${pacCell(p, x.f)}</td><td>${esc(nice(x.f.org) || '')}<small class="kd">${esc(x.f.kind)}</small></td><td class="n">${money(x.amt, true)}</td><td class="n">${shareOf(p, x.amt, cy)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+  ${pacs.length ? `<h3 id="pacs">${full ? 'PAC donors' : 'Top PAC donors'}</h3><p class="sub">${pacCount} PACs gave ${money(pacTotal)} ${when}. Share is each PAC's part of everything ${esc(p.name)} raised ${cy ? `in the ${cyLabel(cy)} cycle` : 'since 2021'}. Open a row for every contribution.${full && pacCount > pacs.length ? ` ${(pacCount - pacs.length).toLocaleString('en-US')} more PAC${pacCount - pacs.length === 1 ? '' : 's'} gave less than $1,000 to all of Congress combined and ${pacCount - pacs.length === 1 ? 'is' : 'are'} not listed.` : ''}</p>
+  <div class="tbl"><table class="pacs"><thead><tr><th>PAC</th><th>Connected to</th><th class="n">Given</th><th class="n">Share</th></tr></thead><tbody>${pacs.map(x => ({ ...x, f: D.funders.get(x.id) })).filter(x => x.f).map(x => `<tr><td>${pacCell(p, x.f)}</td><td>${esc(nice(x.f.org) || '')}<small class="kd">${esc(x.f.kind)}</small></td><td class="n">${money(x.amt, true)}</td><td class="n">${shareOf(p, x.amt, cy)}</td></tr>`).join('')}</tbody></table></div>
+  ${!full && pacCount > pacs.length ? `<p><a class="more" href="${href(p)}/money${y ? '?year=' + y : ''}#pacs">All ${pacCount.toLocaleString('en-US')} PACs</a></p>` : ''}` : ''}
   ${ieF.length || ieA.length ? `<h3>Outside spending ${when}</h3><div class="two">
     ${ieF.length ? `<div><h4>Spent to help them</h4><ol class="rank sm">${ieF.slice(0, 6).map(x => fundRow(x)).join('')}</ol></div>` : ''}
     ${ieA.length ? `<div><h4>Spent to defeat them</h4><ol class="rank sm">${ieA.slice(0, 6).map(x => fundRow(x)).join('')}</ol></div>` : ''}</div>` : ''}
@@ -1178,7 +1180,10 @@ function memberPolling(p) {
     out.push(`<h3>In ${esc(seat)}</h3><p class="sub">Job approval among adults in ${p.chamber === 'S' ? 'the state' : 'the district'}.</p>
     ${pollBar([{ l: 'Approve', v: a.approve, c: 'yes' }, { l: 'Not sure', v: a.unsure, c: 'ns' }, { l: 'Disapprove', v: a.disapprove, c: 'no' }])}
     ${a.byParty ? `<ul class="pm poll-party">${['D', 'I', 'R'].map(k => `<li><span class="pm-l">${PARTYWORD[k]}</span><span class="pm-bar" aria-hidden="true"><i style="width:${a.byParty[k]}%"></i></span><b>${a.byParty[k]}%</b></li>`).join('')}</ul><p class="sub">Approval by the respondent's own party.</p>` : ''}
-    <p class="poll-src"><a href="${D.approval.url}">Cooperative Election Study</a>, ${a.years.join(' and ')} surveys, ${a.n.toLocaleString('en-US')} respondents in ${p.chamber === 'S' ? esc(D.STATES[p.state]) : 'the district'}${p.chamber === 'S' ? '' : ', small-area estimate'}, margin of error ±${a.moe} points.</p>`);
+    <p class="poll-src"><a href="${D.approval.url}">Cooperative Election Study</a>, ${a.years.join(' and ')} surveys, ${a.n.toLocaleString('en-US')} respondents in ${p.chamber === 'S' ? esc(D.STATES[p.state]) : 'the district'}${p.chamber === 'S' ? '' : ', small-area estimate'}, margin of error ±${a.moe} points.</p>
+    ${a.byYear ? `<h4>Year by year</h4><p class="sub">Each year's Cooperative Election Study on its own, ${a.byYear[a.byYear.length - 1].year} to ${a.byYear[0].year}, same seat. Years with a margin of error over 10 points are left out.</p>
+    <div class="tbl"><table class="poll-trend"><thead><tr><th>Survey</th><th class="n">Approve</th><th class="n">Disapprove</th><th class="n">Not sure</th><th class="n">Respondents</th><th class="n">Margin</th></tr></thead><tbody>${a.byYear.map(r => `<tr><td>${r.year}</td><td class="n">${r.approve}%</td><td class="n">${r.disapprove}%</td><td class="n">${r.unsure}%</td><td class="n">${r.n.toLocaleString('en-US')}</td><td class="n">±${r.moe}</td></tr>`).join('')}</tbody></table></div>
+    ${a.byYear.some(r => r.year === 2019) ? '<p class="sub">In 2019 about half as many people answered "not sure" about every member as in later years, so approve and disapprove both run higher that year.</p>' : ''}` : ''}`);
   }
   return out.length ? `<h2>Polling</h2>${out.join('')}` : '';
 }
