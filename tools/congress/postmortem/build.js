@@ -244,7 +244,7 @@ for (const c of lines('itpas2.txt')) {
   const side = sc === 'p' || !against ? pt : pt === 'D' ? 'R' : pt === 'R' ? 'D' : 'O';
   for (const k of ['a', sc]) { const T = sideTot[k] || (sideTot[k] = {}); const t = T[side] || (T[side] = { win: 0, lose: 0, open: 0 }); t[good == null ? 'open' : good ? 'win' : 'lose'] += amt; }
   if (side === 'D' || side === 'R') { const L = fs0._l || (fs0._l = { D: 0, R: 0 }); L[side] += amt; }
-  const fsc = fs0[sc] || (fs0[sc] = { win: 0, lose: 0, contrib: 0, ie: 0 }); if (good != null) fsc[good ? 'win' : 'lose'] += amt; fsc[kind] += amt;
+  const fsc = fs0[sc] || (fs0[sc] = { win: 0, lose: 0, contrib: 0, ie: 0 }); fsc[good == null ? 'open' : good ? 'win' : 'lose'] = (fsc[good == null ? 'open' : good ? 'win' : 'lose'] || 0) + amt; fsc[kind] += amt;
   if (kind === 'contrib' && good != null) { const io = ind.committees[c[0]]; if (io) for (const key of [io.industry, sc + '|' + io.industry]) { const t = indAll.get(key) || { win: 0, lose: 0 }; indAll.set(key, t); t[good ? 'win' : 'lose'] += amt; } }
   if (kind === 'ie') { const m = ieByCand.get(cd[0]) || new Map(); ieByCand.set(cd[0], m); const x = m.get(c[0]) || { for: 0, against: 0, p: 0, g: 0, pA: 0, pF: 0 }; m.set(c[0], x); x[against ? 'against' : 'for'] += amt; x[sc] += amt; if (sc === 'p') x[against ? 'pA' : 'pF'] += amt; }
   const ck0 = cd[0] + '|' + pgi + '|' + (against ? 'A' : 'F');
@@ -309,6 +309,8 @@ for (const sc of ['a', 'g', 'p']) {
   pool.forEach(([id, f], i) => { f['rank' + sc] = i + 1; f['of' + sc] = pool.length; });
   effective[sc] = pool.slice(0, 25).map(([id, f]) => { const e = f._e[sc], d = sc === 'a' ? f : f._d[sc]; return { id, name: nameOfCm(id), slug: slugOfCm(id), eff: e.eff, n: e.n, won: e.won, w: e.w, spent: Math.round(d.win + d.lose) }; });
 }
+// per-stage scorecards for the PAC page filter: g = general and special elections, p = primaries, runoffs and conventions
+for (const f of Object.values(funderScores)) { f.st = {}; for (const k of ['g', 'p']) { const d = f._d[k], e = f._e[k]; if (!(d.win + d.lose)) continue; f.st[k] = { win: Math.round(d.win), lose: Math.round(d.lose), open: Math.round(d.open || 0), races: e.n, won: e.won, eff: e.eff, rank: f['rank' + k] || null, of: f['of' + k] || null }; } }
 for (const f of Object.values(funderScores)) { f.rank = f.ranka || null; f.of = f.ofa || null; f.rankG = f.rankg || null; f.ofG = f.ofg || null; f.rankP = f.rankp || null; f.ofP = f.ofp || null; for (const k of ['ranka', 'ofa', 'rankg', 'ofg', 'rankp', 'ofp', '_e', '_d']) delete f[k]; }
 const raceSpenders = {};
 for (const [rk, m] of raceSp) {

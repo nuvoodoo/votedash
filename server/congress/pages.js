@@ -785,18 +785,24 @@ function funder(f, q) {
   ${aboutBlock(D.funderAbout[f.id])}
   ${leanTrack(f.id)}
   ${yearNav('/f/' + f.slug, y)}
-  ${(() => { // 2026 scorecard: every 2026 House and Senate candidate it spent on, scored by the contest each dollar went to
+  ${(() => { // 2026 scorecard: every 2026 House and Senate candidate it spent on, scored by the contest each dollar went to; filter by stage
     if (!sc || !(sc.win + sc.lose)) return '';
-    const spent = sc.win + sc.lose + sc.open, L = (D.pmRaces && D.pmRaces.funderRaces[f.id]) || [];
-    const bigW = L.find(x => x.g === true), bigL = L.find(x => x.g === false);
+    const L = (D.pmRaces && D.pmRaces.funderRaces[f.id]) || [], isGen = x => /General|Special/.test(x.st);
     const bet = x => `${money(x.a)} ${x.sd === 'A' ? 'against' : 'for'} ${esc(x.n)}, ${esc(x.s)} ${esc(x.st.toLowerCase())}`;
-    return `<h2 class="f-sc-h">${rcy} scorecard</h2><ul class="poll-key pm-key"><li><span class="k fW" aria-hidden="true"></span>Went its way</li><li><span class="k fL" aria-hidden="true"></span>Did not</li></ul>
-  <dl class="facts f-sc">
-  <div><dt>Spent on ${rcy} races</dt><dd>${money(spent)}</dd><dd class="s">PAC gifts and outside spending for or against House and Senate candidates</dd></div>
-  <div><dt>Races that went its way</dt><dd>${sc.won} of ${sc.races}</dd><dd class="mt"><span class="mt-bar" role="img" aria-label="${sc.won} won, ${sc.races - sc.won} lost"><i class="fW" style="flex:${sc.won}"></i><i class="fL" style="flex:${sc.races - sc.won}"></i></span></dd><dd class="s">${pct(sc.won / sc.races)} of the races it put money into</dd></div>
-  <div><dt>Money on the winning side</dt><dd>${pct(sc.win / (sc.win + sc.lose))}</dd><dd class="mt"><span class="mt-bar" role="img" aria-label="${money(sc.win)} on winners, ${money(sc.lose)} on losers"><i class="fW" style="flex:${sc.win}"></i><i class="fL" style="flex:${sc.lose}"></i></span></dd><dd class="s">${money(sc.win)} on winners, ${money(sc.lose)} on losers</dd></div>
-  ${sc.eff != null && sc.rank ? `<div><dt>Effectiveness rank</dt><dd>#${sc.rank.toLocaleString('en-US')} <small>of ${sc.of.toLocaleString('en-US')}</small></dd><dd class="mt"><span class="mt-pct" role="img" aria-label="Better than ${pct(1 - sc.rank / sc.of)} of PACs"><i style="left:${((1 - sc.rank / sc.of) * 100).toFixed(1)}%"></i></span></dd><dd class="s">Better than ${pct(1 - sc.rank / sc.of)} of PACs. ${pct(sc.eff)} of races won when each is weighted by how competitive it was</dd></div>` : ''}
-  </dl>${bigW || bigL ? `<p class="sub f-sc-n">${bigL ? `Biggest losing bet: ${bet(bigL)}.` : ''}${bigW ? ` Biggest winning bet: ${bet(bigW)}.` : ''}</p>` : ''}`; })()}
+    const SC = [['all', 'All races', sc, L, `${rcy} races`], ['gen', 'General elections', sc.st && sc.st.g, L.filter(isGen), `${rcy} general elections`], ['prim', 'Primaries', sc.st && sc.st.p, L.filter(x => !isGen(x)), `${rcy} primaries`]];
+    const card = ([k, , c, l, what], i) => { if (!c || !(c.win + c.lose)) return '';
+      const spent = c.win + c.lose + (c.open || 0), bigW = l.find(x => x.g === true), bigL = l.find(x => x.g === false);
+      return `<div data-scope-panel="${k}"${i ? ' hidden' : ''}><dl class="facts f-sc">
+  <div><dt>Spent on ${what}</dt><dd>${money(spent)}</dd><dd class="s">PAC gifts and outside spending for or against House and Senate candidates</dd></div>
+  <div><dt>Races that went its way</dt><dd>${c.won} of ${c.races}</dd><dd class="mt"><span class="mt-bar" role="img" aria-label="${c.won} won, ${c.races - c.won} lost"><i class="fW" style="flex:${c.won}"></i><i class="fL" style="flex:${c.races - c.won}"></i></span></dd><dd class="s">${pct(c.won / c.races)} of the races it put money into</dd></div>
+  <div><dt>Money on the winning side</dt><dd>${pct(c.win / (c.win + c.lose))}</dd><dd class="mt"><span class="mt-bar" role="img" aria-label="${money(c.win)} on winners, ${money(c.lose)} on losers"><i class="fW" style="flex:${c.win}"></i><i class="fL" style="flex:${c.lose}"></i></span></dd><dd class="s">${money(c.win)} on winners, ${money(c.lose)} on losers</dd></div>
+  ${c.eff != null && c.rank ? `<div><dt>Effectiveness rank</dt><dd>#${c.rank.toLocaleString('en-US')} <small>of ${c.of.toLocaleString('en-US')}</small></dd><dd class="mt"><span class="mt-pct" role="img" aria-label="Better than ${pct(1 - c.rank / c.of)} of PACs"><i style="left:${((1 - c.rank / c.of) * 100).toFixed(1)}%"></i></span></dd><dd class="s">Better than ${pct(1 - c.rank / c.of)} of PACs. ${pct(c.eff)} of races won when each is weighted by how competitive it was</dd></div>` : ''}
+  </dl>${bigW || bigL ? `<p class="sub f-sc-n">${bigL ? `Biggest losing bet: ${bet(bigL)}.` : ''}${bigW ? ` Biggest winning bet: ${bet(bigW)}.` : ''}</p>` : ''}</div>`; };
+    const has = SC.filter(([, , c]) => c && c.win + c.lose);
+    return `<h2 class="f-sc-h">${rcy} scorecard</h2>
+  <div class="f-scw">${has.length > 1 ? `<div class="seg sm pm-scope" role="group" aria-label="Which elections" data-scope-tabs>${SC.map(([k, l, c], i) => c && c.win + c.lose ? `<button type="button" aria-pressed="${i ? 'false' : 'true'}" data-scope="${k}">${l}</button>` : '').join('')}</div>` : ''}
+  <ul class="poll-key pm-key"><li><span class="k fW" aria-hidden="true"></span>Went its way</li><li><span class="k fL" aria-hidden="true"></span>Did not</li></ul>
+  ${SC.map(card).join('')}</div>`; })()}
   <dl class="facts f-sc">${t ? `<div><dt>Given to members</dt><dd>${money(gTotal)}</dd><dd class="s">${rec.length} recipients ${when}</dd></div><div><dt>To Democrats</dt><dd>${pct(s.D / t)}</dd><dd class="s">${money(s.D)}</dd></div><div><dt>To Republicans</dt><dd>${pct(s.R / t)}</dd><dd class="s">${money(s.R)}</dd></div>` : ''}${ieTotal ? `<div><dt>Outside spending on members</dt><dd>${money(ieTotal)}</dd><dd class="s">For and against members of Congress ${when}</dd></div>` : ''}${lob && lob.spend && (lob.spend['2025'] || lob.spend['2026']) ? `<div><dt>Lobbying, 2025-26</dt><dd>${money((lob.spend['2025'] || 0) + (lob.spend['2026'] || 0))}</dd><dd class="s">Lobbying Disclosure Act filings</dd></div>` : ''}</dl>
   ${rec.length ? `<h2>Recipients</h2><p class="sub">Share is the gift's part of everything that member raised ${cy ? `in the ${cyLabel(cy)} cycle` : 'since 2021'}. Open a row for every contribution.</p><div class="tbl"><table class="pacs"><thead><tr><th>Member</th><th class="n">Given</th><th class="n">Share</th><th>${rcy} race</th></tr></thead><tbody>${rec.slice(0, 80).map(([p, a]) => `<tr><td>${personLink(p)}${histDetails(p.id, f.id)}</td><td class="n">${money(a, true)}</td><td class="n">${shareOf(p, a, cy)}</td><td>${resTag(raceResult(p, rcy))}</td></tr>`).join('')}</tbody></table></div>${rec.length > 80 ? `<p><a class="more" href="/f/${f.slug}/recipients${y ? '?year=' + y : ''}">All ${rec.length} recipients</a></p>` : ''}` : ''}
   ${(() => { const L = rcy === 2026 && D.pmRaces && D.pmRaces.funderRaces[f.id]; if (!L || !L.length) return '';
