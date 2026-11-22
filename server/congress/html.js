@@ -122,7 +122,7 @@ const dtIcons = body => body.replace(/<dl class="facts[^"]*">[\s\S]*?<\/dl>/g, b
 function layout({ title: t, desc, path: p, body, active, jsonld, scripts = '', noindex, image }) {
   // off-site links open in a new tab
   body = body.replace(/<a ([^>]*?)href="(https?:\/\/(?!votedash\.net)[^"]+)"([^>]*)>/g, (m, pre, url, post) => {
-    if (/target=/.test(pre + post)) return m;
+    if (/\btarget=/.test(pre + post)) return m;
     return `<a ${pre.replace(/\s*rel="[^"]*"/, '')}href="${url}"${post.replace(/\s*rel="[^"]*"/, '')} target="_blank" rel="noopener">`;
   });
   body = dtIcons(body);

@@ -37,7 +37,7 @@ const OUTLET_MAP = [
   [/wall street journal|wsj/i, 'WSJ'],
   [/axios/i, 'Axios'],
   [/the hill/i, 'The Hill'],
-  [/pbs/i, 'PBS'],
+  [/\bpbs\b/i, 'PBS'],
   [/usa today/i, 'USA Today'],
 ];
 
