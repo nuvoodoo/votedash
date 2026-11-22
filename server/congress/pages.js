@@ -99,7 +99,8 @@ function rcKind(rc) {
   if (rc._kind) return rc._kind;
   const q = rc.question || '', d = (rc.desc || '') + ' ' + rcTitle(rc), b = rc.bill || '';
   let k;
-  if (/Election of the Speaker|vacate/i.test(q + ' ' + d)) k = 'leadership';
+  if (rc.quorum) k = 'procedural';
+  else if (/Election of the Speaker|vacate/i.test(q + ' ' + d)) k = 'leadership';
   else if (/Nomination/i.test(q) || /^PN/i.test(b)) k = 'nomination';
   else if (/Cloture|Motion to Proceed|Recommit|Previous Question|Table|Adjourn|Refer|Commit|Point of Order|Decision of the Chair|Reconsider|Discharge|Consideration of the Resolution|Instruct|Retaining|^On the Motion$|Waive/i.test(q)) k = 'procedural';
   else if (/Agreeing to the Resolution|On the Resolution/i.test(q) && /providing for (the )?consideration|waiving|providing for proceedings/i.test(d)) k = 'procedural';
@@ -658,7 +659,7 @@ function vote(rc) {
   const body = `<div class="wrap"><p class="crumb"><a href="/votes?chamber=${rc.chamber}">${ch} votes</a></p>
   <h1>${esc(rcTitle(rc))}</h1>
   <p class="lede">${esc(rc.question)}${b ? `, <a href="/bill/${bk}">${billLabel(bk)}</a>` : nominationUrl(rc.bill) ? `, <a href="${nominationUrl(rc.bill)}" rel="noopener">${esc(rc.bill)}</a>` : rc.bill ? `, ${esc(rc.bill)}` : ''}. ${ch} roll call ${rc.clerk}, ${date(rc.date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. <span class="vk vk-${rcKind(rc)}">${KIND_LABEL[rcKind(rc)]} vote</span></p>
-  <p class="verdict"><b class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</b> <span>${ch_ ? esc(tallyText(rc)) : `${rc.yea} yea, ${rc.nay} nay`}${groups.P.length ? `, ${groups.P.length} present` : ''}, ${groups.X.length} not voting. Required: ${esc(rc.req)}.</span></p>
+  ${rc.quorum ? `<p class="verdict"><span>Quorum call: ${groups.P.length} present, ${groups.X.length} not voting.</span></p>` : `<p class="verdict"><b class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</b> <span>${ch_ ? esc(tallyText(rc)) : `${rc.yea} yea, ${rc.nay} nay`}${groups.P.length ? `, ${groups.P.length} present` : ''}, ${groups.X.length} not voting. Required: ${esc(rc.req)}.</span></p>`}
   ${qHelp(rc.question) ? `<p class="qhelp">${esc(qHelp(rc.question))}</p>` : ''}
   <div class="cols"><div class="col-main"><figure class="vote-seats">${seatChart(rc.chamber, p => 'v' + (map[p.id] === 'X' ? '0' : map[p.id] || '0'), { label: `${ch} seats colored by vote` })}<figcaption class="ch-key"><span><i class="vY"></i>${esc(keyFor('Y'))}</span><span><i class="vN"></i>${esc(keyFor('N'))}</span><span><i class="vP"></i>Present</span><span><i class="v0"></i>Not voting</span></figcaption></figure></div>
   <aside class="col-side"><div class="tbl"><table><thead><tr><th>Party</th>${cols.map(([l]) => `<th class="n">${l === 'Present' ? '<abbr title="Present">Pres.</abbr>' : l === 'Not voting' ? '<abbr title="Not voting">NV</abbr>' : esc(l)}</th>`).join('')}</tr></thead><tbody>
@@ -1028,7 +1029,11 @@ function comingUp() {
   const items = LV.floorItems(); const meet = LV.upcomingMeetings(7); const s = LV.L.senate.filter(x => x.date && x.date >= todayET()).sort((a, b) => a.date.localeCompare(b.date))[0];
   if (!items.length && !meet.length && !s) return '';
   const thisWeek = LV.L.house[0];
-  const open = items.filter(i => i.week === (thisWeek && thisWeek.week) && !(i.key && votesOnBill(i.key, i.week).length)).slice(0, 5);
+  // "still to come" only while the House sits this week: not after the week, nor once it has adjourned past it
+  const weekEnd = thisWeek && new Date(Date.parse(thisWeek.week + 'T12:00:00Z') + 6 * 864e5).toISOString().slice(0, 10);
+  const hs = LV.L.houseStatus;
+  const sitting = thisWeek && todayET() <= weekEnd && !(hs && hs.adjourned && (!hs.next || hs.next > weekEnd));
+  const open = sitting ? items.filter(i => i.week === thisWeek.week && !(i.key && votesOnBill(i.key, i.week).length)).slice(0, 5) : [];
   return `<section class="band"><div class="wrap cols"><div class="col-main"><h2><a href="/schedule">Coming up in Congress</a></h2>
   ${s ? `<div class="sday"><h3>Senate, ${s.date ? dayLabel(s.date + 'T17:00:00Z') : ''}</h3><p>${billInline(s.paras.slice(0, 2).join(' '))}</p></div>` : ''}
   ${open.length ? `<h3>Still to come on the House floor this week</h3><ul class="floor">${open.map(i => floorItem(i, i.week)).join('')}</ul>` : ''}
@@ -1606,7 +1611,7 @@ function sitemaps() {
       ...(D.caucuses ? D.caucuses.caucuses.map(c => `/caucus/${c.id}`) : []), ...Object.keys(D.STATES).filter(s => D.states[s]).map(s => `/state/${s.toLowerCase()}`), ...Object.keys(D.meta.committees).map(c => `/committee/${c.toLowerCase()}`),
       ...(D.leadership && D.leadership.elections ? D.leadership.elections.map(e => `/leadership/${e.id}`) : []), ...(D.bills ? [...BV.STEPS, ...BV.SIDE].map(st => `/tracker/${st.id}`) : [])],
     members: D.people.flatMap(p => [href(p), ...tabsOf(p).map(id => `${href(p)}/${id}`), ...(p.status !== 'elect' ? [`${href(p)}/network`] : [])]),
-    votes: D.rollcalls.map(r => `/vote/${r.k}`),
+    votes: [...D.rollcalls, ...(D.quorums || [])].map(r => `/vote/${r.k}`),
     bills: D.bills ? Object.keys(D.bills.bills).map(k => `/bill/${k}`) : [],
     money: [...[...D.funders.values()].filter(f => f.total + f.ie >= 25000).map(f => `/f/${f.slug}`), ...[...D.industryTotals.keys()].map(i => `/industry/${i}`), ...(D.bills ? Object.keys(D.bills.issues).map(a => `/issue/${slugIssue(a)}`) : [])],
   };

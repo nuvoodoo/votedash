@@ -17,6 +17,12 @@ const lines = fs.readFileSync(path.join(RAW, 'HS119_rollcalls.csv'), 'utf8').spl
 const head = lines[0].split(',');
 const col = n => head.indexOf(n);
 const rolls = lines.slice(1).map(l => l.split(',')).map(c => ({ ch: c[col('chamber')][0], session: +c[col('session')], clerk: +c[col('clerk_rollnumber')], date: c[col('date')] }));
+// Voteview leaves out House quorum calls (roll call 1 of each session): add every Clerk number it skips
+for (const session of [1, 2]) {
+  const have = new Set(rolls.filter(r => r.ch === 'H' && r.session === session).map(r => r.clerk));
+  const top = Math.max(0, ...have);
+  for (let n = 1; n < top; n++) if (!have.has(n)) rolls.push({ ch: 'H', session, clerk: n, date: rolls.find(r => r.ch === 'H' && r.session === session && r.clerk > n).date });
+}
 
 const url = r => r.ch === 'H'
   ? `https://clerk.house.gov/evs/${r.session === 1 ? 2025 : 2026}/roll${String(r.clerk).padStart(3, '0')}.xml`

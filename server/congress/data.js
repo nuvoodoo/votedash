@@ -22,7 +22,7 @@ const D = {};
 function build() {
   DIR = pickDir();
   const people = load('people.json');
-  const { order, rollcalls } = load('rollcalls.json');
+  const { order, rollcalls, quorums = [] } = load('rollcalls.json');
   const former = new Map((load('former.json', true) || []).map(p => [p.id, p]));
   const funders = load('funders.json');
   const meta = load('meta.json');
@@ -48,7 +48,7 @@ function build() {
   // anyone on a roll call: sitting members, then members who have since left the chamber
   const who = id => byId.get(id) || former.get(id);
   const bySlug = new Map(people.map(p => [p.slug, p]));
-  const rcByK = new Map(rollcalls.map(r => [r.k, r]));
+  const rcByK = new Map([...rollcalls, ...quorums].map(r => [r.k, r]));
   const fundersById = new Map(Object.entries(funders));
   const fundersBySlug = new Map(Object.values(funders).map(f => [f.slug, f]));
 
@@ -92,6 +92,7 @@ function build() {
   Object.assign(D, { funderAbout, caucusAbout, committeeAbout, industryAbout, leadershipSponsors, postmortem, pmRaces, approval, polls, ieYear, dataDir: DIR, caucuses, pacHistory, leadership, givenTo, people, byId, bySlug, former, who, order, rollcalls, rcByK, rcPos, funders: fundersById, fundersBySlug, meta, bills, speeches, industries, indName, sectorOf, sectors, industryOf, industryTotals, lobbying, record, chambers, states, search, STATES });
   D.recentRolls = { H: rollcalls.filter(r => r.chamber === 'H').sort(byDate), S: rollcalls.filter(r => r.chamber === 'S').sort(byDate) };
   D.allRolls = [...rollcalls].sort(byDate);
+  D.quorums = quorums;
   reconcileBills(rollcalls);
 }
 // The GovInfo bill-status files lag the floor by days; a passage roll call newer than a

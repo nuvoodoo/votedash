@@ -10,7 +10,7 @@ const MK = require('./markets');
 const KEY = process.env.DATA_GOV_KEY || readEnvKey();
 const CACHE = process.env.LIVE_CACHE || path.join(os.tmpdir(), 'votedash-live.json');
 const UA = 'Mozilla/5.0 (compatible; VoteDash/1.0; +https://votedash.net/about)';
-const L = { house: [], senate: [], meetings: {}, fresh: [], updated: null, sources: {} };
+const L = { house: [], houseStatus: null, senate: [], meetings: {}, fresh: [], updated: null, sources: {} };
 // last success / failure per upstream host, for /api/data-status (the crew's watch reads it)
 function mark(url, err) { let h; try { h = new URL(url).host; } catch { return; } const s = L.sources[h] || (L.sources[h] = {}); if (err) { s.fail = new Date().toISOString(); s.error = String(err); } else s.ok = new Date().toISOString(); }
 function readEnvKey() { try { const t = fs.readFileSync(path.join(__dirname, '../../../votedash.env'), 'utf8'); const m = t.match(/^DATA_GOV_KEY=(.+)$/m); return m ? m[1].trim() : null; } catch { return null; } }
@@ -53,6 +53,18 @@ function mondayOf(d) {
 }
 
 async function markets() { await MK.refresh(); }
+// Is the House sitting? The Clerk's floor proceedings for the session end with the latest legislative day, its
+// newest action first; an adjournment (H61000) names the next meeting date.
+async function houseStatus() {
+  const y = Number(new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }).slice(0, 4));
+  const x = await get(`https://clerk.house.gov/floor/HDoc-119-${y === 2025 ? 1 : 2}-FloorProceedings.xml`);
+  if (!x || !x.includes('<legislative_day ')) return;
+  const last = x.split('<legislative_day ').pop();
+  const a = last.match(/act-id="(\w+)"[\s\S]*?<action_description>([\s\S]*?)<\/action_description>/); if (!a) return;
+  const adjourned = a[1] === 'H61000';
+  const next = adjourned ? isoDate((a[2].match(/on ([A-Za-z]+ \d{1,2}, \d{4})/) || [])[1]) : null;
+  L.houseStatus = { adjourned, next, checked: new Date().toISOString() };
+}
 async function houseFloor() {
   const weeks = [mondayOf(new Date()), mondayOf(new Date(Date.now() + 7 * 864e5))];
   const out = [];
@@ -173,11 +185,11 @@ function merge(add) {
   D.reconcileBills(add);
 }
 
-function save() { try { fs.writeFileSync(CACHE, JSON.stringify({ meetings: L.meetings, house: L.house, senate: L.senate, fresh: L.fresh, markets: MK.get(), updated: L.updated })); } catch (e) { console.error('live save', e.message); } }
+function save() { try { fs.writeFileSync(CACHE, JSON.stringify({ meetings: L.meetings, house: L.house, houseStatus: L.houseStatus, senate: L.senate, fresh: L.fresh, markets: MK.get(), updated: L.updated })); } catch (e) { console.error('live save', e.message); } }
 function restore() {
   try {
     const j = JSON.parse(fs.readFileSync(CACHE, 'utf8'));
-    Object.assign(L, { meetings: j.meetings || {}, house: j.house || [], senate: j.senate || [], updated: j.updated || null });
+    Object.assign(L, { meetings: j.meetings || {}, house: j.house || [], houseStatus: j.houseStatus || null, senate: j.senate || [], updated: j.updated || null });
     MK.set(j.markets);
     const builtMax = { H: 0, S: 0 }; for (const r of D.rollcalls) if (!r.fresh) builtMax[r.chamber] = Math.max(builtMax[r.chamber], r.roll);
     const f = (j.fresh || []).filter(r => r.roll > builtMax[r.chamber] && r.codes.length === D.order[r.chamber].length);
@@ -189,7 +201,7 @@ let running = false;
 async function refresh() {
   if (running) return; running = true;
   try {
-    for (const f of [houseFloor, senateFloor, freshVotes, markets, meetings]) { try { await f(); } catch (e) { console.error('live', f.name, e); } }
+    for (const f of [houseFloor, houseStatus, senateFloor, freshVotes, markets, meetings]) { try { await f(); } catch (e) { console.error('live', f.name, e); } }
     L.updated = new Date().toISOString();
     save();
   } catch (e) { console.error('live refresh', e); }

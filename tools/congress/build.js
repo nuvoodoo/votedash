@@ -225,9 +225,9 @@ function readOfficial(ch, session, clerk) {
     for (const b of x.split('<recorded-vote>').slice(1)) {
       const leg = (b.match(/<legislator\b[^>]*>/) || [''])[0];
       const id = (leg.match(/name-id="([A-Z]\d{6})"/) || [])[1]; if (!id) continue;
-      votes.push({ id, party: (leg.match(/party="([A-Z])"/) || [])[1] || null, v: xtag(b, 'vote') });
+      votes.push({ id, party: (leg.match(/party="([A-Z])"/) || [])[1] || null, state: (leg.match(/state="([A-Z]{2})"/) || [])[1] || null, v: xtag(b, 'vote') });
     }
-    return { date: isoOf(xtag(x, 'action-date')), votes };
+    return { date: isoOf(xtag(x, 'action-date')), votes, question: xtag(x, 'vote-question'), type: xtag(x, 'vote-type') };
   }
   for (const b of x.split('<member>').slice(1)) { const id = lisTo.get(xtag(b, 'lis_member_id')); if (id) votes.push({ id, party: xtag(b, 'party') || null, v: xtag(b, 'vote_cast') }); }
   // the measure as the Senate numbers it: a nomination keeps its part number (PN11-13, not PN1113)
@@ -249,13 +249,23 @@ const vvCodes = {}; // roll key -> bioguide -> code
     if (v) (vvCodes[ch + roll] ||= {})[bio] = v;
   }
 }
+// House quorum calls: the Clerk numbers Voteview skips (roll call 1 of each session)
+const quorumRecs = [];
+for (const session of [1, 2]) {
+  const have = new Set(rolls.filter(r => r.chamber[0] === 'H' && +r.session === session).map(r => +r.clerk_rollnumber));
+  const top = Math.max(0, ...have);
+  for (let n = 1; n < top; n++) { if (have.has(n)) continue; const o = readOfficial('H', session, n); if (o && /quorum/i.test(o.type)) quorumRecs.push({ session, n, o }); }
+}
 // members who voted in this Congress and have since left the chamber keep their place in the record
 const former = {};
+const recInfo = {}; // bioguide -> { party, state } as an official record lists them
+for (const o of [...Object.values(official), ...quorumRecs.map(q => q.o)]) for (const v of o.votes) recInfo[v.id] ||= { party: v.party, state: v.state };
 const order = { H: members.filter(m => m.chamber === 'H').map(m => m.id), S: members.filter(m => m.chamber === 'S').map(m => m.id) };
 {
   const seen = { H: new Set(order.H), S: new Set(order.S) };
   const add = (ch, id) => { if (seen[ch].has(id)) return; seen[ch].add(id); order[ch].push(id); };
   for (const [k, o] of Object.entries(official)) for (const v of o.votes) add(k[0], v.id);
+  for (const q of quorumRecs) for (const v of q.o.votes) add('H', v.id);
   for (const [k, by] of Object.entries(vvCodes)) for (const id of Object.keys(by)) add(k[0], id);
   const vvName = Object.fromEntries(vvMembers.filter(r => r.bioguide_id).map(r => [r.bioguide_id, r]));
   for (const ch of ['H', 'S']) for (const id of order[ch]) {
@@ -264,9 +274,11 @@ const order = { H: members.filter(m => m.chamber === 'H').map(m => m.id), S: mem
     const terms = L ? L.terms.filter(t => t.end >= '2025-01-03').map(x => ({ type: x.type, start: x.start, end: x.end, state: x.state, district: x.district ?? null, party: x.party })) : [];
     const t = terms.filter(x => (x.type === 'sen') === (ch === 'S')).pop();
     const name = L ? L.name.official_full || `${L.name.nickname || L.name.first} ${L.name.last}` : vv.bioname.replace(/^([^,]+), (.+)$/, '$2 $1').replace(/\b([A-Z])([A-Z]+)\b/g, (w, a, b) => a + b.toLowerCase());
-    const state = t ? t.state : vv.state_abbrev;
-    former[id] = { id, former: true, name, last: L ? L.name.last : name.split(' ').pop(), chamber: ch, state, district: ch === 'H' ? (t ? t.district : +vv.district_code) : null,
-      party: t ? PARTY[t.party] || t.party[0] : { 100: 'D', 200: 'R' }[vv.party_code] || 'I', delegate: ch === 'H' && ['AS', 'GU', 'MP', 'PR', 'VI', 'DC'].includes(state), left: t ? t.end : null, terms };
+    // someone only on a quorum call (elected, never sworn in) has no 119th term: their record entry gives state and party
+    const rec = recInfo[id] || {};
+    const state = t ? t.state : vv ? vv.state_abbrev : rec.state;
+    former[id] = { id, former: true, name, last: L ? L.name.last : name.split(' ').pop(), chamber: ch, state, district: ch === 'H' ? (t ? t.district : vv ? +vv.district_code : null) : null,
+      party: t ? PARTY[t.party] || t.party[0] : vv ? { 100: 'D', 200: 'R' }[vv.party_code] || 'I' : rec.party || 'I', delegate: ch === 'H' && ['AS', 'GU', 'MP', 'PR', 'VI', 'DC'].includes(state), left: t ? t.end : null, terms };
   }
 }
 const who = id => byId[id] || former[id];
@@ -476,7 +488,16 @@ for (const [cm, f] of Object.entries(funders)) {
   funderOut[cm] = { ...info, slug: slugify(info.name).slice(0, 80) + '-' + cm.toLowerCase(), total: Math.round(total), ie: Math.round(ie), given: f.given, ieFor: f.ieFor, ieAgainst: f.ieAgainst };
 }
 fs.writeFileSync(path.join(OUT, 'people.json'), JSON.stringify(allPeople));
-fs.writeFileSync(path.join(OUT, 'rollcalls.json'), JSON.stringify({ order, rollcalls }));
+// House quorum calls (roll call 1 of each session): attendance, not votes. Voteview leaves them out, so they come
+// from the Clerk's records alone; each member is present or not voting. They are kept apart from the roll calls so
+// they count toward no voting record.
+const quorums = quorumRecs.map(({ session, n, o }) => {
+  const codes = Array(order.H.length).fill('0');
+  for (const v of o.votes) codes[pos.H[v.id]] = OFFICIAL_WORD[v.v.toLowerCase()] || 'X';
+  return { k: `HQ${session === 1 ? 2025 : 2026}-${n}`, chamber: 'H', roll: null, clerk: n, session, date: o.date, quorum: true, bill: null,
+    result: '', question: o.question || 'Quorum call', desc: '', req: '', yea: 0, nay: 0, codes };
+});
+fs.writeFileSync(path.join(OUT, 'rollcalls.json'), JSON.stringify({ order, rollcalls, quorums }));
 fs.writeFileSync(path.join(OUT, 'former.json'), JSON.stringify(Object.values(former)));
 fs.writeFileSync(path.join(OUT, 'funders.json'), JSON.stringify(funderOut));
 // compact: { person: { committee: [yyyymmdd, amount, yyyymmdd, amount, ...] } }, oldest first

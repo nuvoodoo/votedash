@@ -33,6 +33,13 @@ function file(req, res, root, rel, cache) {
 const html = (req, res, body, status = 200) => send(req, res, status, Buffer.from(body));
 const json = (req, res, obj) => send(req, res, 200, Buffer.from(JSON.stringify(obj)), 'application/json', 'public, max-age=300');
 
+// Retired addresses. Page addresses come from names, so a renamed PAC or a merged duplicate member changes them:
+// a PAC address ends in its FEC committee ID, and a member address with a state suffix (two people of one name)
+// belongs to that name's member from that state.
+const moved = (res, to) => { res.writeHead(301, { Location: to }); res.end(); };
+const movedFunder = slug => { const id = (slug.match(/-(c\d{8})$/) || [])[1]; return id ? D.funders.get(id.toUpperCase()) : null; };
+const movedMember = slug => { const s = slug.match(/^(.+)-([a-z]{2})$/); return s ? D.people.find(q => q.slug === s[1] && q.state === s[2].toUpperCase()) : null; };
+
 let draining = false;
 const server = http.createServer((req, res) => {
   try {
@@ -77,15 +84,17 @@ const server = http.createServer((req, res) => {
     if (p === '/api/suggest') return json(req, res, P.suggest(url.searchParams.get('q') || ''));
     if ((m = p.match(/^\/api\/graph\/([\w-]+)$/))) { const pp = D.byId.get(m[1]); return pp ? json(req, res, P.graph(pp)) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/m\/([\w-]+)(?:\/([\w-]+))?\/?$/))) {
-      const pp = D.bySlug.get(m[1]); if (!pp) return html(req, res, P.notFound(), 404);
+      const pp = D.bySlug.get(m[1]);
+      if (!pp) { const to = movedMember(m[1]); return to ? moved(res, `/m/${to.slug}${m[2] ? '/' + m[2] : ''}${url.search}`) : html(req, res, P.notFound(), 404); }
       if (m[2] === 'network') return html(req, res, P.network(pp));
       const b = P.member(pp, url.searchParams, m[2]);
       if (b && b.redirect) { res.writeHead(302, { Location: b.redirect }); return res.end(); }
       return b ? html(req, res, b) : html(req, res, P.notFound(), 404);
     }
     if ((m = p.match(/^\/state\/([a-z]{2})$/))) { const b = P.stateP(m[1].toUpperCase()); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
-    if ((m = p.match(/^\/vote\/([HS]\d+)$/))) { const rc = D.rcByK.get(m[1]); return rc ? html(req, res, P.vote(rc)) : html(req, res, P.notFound(), 404); }
+    if ((m = p.match(/^\/vote\/([HS]\d+|HQ\d{4}-\d+)$/))) { const rc = D.rcByK.get(m[1]); return rc ? html(req, res, P.vote(rc)) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/bill\/([a-z]+\d+)$/))) { const b = P.bill(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
+    if ((m = p.match(/^\/f\/([\w-]+)(\/recipients)?$/)) && !D.fundersBySlug.get(m[1])) { const f = movedFunder(m[1]); return f ? moved(res, `/f/${f.slug}${m[2] || ''}${url.search}`) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/f\/([\w-]+)\/recipients$/))) { const f = D.fundersBySlug.get(m[1]); return f ? html(req, res, P.funderRecipients(f, url.searchParams)) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/f\/([\w-]+)$/))) { const f = D.fundersBySlug.get(m[1]); return f ? html(req, res, P.funder(f, url.searchParams)) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/industry\/([\w-]+)$/))) { const b = P.industry(m[1], url.searchParams); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
