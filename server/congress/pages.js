@@ -1647,6 +1647,12 @@ ${SITE}/sitemap.xml indexes ${Object.values(c).reduce((a, b) => a + b, 0).toLoca
 // ---------------- 2026 post-mortem ----------------
 const PM_TABS = [['', 'Overview'], ['seats', 'Seats'], ['candidates', 'Candidates'], ['caucuses', 'Caucuses'], ['ballot', 'Ballot Measures'], ['votes', 'How They Voted'], ['money', 'Money'], ['israel', 'Pro-Israel PACs'], ['progressives', 'Progressives']];
 const PM_SECS = { seats: ['results', 'flips'], candidates: ['candidates'], caucuses: ['caucuses'], ballot: ['ballot'], votes: ['votes'], money: ['money'], israel: ['israel'], progressives: ['progressives'] };
+// one link per source; a source field can list several addresses separated by semicolons
+const sourceLinks = src => {
+  const urls = String(src).split(/\s*;\s*/).filter(Boolean);
+  const site = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
+  return `${urls.length > 1 ? 'Sources' : 'Source'}: ${urls.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(site(u))}</a>`).join(', ')}`;
+};
 function postMortem(tab = '') {
   const X = D.postmortem; if (!X) return null;
   const TAB = PM_TABS.find(t => t[0] === tab); if (!TAB) return null;
@@ -1871,7 +1877,7 @@ function postMortem(tab = '') {
   ${G.issues.counts.length ? `<h3>What they ran on</h3>
   <p class="sub">Issues ${G.issues.sites} endorsed candidates campaigned on, from their campaign sites and campaign coverage, by how many ran on each one.</p>
   <ul class="hbars">${G.issues.counts.filter(i => ISS[i.id] && i.n >= 3).map(i => `<li><span>${esc(ISS[i.id])}</span><span class="hb"><i style="width:${(i.n / iMax * 100).toFixed(1)}%"></i></span><b>${i.n} <small>${pc1(i.n, G.issues.sites)}, ${i.won} won</small></b></li>`).join('')}</ul>` : ''}
-  ${G.platforms.length ? `<h3>The groups' platforms</h3>${G.platforms.map(p => `<details class="pm-more"><summary><b>${esc(p.group)}</b></summary><ul>${p.planks.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${p.source ? `<p class="sub"><a href="${esc(p.source)}" target="_blank" rel="noopener">Source</a></p>` : ''}</details>`).join('')}` : ''}
+  ${G.platforms.length ? `<h3>The groups' platforms</h3>${G.platforms.map(p => `<details class="pm-more"><summary><b>${esc(p.group)}</b></summary><ul>${p.planks.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${p.source ? `<p class="sub">${sourceLinks(p.source)}</p>` : ''}</details>`).join('')}` : ''}
   ${lines.length ? `<h3>Socialist and left party lines</h3><p class="sub">Best general-election results for candidates outside the two major parties on the left.</p>
   <div class="tbl"><table><thead><tr><th>Candidate</th><th>Party line</th><th>Race</th><th class="n">Vote</th></tr></thead><tbody>${lines.map(o => `<tr><td>${esc(o.name)}</td><td>${esc(o.line)}</td><td>${esc(o.seat)}</td><td class="n">${o.gen.pct.toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>` : ''}
   <details class="pm-more" open><summary><b>All endorsed candidates</b> <span class="cnt">${endorsed.length}</span></summary>
