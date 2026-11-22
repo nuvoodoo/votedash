@@ -34,6 +34,13 @@ for (const type of TYPES) {
     let short = null;
     const tItems = items(sec(x, 'titles'), 6).map(it => ({ t: tag(it, 'titleType'), v: tag(it, 'title') }));
     for (const re of SHORT_PRI) { const c = tItems.filter(i => /short/i.test(i.t) && re.test(i.t) && !/portions/i.test(i.t)); if (c.length) { short = c.sort((a, b) => a.v.length - b.v.length)[0].v; break; } }
+    // a later text version (a Senate amendment, a substitute) can rename the bill: the display title is then a short
+    // title of its own, and the earlier short title is what it was called before
+    let formerly = null, introducedAs = false;
+    const display = dec(title || '');
+    if (short && short !== display && tItems.some(i => /short/i.test(i.t) && i.v === display)) {
+      formerly = short; introducedAs = tItems.some(i => /short/i.test(i.t) && /as introduced/i.test(i.t) && i.v === short); short = null;
+    }
     const sponsor = tag(sec(x, 'sponsors'), 'bioguideId') || null;
     const cos = items(sec(x, 'cosponsors'), 6).filter(it => !/<sponsorshipWithdrawnDate>/.test(it)).map(it => tag(it, 'bioguideId')).filter(Boolean);
     const policyArea = tag(sec(x, 'policyArea'), 'name') || null;
@@ -76,7 +83,7 @@ for (const type of TYPES) {
     if (laws.length || has(/Became Public Law|Became Private Law/i).length) set('law', last(has(/Became (Public|Private) Law/i)) || stageDate);
     stageCount[stage] = (stageCount[stage] || 0) + 1;
     bills[key] = {
-      type: type.toUpperCase(), number, title: dec(title), short: short && short !== dec(title) ? short : null, policyArea, subjects,
+      type: type.toUpperCase(), number, title: dec(title), short: short && short !== dec(title) ? short : null, ...(formerly ? { formerly, introducedAs } : {}), policyArea, subjects,
       sponsor, cosponsors: cos.length, introduced: tag(x, 'introducedDate'), latest: la ? { date: tag(la, 'actionDate'), text: tag(la, 'text') } : null,
       law: stage === 'law', lawNumber: laws[0] || null, stage, stageDate, ...(/^(hres|sres|hconres|sconres)/.test(type) && /passed/.test(stage) ? { agreed: true } : {}),
       url: tag(x, 'legislationUrl'), actions, committees, ...(related.length ? { related } : {})

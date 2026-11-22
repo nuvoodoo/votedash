@@ -4,6 +4,11 @@ const H = require('./html');
 const { esc, money, pct, date, age, ord, PARTY, seatLabel, title, short, href, portrait, chip, personLink, seatChart, partyFill, layout, SITE } = H;
 
 const VOTE_WORD = { Y: 'Yea', N: 'Nay', P: 'Present', X: 'Not voting' };
+// a vote between named candidates (Election of the Speaker) shows each member's candidate and each candidate's total
+const wordFor = (rc, id, c) => (rc.choice && id && rc.choice.picks[id]) || VOTE_WORD[c];
+// a nomination as the Senate numbers it (PN11-13 is part 13 of PN11) on Congress.gov
+const nominationUrl = id => { const m = /^PN(\d+)(?:-(\d+))?$/.exec(id || ''); return m ? `https://www.congress.gov/nomination/119th-congress/${m[1]}${m[2] ? '/' + m[2] : ''}` : null; };
+const tallyText = rc => rc.choice ? rc.choice.totals.map(([n, k]) => `${n} ${k}`).join(', ') : `${rc.yea}-${rc.nay}`;
 const billLabel = k => { const m = /^([a-z]+)(\d+)$/.exec(k || ''); if (!m) return k; const t = { hr: 'H.R.', s: 'S.', hres: 'H.Res.', sres: 'S.Res.', hjres: 'H.J.Res.', sjres: 'S.J.Res.', hconres: 'H.Con.Res.', sconres: 'S.Con.Res.' }[m[1]] || m[1].toUpperCase(); return `${t} ${m[2]}`; };
 const rcBillKey = rc => D.bills && D.bills.rollcallBill[rc.k] || (rc.bill ? rc.bill.toLowerCase() : null);
 function rcTitle(rc) {
@@ -43,7 +48,7 @@ function home() {
       <p class="ch-key" data-key="vote" hidden><span><i class="vY"></i>Yea</span><span><i class="vN"></i>Nay</span><span><i class="v0"></i>Not voting</span></p>
     </div>
     <div class="ch-grid">
-      <figure><figcaption><a href="/members?chamber=H">House</a> <span>${count('H', 'R')} R, ${count('H', 'D')} D</span></figcaption>${seatChart('H', partyFill)}<p class="ch-vote" data-vote-cap hidden><a href="/vote/${latestH.k}">${esc(latestH.question)}: ${esc(rcTitle(latestH))}</a>, ${date(latestH.date)}</p></figure>
+      <figure><figcaption><a href="/members?chamber=H">House</a> <span>${count('H', 'R')} R, ${count('H', 'D')} D${count('H', 'I') ? `, ${count('H', 'I')} I` : ''}</span></figcaption>${seatChart('H', partyFill)}<p class="ch-vote" data-vote-cap hidden><a href="/vote/${latestH.k}">${esc(latestH.question)}: ${esc(rcTitle(latestH))}</a>, ${date(latestH.date)}</p></figure>
       <figure><figcaption><a href="/members?chamber=S">Senate</a> <span>${count('S', 'R')} R, ${count('S', 'D')} D, ${count('S', 'I')} I</span></figcaption>${seatChart('S', partyFill)}<p class="ch-vote" data-vote-cap hidden><a href="/vote/${latestS.k}">${esc(latestS.question)}: ${esc(rcTitle(latestS))}</a>, ${date(latestS.date)}</p></figure>
     </div>
     <div class="ch-axis"><span>Most liberal</span><span>Most conservative</span></div>
@@ -67,7 +72,7 @@ ${comingUp()}
   <h2><a href="/incoming">The 120th Congress takes office January 3, 2027</a></h2>
   <p class="sub">${elect.length + D.people.filter(p => p.elect).length} new members won seats on November 3. ${leaving.length} current members leave office.</p>
   <ul class="faces">${elect.filter(p => p.chamber === 'S').concat(D.people.filter(p => p.elect && p.elect.chamber === 'S')).map(p => `<li>${electCard(p)}</li>`).join('')}</ul>
-  <p><a class="more" href="/incoming">See all ${elect.length + D.people.filter(p => p.elect).length} members-elect</a></p>
+  <p><a class="more" href="/incoming">See all ${membersElect().length} members-elect</a></p>
 </div></section>
 
 <section class="band"><div class="wrap cols">
@@ -108,7 +113,7 @@ function rollRow(rc) {
   return `<li><a href="/vote/${rc.k}">
     <span class="rr-meta"><span class="vk vk-${rcKind(rc)}">${KIND_LABEL[rcKind(rc)]}</span> ${rc.chamber === 'H' ? 'House' : 'Senate'} roll call ${rc.clerk}, ${date(rc.date)}</span>
     <b>${esc(rcTitle(rc))}</b>
-    <span class="rr-q">${esc(rc.question)}${rcBillKey(rc) ? ', ' + billLabel(rcBillKey(rc)) : ''}. <em class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</em> ${rc.yea}-${rc.nay}</span>
+    <span class="rr-q">${esc(rc.question)}${rcBillKey(rc) ? ', ' + billLabel(rcBillKey(rc)) : ''}. <em class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</em> ${esc(tallyText(rc))}</span>
     <span class="bar" aria-hidden="true"><i class="vY" style="width:${(rc.yea / tot * 100).toFixed(1)}%"></i><i class="vN" style="width:${(rc.nay / tot * 100).toFixed(1)}%"></i></span>
     <span class="rr-p">D ${t.D.Y}-${t.D.N}, R ${t.R.Y}-${t.R.N}</span>
   </a></li>`;
@@ -243,13 +248,28 @@ function member(p, q, tab) {
 }
 function firstInChamber(p) { const t = p.terms.find(t => (t.type === 'sen') === (p.chamber === 'S')); return t.start; }
 function statusLine(p) {
-  if (p.status === 'elect') return `Won ${p.chamber === 'S' ? 'the Senate seat' : 'the seat'} on November 3, 2026${p.pct ? ` with ${p.pct.toFixed(1)}%` : ''}. Takes office January 3, 2027.`;
+  const pc = x => x != null ? ` with ${x.toFixed(1)}%` : '';
+  if (p.status === 'elect') return p.special
+    ? `Won the special election for the Senate seat on November 3, 2026${pc(p.pct)}. Takes office once the result is certified.`
+    : `Won ${p.chamber === 'S' ? 'the Senate seat' : 'the seat'} on November 3, 2026${p.pct ? ` with ${p.pct.toFixed(1)}%` : ''}. Takes office January 3, 2027.`;
   if (p.elect) return `Elected to the ${p.elect.chamber === 'S' ? 'Senate' : 'House'} from ${D.STATES[p.elect.state]} on November 3, 2026${p.elect.pct ? ` with ${p.elect.pct.toFixed(1)}%` : ''}. Takes that seat January 3, 2027.`;
   if (p.newDistrict != null) return `Re-elected in the redrawn ${ord(p.newDistrict)} District on November 3, 2026${p.redrawnRace && p.redrawnRace.pct ? ` with ${p.redrawnRace.pct.toFixed(1)}%` : ''}.`;
-  if (p.status === 'leaving') return p.race2026 && p.race2026.ran ? `Lost re-election on November 3, 2026${p.race2026.pct != null ? ` with ${p.race2026.pct.toFixed(1)}%` : ''}. Leaves office January 3, 2027.` : `Did not seek re-election in 2026. Leaves office January 3, 2027.`;
-  if (p.race2026 && p.race2026.won) return `Re-elected November 3, 2026${p.race2026.pct != null ? ` with ${p.race2026.pct.toFixed(1)}%` : ''}.`;
-  if (p.chamber === 'S') return `Next up for election in ${new Date(p.termEnd).getUTCFullYear() - 1}.`;
+  const r = p.race2026, sp = r && r.special;
+  if (p.status === 'leaving') return r && r.ran
+    ? (sp ? `Lost the special election on November 3, 2026${pc(r.pct)}. Leaves office when the winner takes the seat.`
+          : `Lost re-election on November 3, 2026${pc(r.pct)}. Leaves office January 3, 2027.`)
+    : `Did not seek re-election in 2026. Leaves office January 3, 2027.`;
+  if (r && r.won) return `${sp ? 'Won the special election' : 'Re-elected'} November 3, 2026${pc(r.pct)}.${p.chamber === 'S' ? ` Next up for election in ${nextSenateElection(p.sclass)}.` : ''}`;
+  if (p.chamber === 'S') return `Next up for election in ${nextSenateElection(p.sclass)}.`;
   return '';
+}
+// Senate classes I, II and III were last elected in 2024, 2026 and 2022, every six years; election day is the
+// Tuesday after the first Monday in November
+function nextSenateElection(cls) {
+  const day = y => { const d = new Date(Date.UTC(y, 10, 1)); const mon = (8 - d.getUTCDay()) % 7; return new Date(Date.UTC(y, 10, 2 + mon)); };
+  let y = { 1: 2024, 2: 2026, 3: 2022 }[cls];
+  while (day(y) <= new Date()) y += 6;
+  return y;
 }
 function seatPhrase(p) {
   const list = D.chambers[p.chamber]; const i = list.findIndex(q => q.id === p.id); if (i < 0) return '';
@@ -276,13 +296,13 @@ function votesSec(p) {
   const breaks = p.votes.breaks.slice(0, 8).map(k => D.rcByK.get(k));
   return `<h2>Votes</h2>
   <p class="sub">${p.votes.cast} votes cast in the 119th Congress. Party-line votes are roll calls where most Democrats and most Republicans voted on opposite sides.</p>
-  ${breaks.length ? `<h3>Broke with their party</h3><p class="sub">${times(p.votes.partyVotes - p.votes.withParty)} on party-line votes.</p><ul class="vlist">${breaks.map(rc => vrow(rc, codeFor(p, rc), true)).join('')}</ul>` : `<h3>Broke with their party</h3><p class="sub">Never on a party-line vote this Congress.</p>`}
-  <h3>Recent votes</h3><ul class="vlist">${recent.map(([rc, c]) => vrow(rc, c)).join('')}</ul>
+  ${breaks.length ? `<h3>Broke with their party</h3><p class="sub">${times(p.votes.partyVotes - p.votes.withParty)} on party-line votes.</p><ul class="vlist">${breaks.map(rc => vrow(rc, codeFor(p, rc), true, p.id)).join('')}</ul>` : `<h3>Broke with their party</h3><p class="sub">Never on a party-line vote this Congress.</p>`}
+  <h3>Recent votes</h3><ul class="vlist">${recent.map(([rc, c]) => vrow(rc, c, false, p.id)).join('')}</ul>
   <p><a class="more" href="${href(p)}/votes">All ${p.votes.eligible} votes</a></p>`;
 }
 const times = n => n === 1 ? 'Once' : n === 2 ? 'Twice' : `${n} times`;
-function vrow(rc, c, flag) {
-  return `<li class="${flag ? 'brk' : ''}"><span class="vc v${c}">${VOTE_WORD[c]}</span><a href="/vote/${rc.k}"><b>${esc(rcTitle(rc))}</b><small>${esc(rc.question)}, ${date(rc.date)}. ${esc(rc.result)} ${rc.yea}-${rc.nay}</small></a></li>`;
+function vrow(rc, c, flag, id) {
+  return `<li class="${flag ? 'brk' : ''}"><span class="vc v${c}">${esc(wordFor(rc, id, c))}</span><a href="/vote/${rc.k}"><b>${esc(rcTitle(rc))}</b><small>${esc(rc.question)}, ${date(rc.date)}. ${esc(rc.result)} ${esc(tallyText(rc))}</small></a></li>`;
 }
 
 // ---- money by year ----
@@ -504,7 +524,7 @@ function votesFull(p, page) {
   const list = rolls.slice((page - 1) * per, page * per);
   const party = rc => { const pt = D.partyOn(p, rc.date); return pt === 'I' ? (p.caucus || 'D') : pt; };
   return `<h2>Votes</h2><p class="sub">${rolls.length} roll calls in the 119th Congress, newest first. Amber marks a vote against the majority of their party on a party-line roll call.</p>
-  <ul class="vlist">${list.map(rc => { const c = codeFor(p, rc); return vrow(rc, c, rc.partyLine && (c === 'Y' || c === 'N') && c !== rc.partyPos[party(rc)]); }).join('')}</ul>
+  <ul class="vlist">${list.map(rc => { const c = codeFor(p, rc); return vrow(rc, c, rc.partyLine && (c === 'Y' || c === 'N') && c !== rc.partyPos[party(rc)], p.id); }).join('')}</ul>
   ${pager(`${href(p)}/votes`, page, pages)}`;
 }
 function pager(base, page, pages) {
@@ -586,14 +606,17 @@ function stateP(st) {
 }
 const statusTag = p => p.status === 'leaving' ? ', leaving' : p.elect ? `, ${p.elect.chamber === 'S' ? 'senator' : 'rep.'}-elect` : '';
 
+// members-elect: everyone elected on November 3, 2026 to a seat they do not hold now (new members and sitting
+// members moving chambers); the one count used on every page
+const membersElect = () => [...D.people.filter(p => p.status === 'elect'), ...D.people.filter(p => p.elect)];
 function incoming() {
-  const el = [...D.people.filter(p => p.status === 'elect'), ...D.people.filter(p => p.elect)];
+  const el = membersElect();
   const S = el.filter(p => (p.elect || p).chamber === 'S'), Hh = el.filter(p => (p.elect || p).chamber === 'H').sort((a, b) => (a.elect || a).state.localeCompare((b.elect || b).state));
   const leaving = D.people.filter(p => p.status === 'leaving');
   const lost = leaving.filter(p => p.race2026 && p.race2026.ran), retiring = leaving.filter(p => !(p.race2026 && p.race2026.ran));
   const cnt = (l, pt) => l.filter(p => (p.elect || p).party === pt).length;
   const body = `<div class="wrap"><h1>The incoming 120th Congress</h1>
-  <p class="lede">Members-elect won on November 3, 2026 and take office January 3, 2027.</p>
+  <p class="lede">Members-elect won on November 3, 2026. The 120th Congress opens January 3, 2027; the winner of a special election takes office once the result is certified.</p>
   <h2>New senators <span class="cnt">${S.length}: ${cnt(S, 'D')} D, ${cnt(S, 'R')} R${cnt(S, 'I') ? `, ${cnt(S, 'I')} I` : ''}</span></h2><ul class="faces">${S.map(p => `<li>${electCard(p)}</li>`).join('')}</ul>
   <h2>New representatives <span class="cnt">${Hh.length}: ${cnt(Hh, 'D')} D, ${cnt(Hh, 'R')} R</span></h2><ul class="faces">${Hh.map(p => `<li>${electCard(p)}</li>`).join('')}</ul>
   <div class="two"><div><h2>Lost re-election <span class="cnt">${lost.length}</span></h2><ul class="plain ppl">${lost.map(p => `<li>${personLink(p)}</li>`).join('')}</ul></div>
@@ -624,22 +647,27 @@ function vote(rc) {
   const groups = { Y: [], N: [], P: [], X: [] };
   for (const [id, c] of Object.entries(map)) { const p = D.who(id); if (!p || !groups[c]) continue; groups[c].push(p); }
   const ptOf = p => D.partyOn(p, rc.date);
-  const byParty = pt => ['Y', 'N', 'P', 'X'].map(c => groups[c].filter(p => ptOf(p) === pt).length);
+  // the columns: yea, nay, present, not voting; or each candidate, present, not voting
+  const ch_ = rc.choice;
+  const cols = ch_ ? [...ch_.totals.map(([n]) => [n, Object.keys(ch_.picks).filter(id => ch_.picks[id] === n).map(D.who).filter(Boolean)]), ['Present', groups.P], ['Not voting', groups.X]]
+    : ['Y', 'N', 'P', 'X'].map(c => [VOTE_WORD[c], groups[c]]);
+  const byParty = pt => cols.map(([, l]) => l.filter(p => ptOf(p) === pt).length);
+  const keyFor = c => !ch_ ? VOTE_WORD[c] : ch_.totals.filter(([n]) => Object.entries(ch_.picks).some(([id, x]) => x === n && map[id] === c)).map(([n]) => n).join(', ');
   const defectors = [...groups.Y, ...groups.N].filter(p => { const pt = ptOf(p) === 'I' ? (p.caucus || 'D') : ptOf(p); return rc.partyLine && rc.partyPos[pt] && map[p.id] !== rc.partyPos[pt]; });
   const ch = rc.chamber === 'H' ? 'House' : 'Senate';
   const body = `<div class="wrap"><p class="crumb"><a href="/votes?chamber=${rc.chamber}">${ch} votes</a></p>
   <h1>${esc(rcTitle(rc))}</h1>
-  <p class="lede">${esc(rc.question)}${b ? `, <a href="/bill/${bk}">${billLabel(bk)}</a>` : rc.bill ? `, ${esc(rc.bill)}` : ''}. ${ch} roll call ${rc.clerk}, ${date(rc.date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. <span class="vk vk-${rcKind(rc)}">${KIND_LABEL[rcKind(rc)]} vote</span></p>
-  <p class="verdict"><b class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</b> <span>${rc.yea} yea, ${rc.nay} nay${groups.P.length ? `, ${groups.P.length} present` : ''}, ${groups.X.length} not voting. Required: ${esc(rc.req)}.</span></p>
+  <p class="lede">${esc(rc.question)}${b ? `, <a href="/bill/${bk}">${billLabel(bk)}</a>` : nominationUrl(rc.bill) ? `, <a href="${nominationUrl(rc.bill)}" rel="noopener">${esc(rc.bill)}</a>` : rc.bill ? `, ${esc(rc.bill)}` : ''}. ${ch} roll call ${rc.clerk}, ${date(rc.date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. <span class="vk vk-${rcKind(rc)}">${KIND_LABEL[rcKind(rc)]} vote</span></p>
+  <p class="verdict"><b class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</b> <span>${ch_ ? esc(tallyText(rc)) : `${rc.yea} yea, ${rc.nay} nay`}${groups.P.length ? `, ${groups.P.length} present` : ''}, ${groups.X.length} not voting. Required: ${esc(rc.req)}.</span></p>
   ${qHelp(rc.question) ? `<p class="qhelp">${esc(qHelp(rc.question))}</p>` : ''}
-  <div class="cols"><div class="col-main"><figure class="vote-seats">${seatChart(rc.chamber, p => 'v' + (map[p.id] === 'X' ? '0' : map[p.id] || '0'), { label: `${ch} seats colored by vote` })}<figcaption class="ch-key"><span><i class="vY"></i>Yea</span><span><i class="vN"></i>Nay</span><span><i class="vP"></i>Present</span><span><i class="v0"></i>Not voting</span></figcaption></figure></div>
-  <aside class="col-side"><div class="tbl"><table><thead><tr><th>Party</th><th class="n">Yea</th><th class="n">Nay</th><th class="n"><abbr title="Present">Pres.</abbr></th><th class="n"><abbr title="Not voting">NV</abbr></th></tr></thead><tbody>
+  <div class="cols"><div class="col-main"><figure class="vote-seats">${seatChart(rc.chamber, p => 'v' + (map[p.id] === 'X' ? '0' : map[p.id] || '0'), { label: `${ch} seats colored by vote` })}<figcaption class="ch-key"><span><i class="vY"></i>${esc(keyFor('Y'))}</span><span><i class="vN"></i>${esc(keyFor('N'))}</span><span><i class="vP"></i>Present</span><span><i class="v0"></i>Not voting</span></figcaption></figure></div>
+  <aside class="col-side"><div class="tbl"><table><thead><tr><th>Party</th>${cols.map(([l]) => `<th class="n">${l === 'Present' ? '<abbr title="Present">Pres.</abbr>' : l === 'Not voting' ? '<abbr title="Not voting">NV</abbr>' : esc(l)}</th>`).join('')}</tr></thead><tbody>
   ${['D', 'R', 'I'].filter(pt => byParty(pt).some(Boolean)).map(pt => `<tr><td>${chip({ party: pt })} ${PARTY[pt]}s</td>${byParty(pt).map(n => `<td class="n">${n}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
   ${b ? `<h2>The bill</h2><p>${esc(b.title)}</p><p class="sub">${b.policyArea ? `<a href="/issue/${slugIssue(b.policyArea)}">${esc(b.policyArea)}</a>. ` : ''}${b.latest ? `Latest action ${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</p><p><a href="${esc(b.url)}" rel="noopener">${billLabel(bk)} on Congress.gov</a></p>` : ''}</aside></div>
   ${b ? voteInProcess(rc, bk, b) : ''}
-  ${defectors.length ? `<h2>Voted against their party <span class="cnt">${defectors.length}</span></h2><ul class="cards">${defectors.map(p => `<li>${personLink(p, ', ' + VOTE_WORD[map[p.id]].toLowerCase())}</li>`).join('')}</ul>` : ''}
-  <h2>How every member voted</h2><div class="vgroups">${['Y', 'N', 'P', 'X'].filter(c => groups[c].length).map(c => `<details${c === 'Y' || c === 'N' ? '' : ''}><summary>${VOTE_WORD[c]} <span class="cnt">${groups[c].length}</span></summary><ul class="names">${groups[c].sort((a, b) => a.state.localeCompare(b.state) || a.last.localeCompare(b.last)).map(p => `<li>${p.former ? esc(p.name) : `<a href="${href(p)}">${esc(p.name)}</a>`} <small>${esc(ptOf(p))}-${short(p).split('-').slice(1).join('-')}${p.former ? ', former member' : ''}</small></li>`).join('')}</ul></details>`).join('')}</div></div>`;
-  return layout({ title: `${rcTitle(rc)}: ${ch} vote ${rc.roll}`, desc: `${ch} roll call ${rc.roll} on ${date(rc.date)}: ${rc.question}, ${rc.result} ${rc.yea}-${rc.nay}. How every member voted.`, path: `/vote/${rc.k}`, body, active: '/votes' });
+  ${defectors.length ? `<h2>Voted against their party <span class="cnt">${defectors.length}</span></h2><ul class="cards">${defectors.map(p => `<li>${personLink(p, ', ' + (ch_ ? wordFor(rc, p.id, map[p.id]) : VOTE_WORD[map[p.id]].toLowerCase()))}</li>`).join('')}</ul>` : ''}
+  <h2>How every member voted</h2><div class="vgroups">${cols.filter(([, l]) => l.length).map(([label, l]) => `<details><summary>${esc(label)} <span class="cnt">${l.length}</span></summary><ul class="names">${l.sort((a, b) => a.state.localeCompare(b.state) || a.last.localeCompare(b.last)).map(p => `<li>${p.former ? esc(p.name) : `<a href="${href(p)}">${esc(p.name)}</a>`} <small>${esc(ptOf(p))}-${short(p).split('-').slice(1).join('-')}${p.former ? ', former member' : ''}</small></li>`).join('')}</ul></details>`).join('')}</div></div>`;
+  return layout({ title: `${rcTitle(rc)}: ${ch} vote ${rc.clerk}`, desc: `${ch} roll call ${rc.clerk} on ${date(rc.date)}: ${rc.question}, ${rc.result} ${tallyText(rc)}. How every member voted.`, path: `/vote/${rc.k}`, body, active: '/votes' });
 }
 // ---------------- bill tracker ----------------
 const STAGE_ORDER = ['introduced', 'committee', 'reported', 'passed-house', 'passed-senate', 'passed-both', 'to-president', 'law'];
@@ -688,7 +716,7 @@ function bill(k) {
   const acts = (b.actions || []).slice().reverse();
   const cms = (b.committees || []);
   const body = `<div class="wrap narrow"><p class="crumb"><a href="/tracker">Bill tracker</a>, ${billLabel(k)}${b.policyArea ? `, <a href="/issue/${slugIssue(b.policyArea)}">${esc(b.policyArea)}</a>` : ''}</p><h1>${esc(b.short || b.title)}</h1>
-  ${b.short && b.short !== b.title ? `<p class="lede">${esc(b.title)}</p>` : ''}
+  ${b.short && b.short !== b.title ? `<p class="lede">${esc(b.title)}</p>` : ''}${b.formerly ? `<p class="lede">${b.introducedAs ? 'Introduced as' : 'Earlier titled'} the ${esc(b.formerly)}.</p>` : ''}
   ${track(k, b)}
   <p>${b.lawNumber ? `<b>${esc(b.lawNumber)}.</b> ` : b.law ? '<b>Became law.</b> ' : ''}Introduced ${date(b.introduced)}${b.cosponsors ? ` with ${b.cosponsors} cosponsors` : ''}. ${b.latest ? `Latest action ${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</p>
   ${schedNote(k)}
@@ -995,8 +1023,9 @@ function schedule() {
   <aside class="col-side"><h2><a href="/votes">Latest roll calls</a></h2><ol class="rolls compact">${recent.map(rollRow).join('')}</ol></aside></div></div>`;
   return layout({ title: 'This week in Congress', desc: 'The House and Senate floor schedules, upcoming committee hearings and the latest roll call votes.', path: '/schedule', body, active: '/schedule' });
 }
+const todayET = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 function comingUp() {
-  const items = LV.floorItems(); const meet = LV.upcomingMeetings(7); const s = LV.L.senate[0];
+  const items = LV.floorItems(); const meet = LV.upcomingMeetings(7); const s = LV.L.senate.filter(x => x.date && x.date >= todayET()).sort((a, b) => a.date.localeCompare(b.date))[0];
   if (!items.length && !meet.length && !s) return '';
   const thisWeek = LV.L.house[0];
   const open = items.filter(i => i.week === (thisWeek && thisWeek.week) && !(i.key && votesOnBill(i.key, i.week).length)).slice(0, 5);
@@ -1010,7 +1039,7 @@ function comingFor(p) {
   if (p.status === 'elect') return '';
   const bm = D.bills && D.bills.byMember[p.id]; const mine = new Set(bm ? [...bm.sponsored, ...bm.cosponsored] : []);
   const floor = LV.floorItems().filter(i => i.key && mine.has(i.key) && !votesOnBill(i.key, i.week).length);
-  const sen = []; for (const s of LV.L.senate) for (const b of (s.paras.join(' ').match(LV.BILL_RE) || [])) { const k = LV.billKey(b); if (k && mine.has(k) && !sen.includes(k)) sen.push(k); }
+  const sen = []; for (const s of LV.L.senate.filter(x => x.date && x.date >= todayET())) for (const b of (s.paras.join(' ').match(LV.BILL_RE) || [])) { const k = LV.billKey(b); if (k && mine.has(k) && !sen.includes(k)) sen.push(k); }
   const meet = LV.meetingsFor(p, 21);
   if (!floor.length && !sen.length && !meet.length) return '';
   const role = k => bm && bm.sponsored.includes(k) ? 'Sponsor' : 'Cosponsor';
@@ -1034,7 +1063,7 @@ const STAGE_HELP = [
   ['First chamber vote', 'In the House, the Rules Committee writes a rule setting debate time and allowed amendments, and the House votes on that rule before the bill. Less contested bills come up under suspension of the rules, which needs a two-thirds vote. In the Senate, most bills need 60 votes for cloture to end debate before a final simple-majority vote.'],
   ['Second chamber vote', 'The other chamber has to pass the same text. It can take up the bill as passed, amend it, or pass its own version.'],
   ['Resolving differences', 'When the two versions differ, the chambers send amendments back and forth until they agree, or appoint a conference committee to write one version that both chambers then vote on.'],
-  ['The President', 'The President has 10 days, not counting Sundays, to sign or veto. Congress can override a veto with two-thirds of both chambers. A bill left unsigned becomes law after 10 days unless Congress has adjourned, which makes it a pocket veto.'],
+  ['The President', 'The President has 10 days, not counting Sundays, from when the bill is presented to sign or veto it. Congress can override a veto with two-thirds of both chambers. A bill left unsigned becomes law after those 10 days, unless Congress has adjourned and the adjournment prevents the return of the bill, which makes it a pocket veto.'],
   ['Law', 'A signed bill becomes a public law with a number such as Public Law 119-21.']
 ];
 const BV = require('./billviz');
@@ -1089,8 +1118,8 @@ function compare(q) {
     const pos = D.rcPos[a.chamber]; const ia = pos.get(a.id), ib = pos.get(b.id); let both = 0, same = 0; const diff = [], crossAgree = [];
     for (const rc of D.recentRolls[a.chamber]) { const x = rc.codes[ia], z = rc.codes[ib]; if (!'YN'.includes(x) || !'YN'.includes(z)) continue; both++; if (x === z) { same++; if (rc.partyLine && a.party !== b.party) crossAgree.push([rc, x]); } else diff.push([rc, x, z]); }
     votesHtml = `<section class="sec"><h2>Voting record</h2><dl class="facts"><div><dt>Voted the same way</dt><dd>${both ? pct(same / both, 1) : ''}</dd><dd class="s">On ${both.toLocaleString('en-US')} roll calls both cast a vote</dd></div><div><dt>Disagreed</dt><dd>${(both - same).toLocaleString('en-US')}</dd><dd class="s">Roll calls</dd></div>${a.party !== b.party ? `<div><dt>Agreed across party lines</dt><dd>${crossAgree.length}</dd><dd class="s">Party-line votes where they sided together</dd></div>` : ''}</dl>
-    ${diff.length ? `<h3>Where they split, most recent first</h3><div class="tbl"><table class="cmp-v"><thead><tr><th>Vote</th><th>${esc(a.last)}</th><th>${esc(b.last)}</th></tr></thead><tbody>${diff.slice(0, 15).map(([rc, x, z]) => `<tr><td><a href="/vote/${rc.k}">${esc(rcTitle(rc))}</a><small>${esc(rc.question)}, ${date(rc.date)}. ${esc(rc.result)}</small></td><td><span class="vc v${x}">${VOTE_WORD[x]}</span></td><td><span class="vc v${z}">${VOTE_WORD[z]}</span></td></tr>`).join('')}</tbody></table></div>` : ''}
-    ${crossAgree.length ? `<h3>Where they crossed party lines together</h3><ul class="vlist">${crossAgree.slice(0, 8).map(([rc, x]) => vrow(rc, x)).join('')}</ul>` : ''}</section>`;
+    ${diff.length ? `<h3>Where they split, most recent first</h3><div class="tbl"><table class="cmp-v"><thead><tr><th>Vote</th><th>${esc(a.last)}</th><th>${esc(b.last)}</th></tr></thead><tbody>${diff.slice(0, 15).map(([rc, x, z]) => `<tr><td><a href="/vote/${rc.k}">${esc(rcTitle(rc))}</a><small>${esc(rc.question)}, ${date(rc.date)}. ${esc(rc.result)}</small></td><td><span class="vc v${x}">${esc(wordFor(rc, a.id, x))}</span></td><td><span class="vc v${z}">${esc(wordFor(rc, b.id, z))}</span></td></tr>`).join('')}</tbody></table></div>` : ''}
+    ${crossAgree.length ? `<h3>Where they crossed party lines together</h3><ul class="vlist">${crossAgree.slice(0, 8).map(([rc, x]) => vrow(rc, x, false, a.id)).join('')}</ul>` : ''}</section>`;
   } else votesHtml = `<section class="sec"><h2>Voting record</h2><p class="sub">They serve in different chambers, so they never vote on the same roll call. Their records side by side:</p>${side(statBlock(a), statBlock(b))}</section>`;
   // positions
   const cau = p => (D.caucuses && D.caucuses.members[p.id]) || [];
@@ -1206,7 +1235,7 @@ function congressPolling() {
   <ul class="pm poll-party">${['R', 'I', 'D'].map(k => `<li><span class="pm-l">${PARTYWORD[k]}</span><span class="pm-bar" aria-hidden="true"><i style="width:${c.byParty[k]}%"></i></span><b>${c.byParty[k]}%</b></li>`).join('')}</ul>
   ${pollSrc(c)}
   <h2>Democratic leaders' plans</h2><p class="sub">Approval of ${esc(d.label.charAt(0).toLowerCase() + d.label.slice(1))}.</p>${pollBar([{ l: 'Approve', v: d.approve, c: 'yes' }, { l: 'Disapprove', v: d.disapprove, c: 'no' }])}
-  ${pollSrc(P.pew)}</section>`;
+  ${pollSrc(d)}</section>`;
 }
 function issuePolling(area) {
   const P = D.polls; if (!P) return '';
@@ -1477,11 +1506,11 @@ async function find(q) {
 function about() {
   const body = `<div class="wrap narrow prose"><h1>How VoteDash works</h1>
   <p>VoteDash collects public records on every member of the U.S. House and Senate and the members-elect of the 120th Congress, and puts them on one page per person.</p>
-  <h2>Votes</h2><p>Every roll call of the 119th Congress comes from Voteview at UCLA, which also publishes DW-NOMINATE, the standard measure of where each member's voting record falls from liberal (-1) to conservative (+1). Seat charts order members by that score. A party-line vote is a roll call where a majority of Democrats and a majority of Republicans voted on opposite sides; party loyalty is the share of those votes cast with the member's party majority. Independents are counted with the party they caucus with.</p>
+  <h2>Votes</h2><p>Every recorded vote of the 119th Congress comes from the official roll call records of the House Clerk and the Secretary of the Senate: each member's vote, their party on the day and the vote date. Voteview at UCLA publishes DW-NOMINATE, the standard measure of where each member's voting record falls from liberal (-1) to conservative (+1). Seat charts order members by that score. A party-line vote is a roll call where a majority of Democrats and a majority of Republicans voted on opposite sides; party loyalty is the share of those votes cast with the member's party majority. Independents are counted with the party they caucus with.</p>
   <h2>Money</h2><p>Fundraising totals come from the Federal Election Commission's candidate summary files for the 2022, 2024 and 2026 cycles. PAC donors are direct contributions from political committees to the member's campaign. Outside spending is independent expenditures reported for or against the member. Industries are assigned from each PAC's connected organization.</p>
   <h2>Connections</h2><p>"Votes most like" is the share of roll calls where two members of the same chamber cast the same yea or nay, over at least 50 shared votes. "Shares the most donors" compares the PACs funding each member, weighted by dollars.</p>
-  <h2>Elections</h2><p>Results through 2024 come from the MIT Election Data and Science Lab. 2026 results come from the VoteDash election-night count, archived at <a href="/2026/">votedash.net/2026</a>.</p>
-  <h2>Bills, speeches and lobbying</h2><p>Bills, cosponsors and policy areas come from the Congress.gov API. Floor speeches come from the Congressional Record on GovInfo. Lobbying comes from Lobbying Disclosure Act filings on LDA.gov.</p>
+  <h2>Elections</h2><p>Results through 2024 come from the MIT Election Data and Science Lab. 2026 results come from the VoteDash election-night count, archived at <a href="/2026/">votedash.net/2026</a>. A candidate's share is their votes divided by all votes cast in the race, write-ins included.</p>
+  <h2>Bills, speeches and lobbying</h2><p>Bills, cosponsors, actions and policy areas come from the GovInfo bill status bulk data (BILLSTATUS), downloaded again every night. Floor speeches come from the Congressional Record on GovInfo. Lobbying comes from Lobbying Disclosure Act filings on LDA.gov.</p>
   <h2>Record</h2><p>Each item on a member's record links to the official document or news report it is drawn from: House and Senate ethics committees, court and Justice Department records, censure resolutions and major news organizations.</p></div>`;
   return layout({ title: 'How VoteDash works', desc: 'Where VoteDash gets its data (Congress.gov, the FEC, Voteview, the Congressional Record and election results) and how each number on the site is built.', path: '/about', body });
 }
@@ -1503,12 +1532,13 @@ function bibliography() {
       ['Problem Solvers Caucus', 'Caucus Members', 'https://problemsolverscaucus.house.gov/about/caucus-members.htm', 'Caucus roster'],
       ['Republican Main Street Caucus', 'Membership', 'https://mainstreetcaucus.house.gov/membership', 'Caucus roster'],
       ['Congressional Hispanic Conference', 'Members', 'https://hispanicconference-gonzales.house.gov/members', 'Caucus roster'],
-      ['Wikipedia', 'Freedom Caucus; Republican Study Committee; Congressional Hispanic Conference', 'https://en.wikipedia.org/wiki/Freedom_Caucus', 'Rosters for caucuses that publish none'],
+      ['Wikipedia', 'Freedom Caucus', 'https://en.wikipedia.org/wiki/Freedom_Caucus', 'House Freedom Caucus roster (the caucus publishes none)'],
+      ['Wikipedia', 'Republican Study Committee', 'https://en.wikipedia.org/wiki/Republican_Study_Committee', 'Republican Study Committee roster (unpublished by the caucus since January 2025)'],
     ]],
     ['Votes', [
-      ['Lewis, Poole, Rosenthal, Boche, Rudkin and Sonnet (UCLA)', 'Voteview: Congressional Roll-Call Votes Database', 'https://voteview.com/data', 'Every roll call of the 119th Congress, member votes and DW-NOMINATE scores'],
-      ['Office of the Clerk, U.S. House of Representatives', 'Roll Call Votes', 'https://clerk.house.gov/Votes', 'Same-day House roll calls'],
-      ['U.S. Senate', 'Roll Call Votes, 119th Congress', 'https://www.senate.gov/legislative/votes_new.htm', 'Same-day Senate roll calls'],
+      ['Lewis, Poole, Rosenthal, Boche, Rudkin and Sonnet (UCLA)', 'Voteview: Congressional Roll-Call Votes Database', 'https://voteview.com/data', 'DW-NOMINATE scores and the list of 119th Congress roll calls'],
+      ['Office of the Clerk, U.S. House of Representatives', 'Roll Call Votes', 'https://clerk.house.gov/Votes', 'Every House roll call: how each member voted, their party and the vote date'],
+      ['U.S. Senate', 'Roll Call Votes, 119th Congress', 'https://www.senate.gov/legislative/votes_new.htm', 'Every Senate roll call: how each senator voted, their party, the vote date and the nomination number'],
     ]],
     ['Bills, schedule and speeches', [
       ['U.S. Government Publishing Office', 'GovInfo Bulk Data: Bill Status (BILLSTATUS)', 'https://www.govinfo.gov/bulkdata/BILLSTATUS', 'Bills, sponsors, cosponsors, actions and policy areas'],
@@ -1639,7 +1669,7 @@ function postMortem(tab = '') {
   const outRows = list => `<div class="pm-mini pm-out">${list.map(c => `<div><span>${c.link || esc(c.name)}</span>${outBar(c)}<b>${c.reElected} won <small>${c.lostGeneral + c.lostPrimary} lost</small></b></div>`).join('')}</div>`;
   const full = (label, n, html) => `<details class="pm-more"><summary><b>${label}</b>${n != null ? ` <span class="cnt">${n}</span>` : ''}</summary>${html}</details>`;
   const dH = hA.D - hB.D, dS = sA.D - sB.D;
-  const lede = `Democrats gained ${dH} House seats and ${dS} Senate seats on November 3, 2026. ${X.counts.defeated} members lost the general election, ${X.counts.primaryLosers} lost renomination, and ${X.counts.newcomers} members-elect take office January 3, 2027.`;
+  const lede = `Democrats gained ${dH} House seats and ${dS} Senate seats on November 3, 2026. ${X.counts.defeated} members lost the general election, ${X.counts.primaryLosers} lost renomination, and ${membersElect().length} members-elect join the 120th Congress.`;
 
   add('results', 'Results', `<h2>The new Congress</h2>
   <div class="two"><div><h3>House</h3><p class="sub">119th Congress</p>${seatBar(hB, 435)}<p class="sub">120th Congress</p>${seatBar(hA, 435)}</div>

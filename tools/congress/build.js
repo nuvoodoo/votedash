@@ -95,11 +95,13 @@ const sameName = (a, b) => lastOf(a) === lastOf(b) || words(a).includes(lastOf(b
 for (const r of fedRaces) {
   const chamber = r.cat === 'senate' ? 'S' : 'H';
   const dist = chamber === 'H' ? (r.district && /-(\d+)$/.test(r.district) ? +r.district.split('-')[1] : 0) : null;
-  const incumbents = members.filter(m => m.chamber === chamber && m.state === r.state && (chamber === 'S' ? m.termEnd.startsWith('2027') : m.district === dist));
+  // a special Senate election is for an appointee's seat, whose appointment runs only until that election
+  const special = chamber === 'S' && /\bSpecial\b/.test(r.name);
+  const incumbents = members.filter(m => m.chamber === chamber && m.state === r.state && (chamber === 'S' ? (special ? m.termEnd < '2027-01-03' : m.termEnd.startsWith('2027')) : m.district === dist));
   const w = r.called ? r.winner : null;
   for (const inc of incumbents) {
     const kept = w && samePerson(w.n, inc.name);
-    inc.race2026 = { id: r.id, won: !!kept, decided: !!w, pct: (r.cands.find(c => samePerson(c.n, inc.name)) || {}).pc ?? null, ran: r.cands.some(c => samePerson(c.n, inc.name)) };
+    inc.race2026 = { id: r.id, won: !!kept, decided: !!w, pct: (r.cands.find(c => samePerson(c.n, inc.name)) || {}).pc ?? null, ran: r.cands.some(c => samePerson(c.n, inc.name)), ...(special ? { special: true } : {}) };
     if (w && !kept) inc.status = 'leaving';
   }
   if (!w) continue;
@@ -109,7 +111,7 @@ for (const r of fedRaces) {
   if (redrawn) { redrawn.newDistrict = dist; redrawn.redrawnRace = { id: r.id, pct: w.pc }; continue; }
   // a sitting member moving chambers keeps one file
   const mover = members.find(m => m.state === r.state && m.chamber !== chamber && samePerson(w.n, m.name));
-  const rec = { chamber, state: r.state, district: dist, party: w.p, partyName: w.pf, name: w.n, raceId: r.id, pct: w.pc, votes: w.v };
+  const rec = { chamber, state: r.state, district: dist, party: w.p, partyName: w.pf, name: w.n, raceId: r.id, pct: w.pc, votes: w.v, ...(special ? { special: true } : {}) };
   if (mover) { mover.elect = rec; continue; }
   elect.push(rec);
 }
@@ -210,6 +212,8 @@ const rolls = csv('HS119_rollcalls.csv');
 const legAll = new Map([...J('legislators-historical.json'), ...leg].map(m => [m.id.bioguide, m]));
 const lisTo = new Map([...legAll.values()].filter(m => m.id.lis).map(m => [m.id.lis, m.id.bioguide]));
 const OFFICIAL_WORD = { yea: 'Y', aye: 'Y', nay: 'N', no: 'N', present: 'P', 'not voting': 'X' };
+// vote words that are a yes/no answer; anything else (a candidate's name) is a choice between candidates
+const CHOICE_WORDS = new Set([...Object.keys(OFFICIAL_WORD), 'guilty', 'not guilty']);
 const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
 const isoOf = s => { let m = s.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})/); if (m) return `${m[3]}-${String(MON[m[2].toLowerCase()]).padStart(2, '0')}-${m[1].padStart(2, '0')}`; m = s.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/); return m && MON[m[1].slice(0, 3).toLowerCase()] ? `${m[3]}-${String(MON[m[1].slice(0, 3).toLowerCase()]).padStart(2, '0')}-${m[2].padStart(2, '0')}` : null; };
 const xtag = (s, n) => { const m = s.match(new RegExp(`<${n}>([\\s\\S]*?)</${n}>`)); return m ? m[1].trim() : ''; };
@@ -226,7 +230,9 @@ function readOfficial(ch, session, clerk) {
     return { date: isoOf(xtag(x, 'action-date')), votes };
   }
   for (const b of x.split('<member>').slice(1)) { const id = lisTo.get(xtag(b, 'lis_member_id')); if (id) votes.push({ id, party: xtag(b, 'party') || null, v: xtag(b, 'vote_cast') }); }
-  return { date: isoOf(xtag(x, 'vote_date')), votes };
+  // the measure as the Senate numbers it: a nomination keeps its part number (PN11-13, not PN1113)
+  const doc = x.match(/<document>[\s\S]*?<\/document>/), dt = doc && xtag(doc[0], 'document_type'), dn = doc && xtag(doc[0], 'document_number');
+  return { date: isoOf(xtag(x, 'vote_date')), votes, nomination: dt === 'PN' && dn ? `PN${dn}` : null };
 }
 const official = {};
 for (const r of rolls) { const o = readOfficial(r.chamber[0], +r.session, +r.clerk_rollnumber); if (o) official[r.chamber[0] + r.rollnumber] = o; }
@@ -276,9 +282,16 @@ const rollcalls = rolls.map(r => {
     // vote text outside yea/nay/present/not voting (candidate names for Speaker, guilty) keeps Voteview's reading
     for (const v of o.votes) { codes[pos[ch][v.id]] = OFFICIAL_WORD[v.v.toLowerCase()] || vv[v.id] || 'X'; if (v.party && o.date) (partySeen[v.id] ||= []).push([o.date, v.party]); }
   } else for (const [id, c] of Object.entries(vv)) codes[pos[ch][id]] = c;
+  // a vote between named candidates (Election of the Speaker) keeps each member's candidate
+  let choice = null;
+  if (o && o.votes.some(v => !CHOICE_WORDS.has(v.v.toLowerCase()))) {
+    const picks = {}, tally = new Map();
+    for (const v of o.votes) if (!OFFICIAL_WORD[v.v.toLowerCase()]) { picks[v.id] = v.v; tally.set(v.v, (tally.get(v.v) || 0) + 1); }
+    choice = { picks, totals: [...tally].sort((a, b) => b[1] - a[1]) };
+  }
   const date = (o && o.date) || r.date;
   const yea = o ? codes.filter(c => c === 'Y').length : +r.yea_count, nay = o ? codes.filter(c => c === 'N').length : +r.nay_count;
-  return { k, chamber: ch, roll: +r.rollnumber, clerk: +r.clerk_rollnumber, session: +r.session, date, bill: r.bill_number || null, result: r.vote_result, question: r.vote_question, desc: r.vote_desc || r.dtl_desc || '', req: r.majority_requirement, yea, nay, codes, ...(o ? {} : { source: 'voteview' }) };
+  return { k, chamber: ch, roll: +r.rollnumber, clerk: +r.clerk_rollnumber, session: +r.session, date, bill: (o && o.nomination) || r.bill_number || null, result: r.vote_result, question: r.vote_question, desc: r.vote_desc || r.dtl_desc || '', req: r.majority_requirement, yea, nay, codes, ...(choice ? { choice } : {}), ...(o ? {} : { source: 'voteview' }) };
 });
 for (const [id, seen] of Object.entries(partySeen)) {
   const hist = []; for (const [d, p] of seen.sort((a, b) => a[0].localeCompare(b[0]))) if (!hist.length || hist[hist.length - 1][1] !== p) hist.push([d, p]);

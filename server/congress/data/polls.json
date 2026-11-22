@@ -12,6 +12,7 @@
   },
   "pew": {
     "pollster": "Pew Research Center",
+    "label": "How Americans view Trump, key administration officials and Democratic congressional leaders",
     "dates": "Nov. 9-15, 2026",
     "n": 10247,
     "pop": "U.S. adults",
@@ -36,7 +37,9 @@
       { "dates": "Jun. 27-Jul. 4, 2022", "fav": 28, "unfav": 43, "unheard": 26 }
     ]
   },
-  "demPlans": { "label": "Democratic congressional leaders' policies and plans for the future", "approve": 55, "disapprove": 41 },
+  "demPlans": { "label": "Democratic congressional leaders' policies and plans for the future", "approve": 55, "disapprove": 41,
+    "pollster": "Pew Research Center", "dates": "Nov. 9-15, 2026", "n": 10247, "pop": "U.S. adults", "moe": 1.4,
+    "url": "https://www.pewresearch.org/politics/2026/11/19/in-wake-of-democrats-midterm-victory-majority-of-americans-approve-of-the-partys-policies-and-plans/" },
   "issues": {
     "question": "Who do you think will have the better approach to each of the following issues?",
     "options": ["Donald Trump", "Democrats in Congress", "Not much difference"],

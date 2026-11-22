@@ -133,7 +133,7 @@ async function freshVotes() {
       const x = await get(url);
       if (!x || x.length < 300) break;
       const codes = Array(D.order[ch].length).fill('0'); const pos = D.rcPos[ch];
-      let date, question, result, bill, desc, req = '1/2';
+      let date, question, result, bill, desc, nomination = null, req = '1/2';
       if (ch === 'H') {
         for (const b of x.split('<recorded-vote>').slice(1)) { const id = (b.match(/name-id="([A-Z]\d{6})"/) || [])[1]; const i = id && pos.get(id); if (i != null) codes[i] = WORD[tag(b, 'vote').toLowerCase()] || '0'; }
         date = isoDate(tag(x, 'action-date'));
@@ -143,10 +143,12 @@ async function freshVotes() {
         for (const b of x.split('<member>').slice(1)) { const id = lis.get(tag(b, 'lis_member_id')); const i = id && pos.get(id); if (i != null) codes[i] = WORD[tag(b, 'vote_cast').toLowerCase()] || '0'; }
         date = isoDate(tag(x, 'vote_date'));
         question = tag(x, 'question'); result = tag(x, 'vote_result'); bill = billKey(tag(x, 'document_name')); desc = tag(x, 'vote_document_text') || tag(x, 'vote_title'); req = tag(x, 'majority_requirement') || '1/2';
+        // a nomination keeps the Senate's part number (PN11-13)
+        if (tag(x, 'document_type') === 'PN' && tag(x, 'document_number')) nomination = 'PN' + tag(x, 'document_number');
       }
       const yea = codes.filter(c => c === 'Y').length, nay = codes.filter(c => c === 'N').length;
       if (!date) break;
-      add.push(finish({ k: ch + (built.roll + (n - built.clerk)), chamber: ch, roll: built.roll + (n - built.clerk), clerk: n, session: built.session, date, bill: bill ? bill.toUpperCase() : null, billKey: bill, result, question, desc, req, yea, nay, codes, fresh: true, source: url }));
+      add.push(finish({ k: ch + (built.roll + (n - built.clerk)), chamber: ch, roll: built.roll + (n - built.clerk), clerk: n, session: built.session, date, bill: bill ? bill.toUpperCase() : nomination, billKey: bill, result, question, desc, req, yea, nay, codes, fresh: true, source: url }));
     }
   }
   if (add.length) merge(add);
