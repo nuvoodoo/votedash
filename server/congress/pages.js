@@ -114,9 +114,9 @@ function rollRow(rc) {
   return `<li><a href="/vote/${rc.k}">
     <span class="rr-meta"><span class="vk vk-${rcKind(rc)}">${KIND_LABEL[rcKind(rc)]}</span> ${rc.chamber === 'H' ? 'House' : 'Senate'} roll call ${rc.clerk}, ${date(rc.date)}</span>
     <b>${esc(rcTitle(rc))}</b>
-    <span class="rr-q">${esc(rc.question)}${rcBillKey(rc) ? ', ' + billLabel(rcBillKey(rc)) : ''}. <em class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</em> ${esc(tallyText(rc))}</span>
+    <span class="rr-q">${esc(rc.question)}${rcBillKey(rc) ? ', ' + billLabel(rcBillKey(rc)) : ''}. ${rc.quorum ? `${rc.codes.split('').filter(c => c === 'P').length} present, ${rc.codes.split('').filter(c => c === 'X').length} not voting` : `<em class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</em> ${esc(tallyText(rc))}`}</span>
     <span class="bar" aria-hidden="true"><i class="vY" style="width:${(rc.yea / tot * 100).toFixed(1)}%"></i><i class="vN" style="width:${(rc.nay / tot * 100).toFixed(1)}%"></i></span>
-    <span class="rr-p">D ${t.D.Y}-${t.D.N}, R ${t.R.Y}-${t.R.N}</span>
+    ${t ? `<span class="rr-p">D ${t.D.Y}-${t.D.N}, R ${t.R.Y}-${t.R.N}</span>` : ''}
   </a></li>`;
 }
 
@@ -629,8 +629,10 @@ function incoming() {
 // ---------------- votes ----------------
 function votes(q) {
   const ch = q.get('chamber'); const page = +q.get('page') || 1;
-  let list = D.allRolls; if (ch === 'H' || ch === 'S') list = list.filter(r => r.chamber === ch);
-  if (q.get('partyline') === '0') list = list.filter(r => !r.partyLine);
+  // every roll call, the House quorum calls included, newest first
+  let list = [...D.allRolls, ...(D.quorums || [])].sort((a, b) => b.date.localeCompare(a.date) || (b.clerk || 0) - (a.clerk || 0));
+  if (ch === 'H' || ch === 'S') list = list.filter(r => r.chamber === ch);
+  if (q.get('partyline') === '0') list = list.filter(r => !r.partyLine && !r.quorum);
   const kind = q.get('kind'); if (KINDS.some(([k]) => k === kind)) list = list.filter(r => rcKind(r) === kind);
   const per = 40, pages = Math.ceil(list.length / per);
   const qs = (k, v) => { const u = new URLSearchParams(q); if (v == null) u.delete(k); else u.set(k, v); u.delete('page'); const s = u.toString(); return '/votes' + (s ? '?' + s : ''); };
@@ -1513,7 +1515,7 @@ function about() {
   const body = `<div class="wrap narrow prose"><h1>How VoteDash works</h1>
   <p>VoteDash collects public records on every member of the U.S. House and Senate and the members-elect of the 120th Congress, and puts them on one page per person.</p>
   <h2>Votes</h2><p>Every recorded vote of the 119th Congress comes from the official roll call records of the House Clerk and the Secretary of the Senate: each member's vote, their party on the day and the vote date. Voteview at UCLA publishes DW-NOMINATE, the standard measure of where each member's voting record falls from liberal (-1) to conservative (+1). Seat charts order members by that score. A party-line vote is a roll call where a majority of Democrats and a majority of Republicans voted on opposite sides; party loyalty is the share of those votes cast with the member's party majority. Independents are counted with the party they caucus with.</p>
-  <h2>Money</h2><p>Fundraising totals come from the Federal Election Commission's candidate summary files for the 2022, 2024 and 2026 cycles. PAC donors are direct contributions from political committees to the member's campaign. Outside spending is independent expenditures reported for or against the member. Industries are assigned from each PAC's connected organization.</p>
+  <h2>Money</h2><p>Fundraising totals come from the Federal Election Commission's candidate summary files for the 2022, 2024 and 2026 cycles. Raised is the total receipts of the member's campaign committees in the cycle; each committee counts once, and money a member moves between their own committees (a House campaign paying into a Senate one) counts once. PAC donors are direct contributions from political committees to the member's campaign. Outside spending is independent expenditures reported for or against the member. Industries are assigned from each PAC's connected organization.</p>
   <h2>Connections</h2><p>"Votes most like" is the share of roll calls where two members of the same chamber cast the same yea or nay, over at least 50 shared votes. "Shares the most donors" compares the PACs funding each member, weighted by dollars.</p>
   <h2>Elections</h2><p>Results through 2024 come from the MIT Election Data and Science Lab. 2026 results come from the VoteDash election-night count, archived at <a href="/2026/">votedash.net/2026</a>. A candidate's share is their votes divided by all votes cast in the race, write-ins included.</p>
   <h2>Bills, speeches and lobbying</h2><p>Bills, cosponsors, actions and policy areas come from the GovInfo bill status bulk data (BILLSTATUS), downloaded again every night. Floor speeches come from the Congressional Record on GovInfo. Lobbying comes from Lobbying Disclosure Act filings on LDA.gov.</p>

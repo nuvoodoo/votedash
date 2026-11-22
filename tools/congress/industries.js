@@ -13,6 +13,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '../..');
+// the raw FEC files: the nightly rebuild's download folder (CONGRESS_RAW), else the repo's data/raw
+const RAW = process.env.CONGRESS_RAW || path.join(ROOT, 'data/raw');
 const DATA = process.env.CONGRESS_OUT || path.join(ROOT, 'server/congress/data');
 const funders = JSON.parse(fs.readFileSync(path.join(DATA, 'funders.json'), 'utf8'));
 const people = JSON.parse(fs.readFileSync(path.join(DATA, 'people.json'), 'utf8'));
@@ -192,10 +194,12 @@ for (const [id, v] of Object.entries(overrides)) if (v[0] !== null && !INDUSTRY.
 // FEC committee type and designation (latest cycle wins), from the same bulk files build.js reads
 const FEC = {};
 for (const f of ['y22/cm.txt', 'y24/cm.txt', 'cm.txt']) {
-  const p = path.join(ROOT, 'data/raw', f);
+  const p = path.join(RAW, f);
   if (!fs.existsSync(p)) continue;
   for (const line of fs.readFileSync(p, 'utf8').split('\n')) { const x = line.split('|'); if (x[0]) FEC[x[0]] = { dsgn: x[8], tp: x[9] }; }
 }
+// without the committee files every candidate committee and joint fundraising committee goes uncoded
+if (!Object.keys(FEC).length) throw new Error(`no FEC committee files (cm.txt) in ${RAW}`);
 
 const PARTY = {}; for (const p of people) PARTY[p.id] = p.party;
 const isNone = s => !s || /^(NONE|N\/?A|NA|NOT APPLICABLE|SAME|-|\.)$/i.test(s.trim());
@@ -272,6 +276,6 @@ console.log('industries.json', (fs.statSync(file).size / 1e6).toFixed(2) + 'MB')
 if (process.env.DUMP) {   // unplaced committees, largest first, for review
   const rest = Object.values(funders).filter(c => !committees[c.id] && (c.total || 0) + (c.ie || 0) >= +process.env.DUMP)
     .sort((a, b) => (b.total + b.ie) - (a.total + a.ie));
-  fs.writeFileSync(path.join(ROOT, 'data/raw/industries-unplaced.tsv'), rest.map(c => [c.id, c.total + c.ie, c.kind, c.name, isNone(c.org) ? '' : c.org].join('\t')).join('\n'));
+  fs.writeFileSync(path.join(RAW, 'industries-unplaced.tsv'), rest.map(c => [c.id, c.total + c.ie, c.kind, c.name, isNone(c.org) ? '' : c.org].join('\t')).join('\n'));
   console.log('unplaced written', rest.length);
 }

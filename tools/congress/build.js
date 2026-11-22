@@ -157,12 +157,33 @@ const ieYear = {}; // person -> committee -> year -> [for, against]
 const pacHist = {}; // 'person|committee' -> [[date, amount, cycle]] // owner -> {cycles:{}, pacs:{cmte:amt}, ieFor:{}, ieAgainst:{}}
 const M$ = id => (money[id] ||= { cycles: {}, pacs: {}, ieFor: {}, ieAgainst: {} });
 for (const cy of cycles) {
-  for (const w of pipe(cy.web, WEB)) {
-    const owner = candOwner[w.CAND_ID]; if (!owner) continue;
+  // A member can have more than one FEC candidate record in a cycle (a House and a Senate run). Each record reports
+  // its principal committee's totals, so one committee is counted once (its latest report), and money moved between
+  // the member's own committees (a House committee paying into the Senate one) is counted once, not as new receipts
+  // and spending on both sides.
+  const pccOf = {};
+  for (const c of pipe(cy.dir + 'cm.txt', CM)) if (c.DSGN === 'P' && c.CAND_ID) pccOf[c.CAND_ID] = c.CMTE_ID;
+  for (const c of cn) if (c.PCC && !pccOf[c.CAND_ID]) pccOf[c.CAND_ID] = c.PCC;
+  const isoOfCvg = w => { if (!w.CVG_END) return ''; const [mo, d, y] = w.CVG_END.split('/'); return `${y}-${mo}-${d}`; };
+  const rowsOf = {};
+  for (const w of pipe(cy.web, WEB)) { const owner = candOwner[w.CAND_ID]; if (owner) (rowsOf[owner] ||= []).push(w); }
+  for (const [owner, rows] of Object.entries(rowsOf)) {
+    const byCmte = new Map();
+    for (const w of rows) {
+      const k = pccOf[w.CAND_ID] || `${w.TTL_RECEIPTS}|${w.COH_COP}|${w.CVG_END}`; const prev = byCmte.get(k);
+      if (!prev || isoOfCvg(w) > isoOfCvg(prev) || (isoOfCvg(w) === isoOfCvg(prev) && +w.TTL_RECEIPTS > +prev.TTL_RECEIPTS)) byCmte.set(k, w);
+    }
+    const list = [...byCmte.values()];
+    let internal = 0;
+    for (const a of list) for (const b of list) if (a !== b) internal += Math.min(+a.TRANS_TO_AUTH, +b.TRANS_FROM_AUTH);
     const c = (M$(owner).cycles[cy.y] ||= { receipts: 0, indiv: 0, pac: 0, party: 0, self: 0, spent: 0, cash: 0, debt: 0, through: null });
-    c.receipts += +w.TTL_RECEIPTS; c.indiv += +w.INDIV; c.pac += +w.OTHER_CMTE; c.party += +w.PARTY_CMTE;
-    c.self += +w.CAND_CONTRIB + +w.CAND_LOANS; c.spent += +w.TTL_DISB; c.cash += +w.COH_COP; c.debt += +w.DEBTS;
-    if (w.CVG_END) { const [mo, d, y] = w.CVG_END.split('/'); const iso = `${y}-${mo}-${d}`; if (!c.through || iso > c.through) c.through = iso; }
+    for (const w of list) {
+      c.receipts += +w.TTL_RECEIPTS; c.indiv += +w.INDIV; c.pac += +w.OTHER_CMTE; c.party += +w.PARTY_CMTE;
+      c.self += +w.CAND_CONTRIB + +w.CAND_LOANS; c.spent += +w.TTL_DISB; c.cash += +w.COH_COP; c.debt += +w.DEBTS;
+      const iso = isoOfCvg(w); if (iso && (!c.through || iso > c.through)) c.through = iso;
+    }
+    c.receipts -= internal; c.spent -= internal;
+    if (list.length > 1) c.committees = list.length;
   }
   const txt = fs.readFileSync(path.join(RAW, cy.dir + 'itpas2.txt'), 'latin1');
   let start = 0;
@@ -495,7 +516,7 @@ const quorums = quorumRecs.map(({ session, n, o }) => {
   const codes = Array(order.H.length).fill('0');
   for (const v of o.votes) codes[pos.H[v.id]] = OFFICIAL_WORD[v.v.toLowerCase()] || 'X';
   return { k: `HQ${session === 1 ? 2025 : 2026}-${n}`, chamber: 'H', roll: null, clerk: n, session, date: o.date, quorum: true, bill: null,
-    result: '', question: o.question || 'Quorum call', desc: '', req: '', yea: 0, nay: 0, codes };
+    result: '', question: o.question || 'Quorum call', desc: '', req: '', yea: 0, nay: 0, codes: codes.join('') };
 });
 fs.writeFileSync(path.join(OUT, 'rollcalls.json'), JSON.stringify({ order, rollcalls, quorums }));
 fs.writeFileSync(path.join(OUT, 'former.json'), JSON.stringify(Object.values(former)));

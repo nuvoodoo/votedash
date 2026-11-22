@@ -146,7 +146,12 @@ for (const r of raceRows) {
 }
 const raceMoney = new Map(raceRows.map(r => [r.id, { cand: new Map(), ieFor: new Map(), ieAgainst: new Map() }]));
 const add = (m, k, v) => m.set(k, (m.get(k) || 0) + v);
-for (const [id, { race, cand }] of fecToRace) add(raceMoney.get(race.id).cand, cand.n, receipts.get(id) || 0);
+// two candidate records of one candidate can report the same principal committee: count that committee once
+const pccOf = new Map(cn.map(c => [c[0], c[9]])), counted = new Set();
+for (const [id, { race, cand }] of fecToRace) {
+  const k = `${race.id}|${cand.n}|${pccOf.get(id) || id}`; if (counted.has(k)) continue; counted.add(k);
+  add(raceMoney.get(race.id).cand, cand.n, receipts.get(id) || 0);
+}
 const spend = new Map(); // cmte -> { contrib, ie, win, lose }
 const indTot = new Map(); // industry -> { win, lose }
 for (const c of lines('itpas2.txt')) {
