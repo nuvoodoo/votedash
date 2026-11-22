@@ -50,7 +50,7 @@ const count = (dir, f, fn) => { try { return fn(JSON.parse(fs.readFileSync(path.
 
   log('downloading');
   const gh = 'https://unitedstates.github.io/congress-legislators/';
-  for (const f of ['legislators-current', 'legislators-social-media', 'legislators-district-offices', 'committees-current', 'committee-membership-current']) await download(`${gh}${f}.json`, path.join(RAW, f + '.json'));
+  for (const f of ['legislators-current', 'legislators-historical', 'legislators-social-media', 'legislators-district-offices', 'committees-current', 'committee-membership-current']) await download(`${gh}${f}.json`, path.join(RAW, f + '.json'));
   for (const f of ['members', 'rollcalls', 'votes']) await download(`https://voteview.com/static/data/out/${f}/HS119_${f}.csv`, path.join(RAW, `HS119_${f}.csv`));
   const fec = 'https://www.fec.gov/files/bulk-downloads/';
   for (const [z, f] of [['weball26', 'weball26.txt'], ['cn26', 'cn.txt'], ['cm26', 'cm.txt'], ['pas226', 'itpas2.txt']]) { await download(`${fec}2026/${z}.zip`, path.join(RAW, 'zip', z + '.zip')); unzip(path.join(RAW, 'zip', z + '.zip'), RAW); }
@@ -69,6 +69,8 @@ const count = (dir, f, fn) => { try { return fn(JSON.parse(fs.readFileSync(path.
     unzip(zp, path.join(RAW, 'billstatus', t));
   }
   steps.push(['download', Math.round((Date.now() - t0) / 1000)]);
+
+  run('fetch-official-votes.js');
 
   log('building');
   run('build.js');

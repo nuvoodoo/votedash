@@ -3,7 +3,7 @@ const D = require('./data');
 const H = require('./html');
 const { esc, money, pct, date, age, ord, PARTY, seatLabel, title, short, href, portrait, chip, personLink, seatChart, partyFill, layout, SITE } = H;
 
-const VOTE_WORD = { Y: 'Yea', N: 'Nay', P: 'Present', 0: 'Not voting' };
+const VOTE_WORD = { Y: 'Yea', N: 'Nay', P: 'Present', X: 'Not voting' };
 const billLabel = k => { const m = /^([a-z]+)(\d+)$/.exec(k || ''); if (!m) return k; const t = { hr: 'H.R.', s: 'S.', hres: 'H.Res.', sres: 'S.Res.', hjres: 'H.J.Res.', sjres: 'S.J.Res.', hconres: 'H.Con.Res.', sconres: 'S.Con.Res.' }[m[1]] || m[1].toUpperCase(); return `${t} ${m[2]}`; };
 const rcBillKey = rc => D.bills && D.bills.rollcallBill[rc.k] || (rc.bill ? rc.bill.toLowerCase() : null);
 function rcTitle(rc) {
@@ -272,7 +272,7 @@ function overview(p, cy) {
 function votesSec(p) {
   if (!p.votes || p.status === 'elect') return '';
   const rolls = D.recentRolls[p.chamber];
-  const recent = []; for (const rc of rolls) { const c = codeFor(p, rc); if (c == null) continue; if (c === '0' && !wasIn(p, rc)) continue; recent.push([rc, c]); if (recent.length >= 12) break; }
+  const recent = []; for (const rc of rolls) { const c = codeFor(p, rc); if (c == null || c === '0') continue; recent.push([rc, c]); if (recent.length >= 12) break; }
   const breaks = p.votes.breaks.slice(0, 8).map(k => D.rcByK.get(k));
   return `<h2>Votes</h2>
   <p class="sub">${p.votes.cast} votes cast in the 119th Congress. Party-line votes are roll calls where most Democrats and most Republicans voted on opposite sides.</p>
@@ -281,8 +281,6 @@ function votesSec(p) {
   <p><a class="more" href="${href(p)}/votes">All ${p.votes.eligible} votes</a></p>`;
 }
 const times = n => n === 1 ? 'Once' : n === 2 ? 'Twice' : `${n} times`;
-// whether a member with no recorded vote should count as not voting; delegates vote only in the Committee of the Whole
-const wasIn = (p, rc) => !p.delegate && p.terms.some(t => (t.type === 'sen') === (rc.chamber === 'S') && t.start <= rc.date && t.end >= rc.date);
 function vrow(rc, c, flag) {
   return `<li class="${flag ? 'brk' : ''}"><span class="vc v${c}">${VOTE_WORD[c]}</span><a href="/vote/${rc.k}"><b>${esc(rcTitle(rc))}</b><small>${esc(rc.question)}, ${date(rc.date)}. ${esc(rc.result)} ${rc.yea}-${rc.nay}</small></a></li>`;
 }
@@ -501,12 +499,12 @@ function rail(p) {
 // full vote history
 function votesFull(p, page) {
   if (!p.votes) return '';
-  const rolls = D.recentRolls[p.chamber].filter(rc => codeFor(p, rc) != null && (codeFor(p, rc) !== '0' || wasIn(p, rc)));
+  const rolls = D.recentRolls[p.chamber].filter(rc => codeFor(p, rc) != null && codeFor(p, rc) !== '0');
   const per = 100, pages = Math.ceil(rolls.length / per); page = Math.min(Math.max(1, page), pages || 1);
   const list = rolls.slice((page - 1) * per, page * per);
-  const party = p.party === 'I' ? (p.caucus || 'D') : p.party;
+  const party = rc => { const pt = D.partyOn(p, rc.date); return pt === 'I' ? (p.caucus || 'D') : pt; };
   return `<h2>Votes</h2><p class="sub">${rolls.length} roll calls in the 119th Congress, newest first. Amber marks a vote against the majority of their party on a party-line roll call.</p>
-  <ul class="vlist">${list.map(rc => { const c = codeFor(p, rc); return vrow(rc, c, rc.partyLine && (c === 'Y' || c === 'N') && c !== rc.partyPos[party]); }).join('')}</ul>
+  <ul class="vlist">${list.map(rc => { const c = codeFor(p, rc); return vrow(rc, c, rc.partyLine && (c === 'Y' || c === 'N') && c !== rc.partyPos[party(rc)]); }).join('')}</ul>
   ${pager(`${href(p)}/votes`, page, pages)}`;
 }
 function pager(base, page, pages) {
@@ -622,23 +620,25 @@ function votes(q) {
 function vote(rc) {
   const ids = D.order[rc.chamber]; const map = Object.fromEntries(ids.map((id, i) => [id, rc.codes[i]]));
   const bk = rcBillKey(rc); const b = bk && D.bills && D.bills.bills[bk];
-  const groups = { Y: [], N: [], P: [], 0: [] };
-  for (const [id, c] of Object.entries(map)) { const p = D.byId.get(id); if (!p || (c === '0' && !wasIn(p, rc))) continue; groups[c].push(p); }
-  const byParty = pt => ['Y', 'N', 'P', '0'].map(c => groups[c].filter(p => p.party === pt).length);
-  const defectors = [...groups.Y, ...groups.N].filter(p => { const pt = p.party === 'I' ? (p.caucus || 'D') : p.party; return rc.partyLine && rc.partyPos[pt] && map[p.id] !== rc.partyPos[pt]; });
+  // only members on this roll call; party as of the vote date
+  const groups = { Y: [], N: [], P: [], X: [] };
+  for (const [id, c] of Object.entries(map)) { const p = D.who(id); if (!p || !groups[c]) continue; groups[c].push(p); }
+  const ptOf = p => D.partyOn(p, rc.date);
+  const byParty = pt => ['Y', 'N', 'P', 'X'].map(c => groups[c].filter(p => ptOf(p) === pt).length);
+  const defectors = [...groups.Y, ...groups.N].filter(p => { const pt = ptOf(p) === 'I' ? (p.caucus || 'D') : ptOf(p); return rc.partyLine && rc.partyPos[pt] && map[p.id] !== rc.partyPos[pt]; });
   const ch = rc.chamber === 'H' ? 'House' : 'Senate';
   const body = `<div class="wrap"><p class="crumb"><a href="/votes?chamber=${rc.chamber}">${ch} votes</a></p>
   <h1>${esc(rcTitle(rc))}</h1>
-  <p class="lede">${esc(rc.question)}${bk ? `, <a href="/bill/${bk}">${billLabel(bk)}</a>` : ''}. ${ch} roll call ${rc.clerk}, ${date(rc.date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. <span class="vk vk-${rcKind(rc)}">${KIND_LABEL[rcKind(rc)]} vote</span></p>
-  <p class="verdict"><b class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</b> <span>${rc.yea} yea, ${rc.nay} nay${groups.P.length ? `, ${groups.P.length} present` : ''}, ${groups[0].length} not voting. Required: ${esc(rc.req)}.</span></p>
+  <p class="lede">${esc(rc.question)}${b ? `, <a href="/bill/${bk}">${billLabel(bk)}</a>` : rc.bill ? `, ${esc(rc.bill)}` : ''}. ${ch} roll call ${rc.clerk}, ${date(rc.date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}. <span class="vk vk-${rcKind(rc)}">${KIND_LABEL[rcKind(rc)]} vote</span></p>
+  <p class="verdict"><b class="res ${/pass|agreed|confirmed|adopted/i.test(rc.result) ? 'ok' : 'no'}">${esc(rc.result)}</b> <span>${rc.yea} yea, ${rc.nay} nay${groups.P.length ? `, ${groups.P.length} present` : ''}, ${groups.X.length} not voting. Required: ${esc(rc.req)}.</span></p>
   ${qHelp(rc.question) ? `<p class="qhelp">${esc(qHelp(rc.question))}</p>` : ''}
-  <div class="cols"><div class="col-main"><figure class="vote-seats">${seatChart(rc.chamber, p => 'v' + (map[p.id] || '0'), { label: `${ch} seats colored by vote` })}<figcaption class="ch-key"><span><i class="vY"></i>Yea</span><span><i class="vN"></i>Nay</span><span><i class="vP"></i>Present</span><span><i class="v0"></i>Not voting</span></figcaption></figure></div>
+  <div class="cols"><div class="col-main"><figure class="vote-seats">${seatChart(rc.chamber, p => 'v' + (map[p.id] === 'X' ? '0' : map[p.id] || '0'), { label: `${ch} seats colored by vote` })}<figcaption class="ch-key"><span><i class="vY"></i>Yea</span><span><i class="vN"></i>Nay</span><span><i class="vP"></i>Present</span><span><i class="v0"></i>Not voting</span></figcaption></figure></div>
   <aside class="col-side"><div class="tbl"><table><thead><tr><th>Party</th><th class="n">Yea</th><th class="n">Nay</th><th class="n"><abbr title="Present">Pres.</abbr></th><th class="n"><abbr title="Not voting">NV</abbr></th></tr></thead><tbody>
   ${['D', 'R', 'I'].filter(pt => byParty(pt).some(Boolean)).map(pt => `<tr><td>${chip({ party: pt })} ${PARTY[pt]}s</td>${byParty(pt).map(n => `<td class="n">${n}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
   ${b ? `<h2>The bill</h2><p>${esc(b.title)}</p><p class="sub">${b.policyArea ? `<a href="/issue/${slugIssue(b.policyArea)}">${esc(b.policyArea)}</a>. ` : ''}${b.latest ? `Latest action ${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</p><p><a href="${esc(b.url)}" rel="noopener">${billLabel(bk)} on Congress.gov</a></p>` : ''}</aside></div>
   ${b ? voteInProcess(rc, bk, b) : ''}
   ${defectors.length ? `<h2>Voted against their party <span class="cnt">${defectors.length}</span></h2><ul class="cards">${defectors.map(p => `<li>${personLink(p, ', ' + VOTE_WORD[map[p.id]].toLowerCase())}</li>`).join('')}</ul>` : ''}
-  <h2>How every member voted</h2><div class="vgroups">${['Y', 'N', 'P', '0'].filter(c => groups[c].length).map(c => `<details${c === 'Y' || c === 'N' ? '' : ''}><summary>${VOTE_WORD[c]} <span class="cnt">${groups[c].length}</span></summary><ul class="names">${groups[c].sort((a, b) => a.state.localeCompare(b.state) || a.last.localeCompare(b.last)).map(p => `<li><a href="${href(p)}">${esc(p.name)}</a> <small>${short(p)}</small></li>`).join('')}</ul></details>`).join('')}</div></div>`;
+  <h2>How every member voted</h2><div class="vgroups">${['Y', 'N', 'P', 'X'].filter(c => groups[c].length).map(c => `<details${c === 'Y' || c === 'N' ? '' : ''}><summary>${VOTE_WORD[c]} <span class="cnt">${groups[c].length}</span></summary><ul class="names">${groups[c].sort((a, b) => a.state.localeCompare(b.state) || a.last.localeCompare(b.last)).map(p => `<li>${p.former ? esc(p.name) : `<a href="${href(p)}">${esc(p.name)}</a>`} <small>${esc(ptOf(p))}-${short(p).split('-').slice(1).join('-')}${p.former ? ', former member' : ''}</small></li>`).join('')}</ul></details>`).join('')}</div></div>`;
   return layout({ title: `${rcTitle(rc)}: ${ch} vote ${rc.roll}`, desc: `${ch} roll call ${rc.roll} on ${date(rc.date)}: ${rc.question}, ${rc.result} ${rc.yea}-${rc.nay}. How every member voted.`, path: `/vote/${rc.k}`, body, active: '/votes' });
 }
 // ---------------- bill tracker ----------------
@@ -683,7 +683,7 @@ function track(k, b) {
 }
 function bill(k) {
   const b = D.bills && D.bills.bills[k]; if (!b) return null;
-  const sp = D.byId.get(b.sponsor);
+  const sp = D.who(b.sponsor);
   const rcs = D.allRolls.filter(r => rcBillKey(r) === k);
   const acts = (b.actions || []).slice().reverse();
   const cms = (b.committees || []);
@@ -1068,7 +1068,7 @@ function trackerStage(stage, q) {
     <label for="fp">Sponsor</label><select id="fp" name="party"><option value="">Any party</option><option value="D"${R.party === 'D' ? ' selected' : ''}>Democrat</option><option value="R"${R.party === 'R' ? ' selected' : ''}>Republican</option><option value="I"${R.party === 'I' ? ' selected' : ''}>Independent</option></select>
     <label for="fs">Sort</label><select id="fs" name="sort"><option value="recent"${R.sort === 'recent' ? ' selected' : ''}>Latest step first</option><option value="cosponsors"${R.sort === 'cosponsors' ? ' selected' : ''}>Most cosponsors</option><option value="oldest"${R.sort === 'oldest' ? ' selected' : ''}>Oldest first</option></select>
     <button type="submit">Find bills</button></form>
-  <ul class="blist finder-list">${list.slice((page - 1) * per, page * per).map(([k, b]) => { const sp = D.byId.get(b.sponsor); return `<li><a href="/bill/${k}"><span class="bl">${BV.label(k)}${b.policyArea ? ` &nbsp;${esc(b.policyArea)}` : ''}</span><b>${esc(b.short || b.title)}</b><small>${sp ? `${esc(title(sp) + ' ' + sp.name)} (${short(sp)}). ` : ''}${b.cosponsors ? `${b.cosponsors} cosponsors. ` : ''}${stageOf(k, b) === 'vetoed' && b.stageDate ? `Vetoed ${date(b.stageDate)}. ` : ''}${b.latest ? `Latest action ${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</small>${track(k, b)}</a></li>`; }).join('')}</ul>
+  <ul class="blist finder-list">${list.slice((page - 1) * per, page * per).map(([k, b]) => { const sp = D.who(b.sponsor); return `<li><a href="/bill/${k}"><span class="bl">${BV.label(k)}${b.policyArea ? ` &nbsp;${esc(b.policyArea)}` : ''}</span><b>${esc(b.short || b.title)}</b><small>${sp ? `${esc(title(sp) + ' ' + sp.name)} (${short(sp)}). ` : ''}${b.cosponsors ? `${b.cosponsors} cosponsors. ` : ''}${stageOf(k, b) === 'vetoed' && b.stageDate ? `Vetoed ${date(b.stageDate)}. ` : ''}${b.latest ? `Latest action ${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</small>${track(k, b)}</a></li>`; }).join('')}</ul>
   ${pager(qs('page', null), page, pages)}</div>`;
   return layout({ title: `${st.name}: bill tracker`, desc: `${list.length} bills ${st.name.toLowerCase()} in the 119th Congress.`, path: `/tracker/${stage}`, body, active: '/tracker', noindex: !!(R.text || R.area || R.party) });
 }

@@ -203,17 +203,34 @@ for (const r of vvMembers) {
   if (r.chamber[0] === m.chamber) { m.nominate = r.nominate_dim1 === '' ? null : +r.nominate_dim1; m.nominate2 = r.nominate_dim2 === '' ? null : +r.nominate_dim2; }
 }
 const rolls = csv('HS119_rollcalls.csv');
-const order = { H: members.filter(m => m.chamber === 'H').map(m => m.id), S: members.filter(m => m.chamber === 'S').map(m => m.id) };
-const pos = { H: Object.fromEntries(order.H.map((id, i) => [id, i])), S: Object.fromEntries(order.S.map((id, i) => [id, i])) };
-const rcIndex = {};
-const rollcalls = rolls.map(r => {
-  const ch = r.chamber[0];
-  const k = `${ch}${r.rollnumber}`;
-  const codes = Array(order[ch].length).fill('0');
-  rcIndex[k] = { r: null, codes };
-  return { k, chamber: ch, roll: +r.rollnumber, clerk: +r.clerk_rollnumber, session: +r.session, date: r.date, bill: r.bill_number || null, result: r.vote_result, question: r.vote_question, desc: r.vote_desc || r.dtl_desc || '', req: r.majority_requirement, yea: +r.yea_count, nay: +r.nay_count, codes };
-});
-const rcByK = Object.fromEntries(rollcalls.map(r => [r.k, r]));
+// Vote codes, one character per member in order[chamber]: Y yea, N nay, P present, X not voting,
+// 0 not on this roll call (not yet or no longer a member, or the Speaker not voting).
+// Each member's vote, party and the vote date come from the official House Clerk and Senate
+// records (fetch-official-votes.js); Voteview fills in where no official record was fetched.
+const legAll = new Map([...J('legislators-historical.json'), ...leg].map(m => [m.id.bioguide, m]));
+const lisTo = new Map([...legAll.values()].filter(m => m.id.lis).map(m => [m.id.lis, m.id.bioguide]));
+const OFFICIAL_WORD = { yea: 'Y', aye: 'Y', nay: 'N', no: 'N', present: 'P', 'not voting': 'X' };
+const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+const isoOf = s => { let m = s.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})/); if (m) return `${m[3]}-${String(MON[m[2].toLowerCase()]).padStart(2, '0')}-${m[1].padStart(2, '0')}`; m = s.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/); return m && MON[m[1].slice(0, 3).toLowerCase()] ? `${m[3]}-${String(MON[m[1].slice(0, 3).toLowerCase()]).padStart(2, '0')}-${m[2].padStart(2, '0')}` : null; };
+const xtag = (s, n) => { const m = s.match(new RegExp(`<${n}>([\\s\\S]*?)</${n}>`)); return m ? m[1].trim() : ''; };
+function readOfficial(ch, session, clerk) {
+  const f = path.join(RAW, 'official', `${ch}${session}-${clerk}.xml.gz`); if (!fs.existsSync(f)) return null;
+  const x = require('zlib').gunzipSync(fs.readFileSync(f)).toString('utf8');
+  const votes = [];
+  if (ch === 'H') {
+    for (const b of x.split('<recorded-vote>').slice(1)) {
+      const leg = (b.match(/<legislator\b[^>]*>/) || [''])[0];
+      const id = (leg.match(/name-id="([A-Z]\d{6})"/) || [])[1]; if (!id) continue;
+      votes.push({ id, party: (leg.match(/party="([A-Z])"/) || [])[1] || null, v: xtag(b, 'vote') });
+    }
+    return { date: isoOf(xtag(x, 'action-date')), votes };
+  }
+  for (const b of x.split('<member>').slice(1)) { const id = lisTo.get(xtag(b, 'lis_member_id')); if (id) votes.push({ id, party: xtag(b, 'party') || null, v: xtag(b, 'vote_cast') }); }
+  return { date: isoOf(xtag(x, 'vote_date')), votes };
+}
+const official = {};
+for (const r of rolls) { const o = readOfficial(r.chamber[0], +r.session, +r.clerk_rollnumber); if (o) official[r.chamber[0] + r.rollnumber] = o; }
+const vvCodes = {}; // roll key -> bioguide -> code
 {
   const txt = fs.readFileSync(path.join(RAW, 'HS119_votes.csv'), 'utf8');
   for (const line of txt.split('\n').slice(1)) {
@@ -221,16 +238,57 @@ const rcByK = Object.fromEntries(rollcalls.map(r => [r.k, r]));
     const [, chamber, roll, icpsr, code] = line.split(',');
     const ch = chamber[0];
     const bio = icpsrTo[ch + icpsr]; if (!bio) continue;
-    const i = pos[ch][bio]; if (i == null) continue;
-    const rc = rcByK[ch + roll]; if (!rc) continue;
     const c = +code; // Voteview cast codes: 1-3 yea, 4-6 nay, 7-8 present, 9 not voting, 0 not a member
-    rc.codes[i] = c >= 1 && c <= 3 ? 'Y' : c >= 4 && c <= 6 ? 'N' : c === 7 || c === 8 ? 'P' : '0';
+    const v = c >= 1 && c <= 3 ? 'Y' : c >= 4 && c <= 6 ? 'N' : c === 7 || c === 8 ? 'P' : c === 9 ? 'X' : null;
+    if (v) (vvCodes[ch + roll] ||= {})[bio] = v;
   }
 }
+// members who voted in this Congress and have since left the chamber keep their place in the record
+const former = {};
+const order = { H: members.filter(m => m.chamber === 'H').map(m => m.id), S: members.filter(m => m.chamber === 'S').map(m => m.id) };
+{
+  const seen = { H: new Set(order.H), S: new Set(order.S) };
+  const add = (ch, id) => { if (seen[ch].has(id)) return; seen[ch].add(id); order[ch].push(id); };
+  for (const [k, o] of Object.entries(official)) for (const v of o.votes) add(k[0], v.id);
+  for (const [k, by] of Object.entries(vvCodes)) for (const id of Object.keys(by)) add(k[0], id);
+  const vvName = Object.fromEntries(vvMembers.filter(r => r.bioguide_id).map(r => [r.bioguide_id, r]));
+  for (const ch of ['H', 'S']) for (const id of order[ch]) {
+    if (byId[id] || former[id]) continue;
+    const L = legAll.get(id), vv = vvName[id];
+    const terms = L ? L.terms.filter(t => t.end >= '2025-01-03').map(x => ({ type: x.type, start: x.start, end: x.end, state: x.state, district: x.district ?? null, party: x.party })) : [];
+    const t = terms.filter(x => (x.type === 'sen') === (ch === 'S')).pop();
+    const name = L ? L.name.official_full || `${L.name.nickname || L.name.first} ${L.name.last}` : vv.bioname.replace(/^([^,]+), (.+)$/, '$2 $1').replace(/\b([A-Z])([A-Z]+)\b/g, (w, a, b) => a + b.toLowerCase());
+    const state = t ? t.state : vv.state_abbrev;
+    former[id] = { id, former: true, name, last: L ? L.name.last : name.split(' ').pop(), chamber: ch, state, district: ch === 'H' ? (t ? t.district : +vv.district_code) : null,
+      party: t ? PARTY[t.party] || t.party[0] : { 100: 'D', 200: 'R' }[vv.party_code] || 'I', delegate: ch === 'H' && ['AS', 'GU', 'MP', 'PR', 'VI', 'DC'].includes(state), left: t ? t.end : null, terms };
+  }
+}
+const who = id => byId[id] || former[id];
+const pos = { H: Object.fromEntries(order.H.map((id, i) => [id, i])), S: Object.fromEntries(order.S.map((id, i) => [id, i])) };
+// party at the time of each vote, from the official records
+const partySeen = {};
+const rollcalls = rolls.map(r => {
+  const ch = r.chamber[0];
+  const k = `${ch}${r.rollnumber}`;
+  const codes = Array(order[ch].length).fill('0');
+  const vv = vvCodes[k] || {}, o = official[k];
+  if (o) {
+    // vote text outside yea/nay/present/not voting (candidate names for Speaker, guilty) keeps Voteview's reading
+    for (const v of o.votes) { codes[pos[ch][v.id]] = OFFICIAL_WORD[v.v.toLowerCase()] || vv[v.id] || 'X'; if (v.party && o.date) (partySeen[v.id] ||= []).push([o.date, v.party]); }
+  } else for (const [id, c] of Object.entries(vv)) codes[pos[ch][id]] = c;
+  const date = (o && o.date) || r.date;
+  const yea = o ? codes.filter(c => c === 'Y').length : +r.yea_count, nay = o ? codes.filter(c => c === 'N').length : +r.nay_count;
+  return { k, chamber: ch, roll: +r.rollnumber, clerk: +r.clerk_rollnumber, session: +r.session, date, bill: r.bill_number || null, result: r.vote_result, question: r.vote_question, desc: r.vote_desc || r.dtl_desc || '', req: r.majority_requirement, yea, nay, codes, ...(o ? {} : { source: 'voteview' }) };
+});
+for (const [id, seen] of Object.entries(partySeen)) {
+  const hist = []; for (const [d, p] of seen.sort((a, b) => a[0].localeCompare(b[0]))) if (!hist.length || hist[hist.length - 1][1] !== p) hist.push([d, p]);
+  if (hist.length > 1) who(id).parties = hist;
+}
+const partyOn = (m, d) => { let p = m.party; if (m.parties) for (const [from, pt] of m.parties) if (from <= d) p = pt; return p === 'I' ? (m.caucus || 'D') : p; };
 // party position per roll call and per-member stats
 for (const rc of rollcalls) {
   const ids = order[rc.chamber]; const tally = { D: { Y: 0, N: 0 }, R: { Y: 0, N: 0 } };
-  rc.codes.forEach((c, i) => { const m = byId[ids[i]]; const p = m.party === 'I' ? (m.caucus || 'D') : m.party; if ((c === 'Y' || c === 'N') && tally[p]) tally[p][c]++; });
+  rc.codes.forEach((c, i) => { const p = partyOn(who(ids[i]), rc.date); if ((c === 'Y' || c === 'N') && tally[p]) tally[p][c]++; });
   rc.tally = tally;
   rc.partyPos = { D: tally.D.Y > tally.D.N ? 'Y' : tally.D.N > tally.D.Y ? 'N' : null, R: tally.R.Y > tally.R.N ? 'Y' : tally.R.N > tally.R.Y ? 'N' : null };
   rc.partyLine = rc.partyPos.D && rc.partyPos.R && rc.partyPos.D !== rc.partyPos.R;
@@ -240,24 +298,26 @@ for (const ch of ['H', 'S']) {
   const ids = order[ch];
   const rcs = rollcalls.filter(r => r.chamber === ch);
   ids.forEach((id, i) => {
-    const m = byId[id]; const p = m.party === 'I' ? (m.caucus || 'D') : m.party;
+    const m = byId[id]; if (!m || m.chamber !== ch) return;
     let eligible = 0, cast = 0, missed = 0, withParty = 0, partyVotes = 0; const breaks = [];
     for (const rc of rcs) {
-      const c = rc.codes[i]; if (c === '0' && !rcWasMember(m, rc)) continue;
+      const c = rc.codes[i]; if (c === '0') continue;
       eligible++;
       if (c === 'Y' || c === 'N') {
         cast++;
-        if (rc.partyLine) { partyVotes++; if (c === rc.partyPos[p]) withParty++; else breaks.push(rc.k); }
+        if (rc.partyLine) { partyVotes++; if (c === rc.partyPos[partyOn(m, rc.date)]) withParty++; else breaks.push(rc.k); }
       } else missed++;
     }
     m.votes = { eligible, cast, missed, partyVotes, withParty, unity: partyVotes ? withParty / partyVotes : null, missedPct: eligible ? missed / eligible : null, breaks: breaks.reverse() };
   });
   // agreement with every colleague of the chamber
   const n = ids.length; const codes = rcs.map(r => r.codes);
+  const sitting = i => byId[ids[i]] && byId[ids[i]].chamber === ch;
   for (let a = 0; a < n; a++) {
+    if (!sitting(a)) continue;
     const scores = [];
     for (let b = 0; b < n; b++) {
-      if (a === b) continue; let both = 0, same = 0;
+      if (a === b || !sitting(b)) continue; let both = 0, same = 0;
       for (const s of codes) { const x = s[a], y = s[b]; if ((x === 'Y' || x === 'N') && (y === 'Y' || y === 'N')) { both++; if (x === y) same++; } }
       if (both >= 50) scores.push([ids[b], same / both]);
     }
@@ -267,8 +327,6 @@ for (const ch of ['H', 'S']) {
     m.crossParty = scores.filter(([id]) => byId[id].party !== p && byId[id].party !== 'I').slice(0, 4).map(([id, s]) => ({ id, agree: +s.toFixed(3) }));
   }
 }
-// delegates vote only in the Committee of the Whole: with no recorded vote they were not eligible
-function rcWasMember(m, rc) { return !m.delegate && m.terms.some(t => (t.type === 'sen') === (rc.chamber === 'S') && t.start <= rc.date && t.end >= rc.date); }
 
 // ---------- shared donors ----------
 const owners = [...members.map(m => m.id), ...elect.map(e => e.id)];
@@ -406,6 +464,7 @@ for (const [cm, f] of Object.entries(funders)) {
 }
 fs.writeFileSync(path.join(OUT, 'people.json'), JSON.stringify(allPeople));
 fs.writeFileSync(path.join(OUT, 'rollcalls.json'), JSON.stringify({ order, rollcalls }));
+fs.writeFileSync(path.join(OUT, 'former.json'), JSON.stringify(Object.values(former)));
 fs.writeFileSync(path.join(OUT, 'funders.json'), JSON.stringify(funderOut));
 // compact: { person: { committee: [yyyymmdd, amount, yyyymmdd, amount, ...] } }, oldest first
 const histOut = {};

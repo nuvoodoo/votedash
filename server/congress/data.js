@@ -23,6 +23,7 @@ function build() {
   DIR = pickDir();
   const people = load('people.json');
   const { order, rollcalls } = load('rollcalls.json');
+  const former = new Map((load('former.json', true) || []).map(p => [p.id, p]));
   const funders = load('funders.json');
   const meta = load('meta.json');
   const bills = load('bills.json', true);
@@ -44,6 +45,8 @@ function build() {
   const caucusAbout = staticJson('caucus-about.json'), committeeAbout = staticJson('committee-about.json'), industryAbout = staticJson('industry-about.json'); const leadershipSponsors = staticJson('leadership-sponsors.json');
 
   const byId = new Map(people.map(p => [p.id, p]));
+  // anyone on a roll call: sitting members, then members who have since left the chamber
+  const who = id => byId.get(id) || former.get(id);
   const bySlug = new Map(people.map(p => [p.slug, p]));
   const rcByK = new Map(rollcalls.map(r => [r.k, r]));
   const fundersById = new Map(Object.entries(funders));
@@ -86,7 +89,7 @@ function build() {
   for (const f of fundersById.values()) if (f.total + f.ie >= 10000) search.push({ t: 'funder', key: norm(`${f.name} ${f.org || ''}`), f });
   if (bills) for (const [k, b] of Object.entries(bills.bills)) search.push({ t: 'bill', key: norm(`${k} ${b.type}${b.number} ${b.type} ${b.number} ${b.short || ''} ${b.title}`), k, b });
 
-  Object.assign(D, { funderAbout, caucusAbout, committeeAbout, industryAbout, leadershipSponsors, postmortem, pmRaces, approval, polls, ieYear, dataDir: DIR, caucuses, pacHistory, leadership, givenTo, people, byId, bySlug, order, rollcalls, rcByK, rcPos, funders: fundersById, fundersBySlug, meta, bills, speeches, industries, indName, sectorOf, sectors, industryOf, industryTotals, lobbying, record, chambers, states, search, STATES });
+  Object.assign(D, { funderAbout, caucusAbout, committeeAbout, industryAbout, leadershipSponsors, postmortem, pmRaces, approval, polls, ieYear, dataDir: DIR, caucuses, pacHistory, leadership, givenTo, people, byId, bySlug, former, who, order, rollcalls, rcByK, rcPos, funders: fundersById, fundersBySlug, meta, bills, speeches, industries, indName, sectorOf, sectors, industryOf, industryTotals, lobbying, record, chambers, states, search, STATES });
   D.recentRolls = { H: rollcalls.filter(r => r.chamber === 'H').sort(byDate), S: rollcalls.filter(r => r.chamber === 'S').sort(byDate) };
   D.allRolls = [...rollcalls].sort(byDate);
   reconcileBills(rollcalls);
@@ -114,10 +117,13 @@ function reconcileBills(rolls) {
   }
 }
 function byDate(a, b) { return b.date.localeCompare(a.date) || b.roll - a.roll; }
+// party on a date: the official roll call records note any change of party during the Congress
+function partyOn(p, d) { let pt = p.party; if (p.parties) for (const [from, x] of p.parties) if (from <= d) pt = x; return pt; }
 function partyMid(p) { return p === 'D' ? -0.38 : p === 'R' ? 0.5 : 0; }
 const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 build();
 D.norm = norm;
 D.reload = build;
 D.reconcileBills = reconcileBills;
+D.partyOn = partyOn;
 module.exports = D;

@@ -38,6 +38,8 @@ const portrait = (p, size = 's', cls = '') => hasPortrait(p) ? `<img class="pt $
 const chip = p => `<span class="pc p${p.party}" title="${PARTY[p.party] || p.party}">${p.party}</span>`;
 
 function personLink(p, extra = '') {
+  // a member who has left office has no page of their own
+  if (p.former) return `<span class="who"><span><b>Former ${esc(title(p))} ${esc(p.name)}</b><small>${chip(p)} ${esc(seatLabel(p))}${extra}</small></span></span>`;
   return `<a class="who" href="${href(p)}">${portrait(p)}<span><b>${esc(title(p))} ${esc(p.name)}</b><small>${chip(p)} ${esc(seatLabel(p))}${extra}</small></span></a>`;
 }
 

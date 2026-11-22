@@ -118,7 +118,7 @@ async function meetings() {
 }
 
 // roll calls after the last one in the build
-const WORD = { yea: 'Y', aye: 'Y', nay: 'N', no: 'N', present: 'P', 'not voting': '0' };
+const WORD = { yea: 'Y', aye: 'Y', nay: 'N', no: 'N', present: 'P', 'not voting': 'X' };
 async function freshVotes() {
   const lis = new Map(D.people.filter(p => p.ids && p.ids.lis).map(p => [p.ids.lis, p.id]));
   const add = [];
@@ -153,7 +153,7 @@ async function freshVotes() {
 }
 function finish(rc) {
   const ids = D.order[rc.chamber]; const tally = { D: { Y: 0, N: 0 }, R: { Y: 0, N: 0 } };
-  rc.codes.forEach((c, i) => { const m = D.byId.get(ids[i]); if (!m) return; const p = m.party === 'I' ? (m.caucus || 'D') : m.party; if ((c === 'Y' || c === 'N') && tally[p]) tally[p][c]++; });
+  rc.codes.forEach((c, i) => { const m = D.who(ids[i]); if (!m) return; const pt = D.partyOn(m, rc.date); const p = pt === 'I' ? (m.caucus || 'D') : pt; if ((c === 'Y' || c === 'N') && tally[p]) tally[p][c]++; });
   rc.tally = tally;
   rc.partyPos = { D: tally.D.Y > tally.D.N ? 'Y' : tally.D.N > tally.D.Y ? 'N' : null, R: tally.R.Y > tally.R.N ? 'Y' : tally.R.N > tally.R.Y ? 'N' : null };
   rc.partyLine = !!(rc.partyPos.D && rc.partyPos.R && rc.partyPos.D !== rc.partyPos.R);
