@@ -10,6 +10,8 @@ const P = require('./congress/pages');
 const LV = require('./congress/live');
 
 const PORT = process.env.PORT || 8080;
+// when this server process started: a deploy or restart, reported in /api/data-status
+const STARTED = new Date().toISOString();
 const PUB = path.join(__dirname, '../public');
 const ARCHIVE = path.join(__dirname, '../archive');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.xml': 'application/xml', '.txt': 'text/plain; charset=utf-8', '.woff2': 'font/woff2', '.geojson': 'application/json' };
@@ -39,7 +41,7 @@ const server = http.createServer((req, res) => {
     if (p.length > 1 && p.endsWith('/') && !p.startsWith('/2026')) { res.writeHead(301, { Location: p.slice(0, -1) + url.search }); return res.end(); }
     if (p === '/healthz') return send(req, res, 200, Buffer.from('ok'), 'text/plain', 'no-store');
     if (p === '/readyz') return draining ? send(req, res, 503, Buffer.from('draining'), 'text/plain', 'no-store') : send(req, res, 200, Buffer.from('ok'), 'text/plain', 'no-store');
-    if (p === '/api/data-status') { let last = null; try { last = JSON.parse(fs.readFileSync(path.join(process.env.CONGRESS_HOME || '/nonexistent', 'last-run.json'), 'utf8')); } catch {} return send(req, res, 200, Buffer.from(JSON.stringify({ dataDir: D.dataDir === path.join(__dirname, 'congress/data') ? 'bundled' : 'disk', built: D.meta.built, running: nightlyRunning, last, live: { updated: LV.L.updated, sources: LV.L.sources } })), 'application/json', 'no-store'); }
+    if (p === '/api/data-status') { let last = null; try { last = JSON.parse(fs.readFileSync(path.join(process.env.CONGRESS_HOME || '/nonexistent', 'last-run.json'), 'utf8')); } catch {} return send(req, res, 200, Buffer.from(JSON.stringify({ dataDir: D.dataDir === path.join(__dirname, 'congress/data') ? 'bundled' : 'disk', built: D.meta.built, started: STARTED, running: nightlyRunning, last, live: { updated: LV.L.updated, sources: LV.L.sources } })), 'application/json', 'no-store'); }
     if (p === '/api/rebuild' && req.method === 'POST') { if (!process.env.REBUILD_TOKEN || req.headers.authorization !== 'Bearer ' + process.env.REBUILD_TOKEN) return send(req, res, 403, Buffer.from('forbidden'), 'text/plain', 'no-store'); runNightly(); return send(req, res, 202, Buffer.from('started'), 'text/plain', 'no-store'); }
     if (p === '/2026') { res.writeHead(301, { Location: '/2026/' }); return res.end(); }
     if (p.startsWith('/2026/')) { if (file(req, res, ARCHIVE, p, 'public, max-age=3600')) return; return html(req, res, P.notFound(), 404); }
