@@ -62,6 +62,8 @@ const count = (dir, f, fn) => { try { return fn(JSON.parse(fs.readFileSync(path.
   }
   for (const f of ['house-1976-2024.tab', 'senate-1976-2024.tab']) fs.copyFileSync(path.join(__dirname, 'static', f), path.join(RAW, f));
   fs.copyFileSync(path.join(REPO, 'archive/2026/api/snapshot.json'), path.join(RAW, 'snapshot.json'));
+  // each state's official 2026 results, once the state labels its file official, over the election-night count
+  try { run('official-results.js'); } catch (e) { log('official results step failed, keeping the election-night count:', e.message); steps.push(['official-results.js', 'kept previous']); }
   for (const t of ['hr', 's', 'hres', 'sres', 'hjres', 'sjres', 'hconres', 'sconres']) {
     const zp = path.join(RAW, 'zip', `BILLSTATUS-119-${t}.zip`);
     await download(`https://www.govinfo.gov/bulkdata/BILLSTATUS/119/${t}/BILLSTATUS-119-${t}.zip`, zp);

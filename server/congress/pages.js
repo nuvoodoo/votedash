@@ -435,7 +435,8 @@ function electionsSec(p) {
   const general = e.length ? `<h3>General elections</h3>${chart}
   <div class="tbl"><table><thead><tr><th>Year</th><th>Race</th><th class="n">Share</th><th>Opponent</th><th>Result</th></tr></thead><tbody>
   ${e.map(x => `<tr><td>${x.year}</td><td>${seat(x)}</td><td class="n">${x.pct != null ? pct(x.pct, 1) : ''}</td><td>${x.uncontested ? 'Unopposed' : x.opponent ? `${esc(x.opponent.name)} (${esc(x.opponent.party || '')})${x.opponent.pct != null ? ', ' + pct(x.opponent.pct, 1) : ''}` : ''}</td><td>${x.won ? 'Won' : 'Lost'}${x.runoff ? ' runoff' : ''}${x.raceId && x.year === 2026 ? ` <a href="/2026/race/${x.raceId}/">results</a>` : ''}</td></tr>`).join('')}
-  </tbody></table></div>` : '';
+  </tbody></table></div>${(() => { const src = [...new Map(e.filter(x => x.src).map(x => [x.src.url, x])).values()];
+    return src.length ? `<p class="sub">${src.map(x => `${x.year} result: <a href="${esc(x.src.url)}" rel="noopener">${esc(x.src.name)}</a>, official count as of ${date(x.src.asOf)}.`).join(' ')}</p>` : ''; })()}` : '';
   const primaries = pr.length ? `<h3>Primaries</h3>
   <div class="tbl"><table><thead><tr><th>Year</th><th>Race</th><th class="n">Share</th><th>Top rival</th><th>Result</th></tr></thead><tbody>
   ${pr.map(x => `<tr><td>${x.year}</td><td>${primLabel(x)}</td><td class="n">${x.pct != null && !x.uncontested ? pct(x.pct, 1) + (x.runoffPct != null ? `<br><small>runoff ${pct(x.runoffPct, 1)}</small>` : '') : ''}</td><td>${x.uncontested ? 'Unopposed' : x.opponent ? `${esc(x.opponent.name)}${x.party === 'T2' && x.opponent.party ? ` (${esc(x.opponent.party)})` : ''}${x.opponent.pct != null ? ', ' + pct(x.opponent.pct, 1) : ''}${x.field > 2 ? `<br><small>${x.field} candidates</small>` : ''}` : ''}</td><td>${x.won ? (x.party === 'T2' ? 'Advanced' : 'Won') : 'Lost'}${x.runoffPct != null ? ' runoff' : ''}</td></tr>`).join('')}

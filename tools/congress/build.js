@@ -425,7 +425,7 @@ for (const r of fedRaces) {
     const me = r.cands.find(c => samePerson(c.n, nm)); if (!me) continue;
     if (o.chamber && o.chamber !== chamber && !(o.elect && o.elect.chamber === chamber)) continue;
     const opp = r.cands.find(c => c !== me);
-    pushH(o.id, { year: 2026, chamber, state: r.state, district: dist, pct: total ? me.v / total : me.pc / 100, votes: me.v, won: !!me.w, opponent: opp ? { name: opp.n, party: opp.p, pct: total ? opp.v / total : opp.pc / 100 } : null, uncontested: !opp, raceId: r.id });
+    pushH(o.id, { year: 2026, chamber, state: r.state, district: dist, pct: total ? me.v / total : me.pc / 100, votes: me.v, won: !!me.w, opponent: opp ? { name: opp.n, party: opp.p, pct: total ? opp.v / total : opp.pc / 100 } : null, uncontested: !opp, ...(r.official ? { src: { name: r.official.name, url: r.official.url, asOf: r.official.asOf } } : {}), raceId: r.id });
   }
 }
 // ---------- primaries, special elections, territory delegates ----------
