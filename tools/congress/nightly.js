@@ -14,6 +14,9 @@ const NEXT = path.join(HOME, 'congress-next');
 const PREV = path.join(HOME, 'congress-prev');
 const REPO = path.join(__dirname, '../..');
 const BUNDLED = path.join(REPO, 'server/congress/data');
+// roots some sources chain to that this Node's bundled list lacks (Florida's GoDaddy TLS Root CA - R1, from the
+// Windows trusted root store, SHA-1 C6FC6A49610C09CB640E250CCB05CDE834660517)
+const CA = path.join(__dirname, 'ca/godaddy-tls-root-r1.pem');
 const log = (...a) => console.log(new Date().toISOString(), '[nightly]', ...a);
 const steps = [];
 
@@ -34,7 +37,7 @@ async function download(url, dest, { ifMissing } = {}) {
 const unzip = (zip, dir) => { fs.mkdirSync(dir, { recursive: true }); execFileSync('unzip', ['-oq', zip, '-d', dir]); };
 function run(script, args = []) {
   const t = Date.now();
-  execFileSync(process.execPath, ['--max-old-space-size=1400', path.join(__dirname, script), ...args], { stdio: 'inherit', timeout: 40 * 60e3, env: { ...process.env, CONGRESS_RAW: RAW, CONGRESS_OUT: NEXT } });
+  execFileSync(process.execPath, ['--max-old-space-size=1400', path.join(__dirname, script), ...args], { stdio: 'inherit', timeout: 40 * 60e3, env: { ...process.env, CONGRESS_RAW: RAW, CONGRESS_OUT: NEXT, NODE_EXTRA_CA_CERTS: CA } });
   steps.push([script, Math.round((Date.now() - t) / 1000)]);
 }
 const count = (dir, f, fn) => { try { return fn(JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'))); } catch { return 0; } };

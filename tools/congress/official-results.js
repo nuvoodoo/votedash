@@ -22,16 +22,23 @@ const DIR = path.join(RAW, 'official-results');
 const UA = 'Mozilla/5.0 (compatible; VoteDash/1.0; +https://votedash.net/about)';
 
 async function get(url, name) {
+  const file = path.join(DIR, name);
   for (let i = 0; i < 3; i++) {
     try {
       const r = await fetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(120e3), redirect: 'follow' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const buf = Buffer.from(await r.arrayBuffer());
       if (!buf.length) throw new Error('empty');
-      const file = path.join(DIR, name);
       fs.writeFileSync(file + '.tmp', buf); fs.renameSync(file + '.tmp', file);
-      return { buf, file, modified: r.headers.get('last-modified') };
-    } catch (e) { if (i === 2) throw new Error(`${url}: ${e.message}`); await new Promise(res => setTimeout(res, 5000 * (i + 1))); }
+      const modified = r.headers.get('last-modified'); fs.writeFileSync(file + '.modified', modified || '');
+      return { buf, file, modified };
+    } catch (e) {
+      if (i < 2) { await new Promise(res => setTimeout(res, 5000 * (i + 1))); continue; }
+      // the last copy downloaded is still the state's file: the snapshot is rebuilt from the election-night count
+      // every night, so falling back to nothing would undo the state's numbers
+      if (fs.existsSync(file)) { console.error(`official results: ${url}: ${e.cause && e.cause.code || e.message}; using the copy from ${iso(fs.statSync(file).mtime)}`); return { buf: fs.readFileSync(file), file, modified: fs.existsSync(file + '.modified') ? fs.readFileSync(file + '.modified', 'utf8') || null : null }; }
+      throw new Error(`${url}: ${e.cause && e.cause.code || e.message}`);
+    }
   }
 }
 const iso = d => (d ? new Date(d) : new Date()).toISOString().slice(0, 10);
