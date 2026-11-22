@@ -24,9 +24,13 @@ const url = r => r.ch === 'H'
 const file = r => path.join(DIR, `${r.ch}${r.session}-${r.clerk}.xml.gz`);
 const cutoff = new Date(Date.now() - REFRESH_DAYS * 864e5).toISOString().slice(0, 10);
 
+// clerk.house.gov and senate.gov both answer 403 to a burst of requests and keep refusing for
+// some minutes, so each site gets one request at a time with a pause, a refused request waits
+// longer each time, and a site that keeps refusing is left for the next run instead of
+// spending the rest of the step on it (the build uses Voteview for anything not on disk).
+const PAUSE = 300, WAITS = [20e3, 60e3, 120e3], GIVE_UP = 3;
 async function get(u) {
-  // senate.gov answers 403 when requests come too fast, so a 403 waits and tries again
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; ; i++) {
     try {
       const res = await fetch(u, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(30e3) });
       if (res.status === 404) return { status: 404 };
@@ -34,27 +38,27 @@ async function get(u) {
       const text = await res.text();
       if (!/<(rollcall-vote|roll_call_vote)\b/.test(text)) throw new Error('not a roll call record');
       return { text };
-    } catch (e) { if (i === 3) return { error: e.message }; await new Promise(r => setTimeout(r, 15000 * (i + 1))); }
+    } catch (e) { if (i === WAITS.length) return { error: e.message }; await new Promise(r => setTimeout(r, WAITS[i])); }
   }
 }
 
 (async () => {
   fs.mkdirSync(DIR, { recursive: true });
   const todo = rolls.filter(r => !fs.existsSync(file(r)) || r.date >= cutoff);
-  let ok = 0, missing = 0, failed = 0;
+  let ok = 0, missing = 0, failed = 0, skipped = 0;
   const t0 = Date.now();
-  // one queue per site: the Clerk takes four at a time, the Senate one at a time with a pause
-  async function worker(queue, pause) {
+  async function worker(queue) {
+    let refusedInRow = 0;
     while (queue.length) {
+      if (refusedInRow >= GIVE_UP) { skipped += queue.length; console.error(`official vote: ${new URL(url(queue[0])).host} keeps refusing, ${queue.length} left for the next run`); break; }
       const r = queue.shift();
       const out = await get(url(r));
-      if (out.text) { fs.writeFileSync(file(r) + '.tmp', zlib.gzipSync(out.text)); fs.renameSync(file(r) + '.tmp', file(r)); ok++; }
-      else if (out.status) missing++;
-      else { failed++; console.error('official vote', url(r), out.error); }
-      if (pause) await new Promise(res => setTimeout(res, pause));
+      if (out.text) { fs.writeFileSync(file(r) + '.tmp', zlib.gzipSync(out.text)); fs.renameSync(file(r) + '.tmp', file(r)); ok++; refusedInRow = 0; }
+      else if (out.status) { missing++; refusedInRow = 0; }
+      else { failed++; refusedInRow++; console.error('official vote', url(r), out.error); }
+      await new Promise(res => setTimeout(res, PAUSE));
     }
   }
-  const house = todo.filter(r => r.ch === 'H'), senate = todo.filter(r => r.ch === 'S');
-  await Promise.all([...Array.from({ length: 4 }, () => worker(house, 0)), worker(senate, 250)]);
-  console.log(`official votes: ${rolls.length} roll calls, ${todo.length} fetched (${ok} saved, ${missing} not available, ${failed} failed) in ${Math.round((Date.now() - t0) / 1000)}s`);
+  await Promise.all([worker(todo.filter(r => r.ch === 'H')), worker(todo.filter(r => r.ch === 'S'))]);
+  console.log(`official votes: ${rolls.length} roll calls, ${todo.length} fetched (${ok} saved, ${missing} not available, ${failed} failed, ${skipped} skipped) in ${Math.round((Date.now() - t0) / 1000)}s`);
 })();

@@ -76,11 +76,10 @@ const count = (dir, f, fn) => { try { return fn(JSON.parse(fs.readFileSync(path.
   run('build.js');
   run('bills-bulk.js');
   run('industries.js');
-  run('caucuses.js', ['--refresh']);
-  // The GovInfo cache lives in /tmp and is lost on every deploy, so the first runs after a
-  // deploy re-fetch the whole Congressional Record and can outlast the step timeout. The
-  // cache is written as it goes, so a cut-off run still advances; keep the current
-  // speeches.json and let the rest of the rebuild go live.
+  // caucus rosters come from many house.gov and caucus sites; one refusing must not cost the night
+  try { run('caucuses.js', ['--refresh']); } catch (e) { log('caucuses step failed, keeping current caucuses:', e.message); steps.push(['caucuses.js', 'kept previous']); }
+  // A full Congressional Record fetch (empty cache) can outlast the step timeout. The cache is
+  // written as it goes, so a cut-off run still advances; keep the current speeches.json.
   try { run('fetch-speeches.js'); } catch (e) { log('speeches step did not finish, keeping current speeches:', e.message); steps.push(['fetch-speeches.js', 'kept previous']); }
 
   // validate against the data now live

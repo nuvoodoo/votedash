@@ -25,9 +25,16 @@ const stripTitle = s => s.replace(/^(Rep|Sen|Del|Mr|Ms|Mrs|Dr)\.\s*/i, '').trim(
 async function get(file, url) {
   const f = path.join(RAW, file);
   if (!REFRESH && fs.existsSync(f)) return fs.readFileSync(f, 'utf8');
-  const r = await fetch(url, { headers: { 'User-Agent': UA }, redirect: 'follow' });
-  if (!r.ok) throw new Error(`${url} -> HTTP ${r.status}`);
-  const t = await r.text();
+  let t;
+  try {
+    const r = await fetch(url, { headers: { 'User-Agent': UA }, redirect: 'follow', signal: AbortSignal.timeout(30e3) });
+    if (!r.ok) throw new Error(`${url} -> HTTP ${r.status}`);
+    t = await r.text();
+  } catch (e) {
+    // a refused refresh keeps the last downloaded copy; its file date stays the source date shown
+    if (fs.existsSync(f)) { console.error(`${e.message}; using the copy from ${fetched(file)}`); return fs.readFileSync(f, 'utf8'); }
+    throw e;
+  }
   fs.writeFileSync(f, t);
   return t;
 }
