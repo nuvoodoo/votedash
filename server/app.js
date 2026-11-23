@@ -57,9 +57,13 @@ const server = http.createServer((req, res) => {
     if (p.startsWith('/c/') || p.startsWith('/portraits/') || p === '/favicon.svg') { if (file(req, res, PUB, p, p.startsWith('/portraits/') ? 'public, max-age=604800' : 'public, max-age=86400')) return; return send(req, res, 404, Buffer.from('not found'), 'text/plain'); }
     // old dashboard URLs move to the archive
     let m;
-    if ((m = p.match(/^\/(race\/\d+|board(\/[\w-]+)?|feed|calls)$/))) { res.writeHead(301, { Location: `/2026/${m[1]}/` }); return res.end(); }
-    if ((m = p.match(/^\/(race\/\d+)\/./)) || (m = p.match(/^\/(feed)\/./))) return moved(res, `/2026/${m[1]}/`);
+    if ((m = p.match(/^\/race\/(\d+)(\/.*)?$/))) return moved(res, `/2026/race/${m[1]}/`);
+    if ((m = p.match(/^\/board(?:\/([\w-]+))?$/))) return moved(res, `/2026/board/${m[1] && fs.existsSync(path.join(ARCHIVE, '2026/board', m[1])) ? m[1] + '/' : ''}${url.search}`);
+    if ((m = p.match(/^\/feed(?:\/([\w-]+))?(\/.*)?$/))) return moved(res, `/2026/feed/${m[1] && fs.existsSync(path.join(ARCHIVE, '2026/feed', m[1])) ? m[1] + '/' : ''}`);
+    if (p === '/calls') return moved(res, '/2026/calls/');
     if (p === '/og.png' || p === '/og.svg') return moved(res, '/2026/og.png');
+    if (p === '/api/snapshot' || p === '/api/calls') return moved(res, `/2026${p}.json`);
+    if ((m = p.match(/^\/api\/race\/(\d+)$/))) return moved(res, `/2026/api/race/${m[1]}.json`);
 
     if (p === '/') return html(req, res, P.home());
     if (p === '/schedule') return html(req, res, P.schedule());
