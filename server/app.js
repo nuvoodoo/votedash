@@ -51,11 +51,15 @@ const server = http.createServer((req, res) => {
     if (p === '/api/data-status') { let last = null; try { last = JSON.parse(fs.readFileSync(path.join(process.env.CONGRESS_HOME || '/nonexistent', 'last-run.json'), 'utf8')); } catch {} return send(req, res, 200, Buffer.from(JSON.stringify({ dataDir: D.dataDir === path.join(__dirname, 'congress/data') ? 'bundled' : 'disk', built: D.meta.built, started: STARTED, running: nightlyRunning, last, live: { updated: LV.L.updated, sources: LV.L.sources } })), 'application/json', 'no-store'); }
     if (p === '/api/rebuild' && req.method === 'POST') { if (!process.env.REBUILD_TOKEN || req.headers.authorization !== 'Bearer ' + process.env.REBUILD_TOKEN) return send(req, res, 403, Buffer.from('forbidden'), 'text/plain', 'no-store'); runNightly(); return send(req, res, 202, Buffer.from('started'), 'text/plain', 'no-store'); }
     if (p === '/2026') { res.writeHead(301, { Location: '/2026/' }); return res.end(); }
+    // the dashboard's South Bay board became its LA County board
+    if (/^\/(2026\/)?board\/southbay\/?$/.test(p)) return moved(res, '/2026/board/lacounty/');
     if (p.startsWith('/2026/')) { if (file(req, res, ARCHIVE, p, 'public, max-age=3600')) return; return html(req, res, P.notFound(), 404); }
     if (p.startsWith('/c/') || p.startsWith('/portraits/') || p === '/favicon.svg') { if (file(req, res, PUB, p, p.startsWith('/portraits/') ? 'public, max-age=604800' : 'public, max-age=86400')) return; return send(req, res, 404, Buffer.from('not found'), 'text/plain'); }
     // old dashboard URLs move to the archive
     let m;
     if ((m = p.match(/^\/(race\/\d+|board(\/[\w-]+)?|feed|calls)$/))) { res.writeHead(301, { Location: `/2026/${m[1]}/` }); return res.end(); }
+    if ((m = p.match(/^\/(race\/\d+)\/./)) || (m = p.match(/^\/(feed)\/./))) return moved(res, `/2026/${m[1]}/`);
+    if (p === '/og.png' || p === '/og.svg') return moved(res, '/2026/og.png');
 
     if (p === '/') return html(req, res, P.home());
     if (p === '/schedule') return html(req, res, P.schedule());
