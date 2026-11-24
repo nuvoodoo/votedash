@@ -982,6 +982,7 @@ function suggest(q) {
   if (/^\d{5}$/.test(q.trim()) && F.ZIPS[q.trim()]) { const z = F.ZIPS[q.trim()]; return [{ t: 'ZIP code', l: `Your representatives for ${q.trim()}`, s: D.STATES[z.d[0][0]], u: '/find?q=' + q.trim() }]; }
   const st = Object.entries(D.STATES).find(([k, v]) => D.states[k] && (D.norm(v) === D.norm(q) || (q.length === 2 && k === q.toUpperCase()) || (q.length > 2 && D.norm(v).startsWith(D.norm(q)))));
   const head = st ? [{ t: 'State', l: `${st[1]} delegation`, s: `${D.states[st[0]].filter(p => p.status !== 'elect').length} members`, u: `/state/${st[0].toLowerCase()}` }] : [];
+  head.push(...require('./civics').suggest(q));
   return head.concat(searchRun(q, 8 - head.length).map(r => r.t === 'person' ? { t: 'Member', l: `${title(r.p)} ${r.p.name}`, s: short(r.p), u: href(r.p), img: H.hasPortrait(r.p) ? `/portraits/s/${r.p.id}.webp` : null }
     : r.t === 'funder' ? { t: r.f.kind, l: nice(r.f.name), s: money(r.f.total || r.f.ie), u: `/f/${r.f.slug}` }
       : { t: 'Bill', l: r.b.short || r.b.title, s: billLabel(r.k), u: `/bill/${r.k}` }));
@@ -1080,7 +1081,7 @@ function tracker(q) {
   const F = BV.flow(q);
   const res = q.get('kind') === 'resolutions';
   const body = `<div class="wrap"><h1>Bill tracker</h1>
-  <p class="lede">How far every ${res ? 'resolution' : 'bill'} of the 119th Congress has gone. Each box shows how many reached that step and how many are sitting there now. Select a step to search the ${res ? 'resolutions' : 'bills'} in it.</p>
+  <p class="lede">How far every ${res ? 'resolution' : 'bill'} of the 119th Congress has gone. Each box shows how many reached that step and how many are sitting there now. Select a step to search the ${res ? 'resolutions' : 'bills'} in it. <a href="/how-congress-works/bills">See every bill on the map</a>.</p>
   <div class="filters">${BV.filterBar('/tracker', q)}</div>
   <div class="flow-wrap">${F.svg}</div>
   ${F.side.length ? `<p class="flow-side">${F.side.map(([s, v]) => `<a href="/tracker/${s.id}${F.qs}"><b>${v.toLocaleString('en-US')}</b> ${esc(s.name.toLowerCase())}</a>`).join('')}</p>` : ''}
@@ -1095,10 +1096,10 @@ function trackerStage(stage, q) {
   const { st, list, areas, page, pages, per } = R;
   const keep = ['kind', 'origin'].filter(k => q.get(k)).map(k => `<input type="hidden" name="${k}" value="${esc(q.get(k))}">`).join('');
   const qs = (k, v) => { const u = new URLSearchParams(q); if (v == null) u.delete(k); else u.set(k, v); u.delete('page'); const s = u.toString(); return `/tracker/${stage}` + (s ? '?' + s : ''); };
-  const body = `<div class="wrap"><p class="crumb"><a href="/tracker${(() => { const u = new URLSearchParams(); for (const k of ['kind', 'origin']) if (q.get(k)) u.set(k, q.get(k)); const s = u.toString(); return s ? '?' + s : ''; })()}">Bill tracker</a></p>
+  const body = `<div class="wrap"><p class="crumb">${st.map ? '<a href="/how-congress-works/bills">How a bill becomes law</a>, ' : ''}<a href="/tracker${(() => { const u = new URLSearchParams(); for (const k of ['kind', 'origin']) if (q.get(k)) u.set(k, q.get(k)); const s = u.toString(); return s ? '?' + s : ''; })()}">Bill tracker</a></p>
   <h1>${esc(st.name)}</h1><p class="lede">${esc(st.help)} ${list.length.toLocaleString('en-US')} ${q.get('kind') === 'resolutions' ? 'resolutions' : 'bills'} match.</p>
-  <nav class="stage-nav" aria-label="Steps">${[...BV.STEPS, ...BV.SIDE].map(s => `<a href="/tracker/${s.id}${(() => { const u = new URLSearchParams(q); u.delete('page'); const x = u.toString(); return x ? '?' + x : ''; })()}"${s.id === stage ? ' aria-current="page"' : ''}>${esc(s.short || s.name)}</a>`).join('')}</nav>
-  <div class="filters">${BV.filterBar('/tracker/' + stage, q)}</div>
+  ${st.map ? '' : `<nav class="stage-nav" aria-label="Steps">${[...BV.STEPS, ...BV.SIDE].map(s => `<a href="/tracker/${s.id}${(() => { const u = new URLSearchParams(q); u.delete('page'); const x = u.toString(); return x ? '?' + x : ''; })()}"${s.id === stage ? ' aria-current="page"' : ''}>${esc(s.short || s.name)}</a>`).join('')}</nav>
+  <div class="filters">${BV.filterBar('/tracker/' + stage, q)}</div>`}
   <form class="finder" action="/tracker/${stage}">${keep}
     <label for="fq">Search</label><input id="fq" name="q" type="search" value="${esc(R.text)}" placeholder="Title, number or subject">
     <label for="fa">Issue</label><select id="fa" name="area"><option value="">All issues</option>${areas.map(a => `<option${a === R.area ? ' selected' : ''}>${esc(a)}</option>`).join('')}</select>
@@ -1107,7 +1108,7 @@ function trackerStage(stage, q) {
     <button type="submit">Find bills</button></form>
   <ul class="blist finder-list">${list.slice((page - 1) * per, page * per).map(([k, b]) => { const sp = D.who(b.sponsor); return `<li><a href="/bill/${k}"><span class="bl">${BV.label(k)}${b.policyArea ? ` &nbsp;${esc(b.policyArea)}` : ''}</span><b>${esc(b.short || b.title)}</b><small>${sp ? `${esc(title(sp) + ' ' + sp.name)} (${short(sp)}). ` : ''}${b.cosponsors ? `${b.cosponsors} cosponsors. ` : ''}${stageOf(k, b) === 'vetoed' && b.stageDate ? `Vetoed ${date(b.stageDate)}. ` : ''}${b.latest ? `Latest action ${date(b.latest.date)}: ${esc(b.latest.text)}` : ''}</small>${track(k, b)}</a></li>`; }).join('')}</ul>
   ${pager(qs('page', null), page, pages)}</div>`;
-  return layout({ title: `${st.name}: bill tracker`, desc: `${list.length} bills ${st.name.toLowerCase()} in the 119th Congress.`, path: `/tracker/${stage}`, body, active: '/tracker', noindex: !!(R.text || R.area || R.party) });
+  return layout({ title: `${st.name}: bill tracker`, desc: st.map ? `${list.length} ${st.name} in the 119th Congress.` : `${list.length} bills ${st.name.toLowerCase()} in the 119th Congress.`, path: `/tracker/${stage}`, body, active: '/tracker', noindex: !!(R.text || R.area || R.party) });
 }
 // ---------------- compare two members ----------------
 function compare(q) {
@@ -1610,7 +1611,7 @@ function sitemaps() {
     record: p => D.record && (D.record.byPerson[p.id] || []).length, connections: p => (p.votesLike || []).length || (p.sharedDonors || []).length };
   const tabsOf = p => Object.keys(has).filter(id => has[id](p));
   const groups = {
-    pages: [...'/ /leadership /tracker /find /committees /schedule /members /votes /money /issues /incoming /compare /about /bibliography'.split(' '), ...PM_TABS.map(([k]) => k ? '/2026-post-mortem/' + k : '/2026-post-mortem'),
+    pages: [...'/ /leadership /tracker /find /committees /schedule /members /votes /money /issues /incoming /compare /about /bibliography'.split(' '), ...require('./civics').paths(), ...PM_TABS.map(([k]) => k ? '/2026-post-mortem/' + k : '/2026-post-mortem'),
       ...(D.caucuses ? D.caucuses.caucuses.map(c => `/caucus/${c.id}`) : []), ...Object.keys(D.STATES).filter(s => D.states[s]).map(s => `/state/${s.toLowerCase()}`), ...Object.keys(D.meta.committees).map(c => `/committee/${c.toLowerCase()}`),
       ...(D.leadership && D.leadership.elections ? D.leadership.elections.map(e => `/leadership/${e.id}`) : []), ...(D.bills ? [...BV.STEPS, ...BV.SIDE].map(st => `/tracker/${st.id}`) : [])],
     members: D.people.flatMap(p => [href(p), ...tabsOf(p).map(id => `${href(p)}/${id}`), ...(p.status !== 'elect' ? [`${href(p)}/network`] : [])]),
@@ -1637,6 +1638,7 @@ function llms() {
 - [Members of Congress](${SITE}/members): all ${D.people.length} current members and members-elect. Each has a profile at /m/{slug} and tab pages at /m/{slug}/{tab}, tabs: elections, polling, votes, money, bills, speeches, record, connections.
 - [Find your representatives](${SITE}/find): by ZIP code or address.
 - [Roll call votes](${SITE}/votes): every House and Senate roll call in the 119th Congress, at /vote/{id}.
+- [How Congress works](${SITE}/how-congress-works): a map of where every bill of the 119th Congress stands (/how-congress-works/bills) with a page per step (/how-congress-works/bills/{step}), opening day in each chamber (/how-congress-works/new-congress/house, /senate), one page per office (/how-congress-works/officers/{id}) and one per rule or term (/how-congress-works/rules/{id}).
 - [Bills](${SITE}/tracker): every bill in the 119th Congress at /bill/{type}{number}, by stage at /tracker/{stage}.
 - [Issues](${SITE}/issues): bills and votes by policy area, at /issue/{slug}.
 - [Money](${SITE}/money): PACs at /f/{slug}, industries at /industry/{id}; contributions, outside spending and 2026 win rates.
@@ -1927,4 +1929,4 @@ ${tabNav}
   return layout({ title: tab ? `${TAB[1]}: the 2026 midterms` : 'The 2026 midterms: winners, losers, ballot measures and money', desc: lede, path: href2(tab), body, active: base });
 }
 
-module.exports = { funderRecipients, sitemapFile, llms, postMortem, compare, trackerStage, caucusPage, leadership, leaderElection, tracker, committees, committee, find, contactLinks, schedule, home, member, network, graph, members, stateP, incoming, votes, vote, bill, moneyP, funder, industry, issues, issue, search, suggest, about, bibliography, notFound, sitemap };
+module.exports = { STAGE_HELP, funderRecipients, sitemapFile, llms, postMortem, compare, trackerStage, caucusPage, leadership, leaderElection, tracker, committees, committee, find, contactLinks, schedule, home, member, network, graph, members, stateP, incoming, votes, vote, bill, moneyP, funder, industry, issues, issue, search, suggest, about, bibliography, notFound, sitemap };

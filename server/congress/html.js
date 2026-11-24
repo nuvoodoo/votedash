@@ -82,7 +82,7 @@ function caucusAttr(p) {
 }
 
 // ---- layout ----
-const NAV = [['/find', 'Your Reps'], ['/members', 'Members'], ['/committees', 'Committees'], ['/leadership', 'Leaders'], ['/schedule', 'Schedule'], ['/tracker', 'Bills'], ['/votes', 'Votes'], ['/money', 'Money'], ['/incoming', 'Incoming'], ['/2026-post-mortem', '2026 Results']];
+const NAV = [['/find', 'Your Reps'], ['/members', 'Members'], ['/committees', 'Committees'], ['/leadership', 'Leaders'], ['/schedule', 'Schedule'], ['/tracker', 'Bills'], ['/votes', 'Votes'], ['/money', 'Money'], ['/incoming', 'Incoming'], ['/2026-post-mortem', '2026 Results'], ['/how-congress-works', 'How It Works']];
 
 // Icons: Lucide (ISC license), inline, stroke = currentColor
 const ICONS = {

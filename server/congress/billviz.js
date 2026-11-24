@@ -2,6 +2,7 @@
 // Bill tracker flow chart, stage finder and per-bill timeline (server-rendered SVG).
 const D = require('./data');
 const { esc, date, href, chip, personLink, title, short, PARTY } = require('./html');
+const BM = require('./billmap');
 
 const LAW_TYPES = /^(hr|s|hjres|sjres)\d/;          // can become law
 const RES_TYPES = /^(hres|sres|hconres|sconres)\d/;  // resolutions
@@ -79,9 +80,10 @@ function filterBar(base, q, keep = []) {
 
 // ---------- stage finder ----------
 function finder(stage, q) {
-  const st = STEPS.find(s => s.id === stage) || SIDE.find(s => s.id === stage); if (!st) return null;
+  const map = BM.station(stage);   // a station of the bill map: its own set of bills
+  const st = STEPS.find(s => s.id === stage) || SIDE.find(s => s.id === stage) || (map && { id: map.id, name: map.full, help: map.help, map: true }); if (!st) return null;
   const text = (q.get('q') || '').trim().toLowerCase(), area = q.get('area') || '', party = q.get('party') || '', sort = q.get('sort') || 'recent';
-  let list = pool(q).filter(([, b]) => stepOf(b) === stage);
+  let list = map ? BM.keysAt(stage).map(k => [k, D.bills.bills[k]]) : pool(q).filter(([, b]) => stepOf(b) === stage);
   const areas = [...new Set(list.map(([, b]) => b.policyArea).filter(Boolean))].sort();
   if (area) list = list.filter(([, b]) => b.policyArea === area);
   if (party) list = list.filter(([, b]) => { const p = D.byId.get(b.sponsor); return p && p.party === party; });

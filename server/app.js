@@ -8,6 +8,8 @@ const zlib = require('zlib');
 const D = require('./congress/data');
 const P = require('./congress/pages');
 const LV = require('./congress/live');
+const CV = require('./congress/civics');
+const BM = require('./congress/billmap');
 
 const PORT = process.env.PORT || 8080;
 // when this server process started: a deploy or restart, reported in /api/data-status
@@ -70,6 +72,10 @@ const server = http.createServer((req, res) => {
     if ((m = p.match(/^\/caucus\/([a-z]+)$/))) { const b = P.caucusPage(m[1], url.searchParams); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if (p === '/leadership') { const b = P.leadership(); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if ((m = p.match(/^\/leadership\/([\w-]+)$/))) { const b = P.leaderElection(m[1]); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
+    if (p === CV.BASE || p.startsWith(CV.BASE + '/')) { const b = CV.page(p.slice(CV.BASE.length + 1)); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
+    if (p === '/api/billmap.json') { const B = BM.build(); return B ? send(req, res, 200, Buffer.from(B.json), 'application/json', 'public, max-age=3600') : send(req, res, 404, Buffer.from('{}'), 'application/json'); }
+    if (p === '/api/billmap/tip') { const t = BM.tip(url.searchParams.get('k') || ''); return t ? json(req, res, t) : send(req, res, 404, Buffer.from('{}'), 'application/json'); }
+    if (p === '/api/billmap/find') return json(req, res, BM.find(url.searchParams.get('q') || ''));
     if (p === '/tracker') return html(req, res, P.tracker(url.searchParams));
     if ((m = p.match(/^\/tracker\/([a-z-]+)$/))) { const b = P.trackerStage(m[1], url.searchParams); return b ? html(req, res, b) : html(req, res, P.notFound(), 404); }
     if (p === '/committees') return html(req, res, P.committees());
